@@ -1,0 +1,8 @@
+version: "3.8"
+services:
+  dashboard-app:
+    build: .
+    container_name: hr-dashboard
+    ports:
+      - "5173:5173"
+    command: ["npm", "run", "dev", "--", "--host"]
