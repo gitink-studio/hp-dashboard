@@ -1,4 +1,4 @@
-import { AutocompleteInput, ReferenceInput, SelectInput } from "react-admin";
+import { ReferenceInput, SelectInput } from "react-admin";
 import { IDropdownList } from "../common/interfaces";
 
 export const DropdownList = ({
@@ -6,19 +6,12 @@ export const DropdownList = ({
   reference,
   optionText,
   optionLabel,
+  defaultDisplayValue,
   ...props
 }: IDropdownList & any) => {
   return (
-    <ReferenceInput source={source} reference={reference} {...props}>
-      {props.selectInput ? (
-        <SelectInput optionText={optionText} label={optionLabel} />
-      ) : (
-        <AutocompleteInput
-          optionText={optionText}
-          label={optionLabel}
-          alwaysOn
-        />
-      )}
+    <ReferenceInput source={source} reference={reference}>
+      <SelectInput optionText={optionText} label={optionLabel} {...props} />
     </ReferenceInput>
   );
 };

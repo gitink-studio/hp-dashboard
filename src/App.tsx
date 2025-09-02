@@ -1,4 +1,4 @@
-import { Admin, Button, ListGuesser, Resource, ShowGuesser } from "react-admin";
+import { Admin, Resource } from "react-admin";
 import { DeviceList } from "./pages/devices/device-list";
 import { dataProvider } from "./data-providers/data-provider";
 import { UserList } from "./pages/users/user-list";
@@ -12,12 +12,14 @@ import { GameCreate } from "./pages/games/game-create";
 import { QueryNames } from "./common/constants";
 import CustomLayout from "./components/layouts/CustomLayout";
 import { authProvider } from "./auth-providers/auth-provider";
+import { LoginPage } from "./pages/auth/login-page";
 
 export const App = () => (
   <Admin
     layout={CustomLayout}
     dataProvider={dataProvider}
     authProvider={authProvider}
+    loginPage={<LoginPage />}
   >
     <Resource
       name={QueryNames.GET_ALL_DASHBOARD_DATA}

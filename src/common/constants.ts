@@ -21,9 +21,9 @@ const HR_WELOADIN_URL = "https://hr.weloadin.lol/";
 const LOCAL_HOST_URL = "http://localhost:3000";
 
 // Exports
+export const ROOT_URL = LOCAL_HOST_URL;
 export const DECIMAL_LENGTH = 2;
-export const MIN_DATE = "21-07-2025";
-export const ROOT_URL = HR_WELOADIN_URL;
+export const MIN_DATE = "2025-07-21";
 export const CREATE_GAME_PLATFORM_URL = "/gamePlatforms/new";
 export const GRAPHQL_CLIENT_OPTION = { uri: ROOT_URL + "/graphql" };
 export const QueryNames = {

@@ -92,18 +92,18 @@ const getVariable: any = (resource: string, params: any) => {
   // }
 
   if (resource === QueryNames.GET_ALL_DASHBOARD_DATA) {
-    console.log(resource, params);
-    // if (params?.filter.q) {
-    //   return {
-    //     filter: {
-    //       platform: params.filter.platform,
-    //       subPlatform: params.filter.subPlatform,
-    //       game: params.filter.game,
-    //       startDate: params.filter.startDate,
-    //       endDate: params.filter.endDate,
-    //     },
-    //   };
-    // }
+    console.log("Filter:", params);
+    if (params?.filter.q) {
+      return {
+        filter: {
+          platform: params.filter.platform,
+          subPlatform: params.filter.subPlatform,
+          game: params.filter.game,
+          startDate: params.filter.startDate,
+          endDate: params.filter.endDate,
+        },
+      };
+    }
 
     return {
       filter: {
@@ -142,7 +142,7 @@ export const graphqlDataProvider = buildGraphQLProvider({
           query: getQuery(resource),
           variables: customVariables,
           parseResponse: (res) => {
-            console.log(`response data: ${JSON.stringify(res)}`);
+            // console.log(`response data: ${JSON.stringify(res)}`);
 
             return {
               data: isResponseJsonData(res.data)

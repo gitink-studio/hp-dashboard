@@ -1,5 +1,6 @@
-import { DateInput } from "react-admin";
-import { Box } from "@mui/material";
+import { DateInput, SimpleForm } from "react-admin";
+import { Box, Stack } from "@mui/material";
+import { MIN_DATE } from "../common/constants";
 
 export const DateRangeInput = ({
   source,
@@ -10,9 +11,13 @@ export const DateRangeInput = ({
   label: string;
 } & any) => {
   return (
-    <Box display="flex" gap={2}>
-      <DateInput source="startDate" key="from" label="From " />
-      <DateInput source="endDate" key="To" label="To" />
-    </Box>
+    // <SimpleForm toolbar={false} sx={{ height: "60px", p: 0 }} defaultValues={{startDate: MIN_DATE, endDate: new Date}}>
+    // <Box display="flex" gap={2} sx={{ alignItems: "center" }}>
+    //   <DateInput source="startDate" label="From " />
+    //   <DateInput source="endDate" label="To" />
+    // </Box>
+    {
+      /* </SimpleForm> */
+    }
   );
 };
