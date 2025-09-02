@@ -230,6 +230,12 @@ const IsDataAlreadyExist = gql`
   }
 `;
 
+const IsValidUser = gql`
+  query Query($email: String!, $password: String!) {
+    isValidUser(email: $email, password: $password)
+  }
+`;
+
 export const Queries = {
   DeviceList,
   Device,
@@ -246,4 +252,5 @@ export const Queries = {
   GetGameFilter,
   GetAllDashboardData,
   IsDataAlreadyExist,
+  IsValidUser,
 };

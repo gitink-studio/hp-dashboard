@@ -44,4 +44,17 @@ export const dataProvider: DataProvider = {
     const { data } = await response.json();
     return data[QueryNames.CHECK_DATA_EXIST_OR_NOT];
   },
+  isValidUser: async (resource: string, params: any) => {
+    const response = await fetch(resource, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: params.query,
+        variables: params.variables,
+      }),
+    });
+
+    const { data } = await response.json();
+    return data[QueryNames.IS_VALID_USER];
+  },
 };

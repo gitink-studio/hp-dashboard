@@ -4,12 +4,22 @@ import {
   UserMenu,
   Logout,
   ToggleThemeButton,
+  Button,
 } from "react-admin";
-import { AppBar, Toolbar, Box, IconButton, Typography } from "@mui/material";
+import {
+  AppBar,
+  Toolbar,
+  Box,
+  IconButton,
+  Typography,
+  MenuItem,
+  ListItemText,
+} from "@mui/material";
 import { CircleNotifications } from "@mui/icons-material";
 
 const CustomAppBar = () => {
   const resources = useResourceDefinitions();
+  const userName = localStorage.getItem("userName");
   return (
     <AppBar
       position="fixed"
@@ -58,6 +68,9 @@ const CustomAppBar = () => {
             <CircleNotifications />
           </IconButton>
           <UserMenu label={"User"}>
+            <MenuItem disabled>
+              <ListItemText primary={userName || "Guest"} />
+            </MenuItem>
             <Logout />
           </UserMenu>
           <ToggleThemeButton />

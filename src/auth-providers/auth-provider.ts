@@ -1,13 +1,17 @@
 import { AuthProvider } from "react-admin";
+import { isValidUser, sendRequest } from "../common/utils";
+import { HTTP_METHODS } from "../common/constants";
 
 export const authProvider: AuthProvider = {
-  login: ({ username, password }) => {
-    if (username === "demo" && password === "demo") {
+  login: async ({ username, password }) => {
+    let isValidCredentials = await isValidUser(username, password);
+
+    if (isValidCredentials) {
       localStorage.setItem("userName", username);
       return Promise.resolve();
-    } else {
-      return Promise.reject();
     }
+
+    return Promise.reject();
   },
   logout: () => {
     removeLocalData("userName");

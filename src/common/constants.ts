@@ -15,6 +15,9 @@ const GET_SUB_PLATFORM_FILTER = "getSubPlatformFilter";
 const GET_GAME_FILTER = "getGameFilter";
 const GET_ALL_DASHBOARD_DATA = "getAllDashboardData";
 const CHECK_DATA_EXIST_OR_NOT = "checkDataExistOrNot";
+const IS_VALID_USER = "isValidUser";
+const POST = "POST";
+const GET = "GET";
 
 // URLs
 const HR_WELOADIN_URL = "https://hr.weloadin.lol/";
@@ -26,6 +29,7 @@ export const DECIMAL_LENGTH = 2;
 export const MIN_DATE = "2025-07-21";
 export const CREATE_GAME_PLATFORM_URL = "/gamePlatforms/new";
 export const GRAPHQL_CLIENT_OPTION = { uri: ROOT_URL + "/graphql" };
+export const CREATE_USER_URL = ROOT_URL + "/users/new";
 export const QueryNames = {
   GET_ALL_DEVICE_DATA,
   GET_ALL_USER_DATA,
@@ -43,6 +47,8 @@ export const QueryNames = {
   GET_GAME_FILTER,
   GET_ALL_DASHBOARD_DATA,
   CHECK_DATA_EXIST_OR_NOT,
+  IS_VALID_USER,
 };
 
 export const PLATFORMS = ["Play Store", "App Store", "Web"];
+export const HTTP_METHODS = { GET, POST };

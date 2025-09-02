@@ -1,3 +1,4 @@
+import { fetchUtils } from "react-admin";
 import { dataProvider } from "../data-providers/data-provider";
 import { Queries } from "../graphql/queries";
 import { DECIMAL_LENGTH, ROOT_URL } from "./constants";
@@ -22,6 +23,20 @@ const isDataAlreadyExist = (
   return isDataExist;
 };
 
+export const isValidUser = (_email: string, _password: string) => {
+  const query = print(Queries.IsValidUser);
+  const variables = {
+    email: _email,
+    password: _password,
+  };
+  const isValidUser = dataProvider.isValidUser(ROOT_URL + "/graphql", {
+    query: query,
+    variables: variables,
+  });
+
+  return isValidUser;
+};
+
 export const validateValue = async (
   modelName: string,
   fieldName: string,
@@ -42,6 +57,10 @@ export const validateValue = async (
   }
 };
 
+export const isUserAlreadyExist = async (value: string) => {
+  return await isDataAlreadyExist("user", "email", value);
+};
+
 export const formatNumber = (_value: number | string): string => {
   const value = typeof _value === "string" ? parseFloat(_value) : _value;
 
@@ -54,4 +73,16 @@ export const formatNumber = (_value: number | string): string => {
   } else {
     return value.toFixed(2).replace(/\.00$/, "");
   }
+};
+
+export const sendRequest = async (method: string, url: string, data: any) => {
+  const options = {
+    method: method,
+    body: JSON.stringify(data),
+    headers: new Headers({ "Content-Type": "application/json" }),
+  };
+
+  const { json } = await fetchUtils.fetchJson(url, options);
+
+  return json;
 };
