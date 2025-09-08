@@ -14,13 +14,14 @@ const GET_PLATFORM_FILTER = "getPlatformFilter";
 const GET_SUB_PLATFORM_FILTER = "getSubPlatformFilter";
 const GET_GAME_FILTER = "getGameFilter";
 const GET_ALL_DASHBOARD_DATA = "getAllDashboardData";
+const GET_ALL_ADMIN_DASHBOARD_DATA = "getAllAdminDashboardData";
 const CHECK_DATA_EXIST_OR_NOT = "checkDataExistOrNot";
 const IS_VALID_USER = "isValidUser";
 const POST = "POST";
 const GET = "GET";
 
 // URLs
-const HR_WELOADIN_URL = "https://hr.weloadin.lol/";
+const HR_WELOADIN_URL = "https://hr.weloadin.lol";
 const LOCAL_HOST_URL = "http://localhost:3000";
 
 // Exports
@@ -46,9 +47,12 @@ export const QueryNames = {
   GET_SUB_PLATFORM_FILTER,
   GET_GAME_FILTER,
   GET_ALL_DASHBOARD_DATA,
+  GET_ALL_ADMIN_DASHBOARD_DATA,
   CHECK_DATA_EXIST_OR_NOT,
   IS_VALID_USER,
 };
 
-export const PLATFORMS = ["Play Store", "App Store", "Web"];
+export const DATE_RANGE_NAMES = [0, 1, 7, 14, 30, "Custom"];
+export const SUB_PLATFORMS = ["All", "Poki", "CrazyGames"];
+export const GAMES = ["All", "PickleBall", "FoodJam"];
 export const HTTP_METHODS = { GET, POST };

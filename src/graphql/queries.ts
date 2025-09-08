@@ -201,8 +201,8 @@ const GetSubPlatformFilter = gql`
 `;
 
 const GetGameFilter = gql`
-  query GetGameFilter($subPlatform: String) {
-    getGameFilter(subPlatform: $subPlatform) {
+  query GetGameFilter($platform: String, $subPlatform: String) {
+    getGameFilter(subPlatform: $subPlatform, platform: $platform) {
       data
     }
   }

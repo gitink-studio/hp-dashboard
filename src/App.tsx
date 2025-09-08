@@ -13,6 +13,7 @@ import { QueryNames } from "./common/constants";
 import CustomLayout from "./components/layouts/CustomLayout";
 import { authProvider } from "./auth-providers/auth-provider";
 import { LoginPage } from "./pages/auth/login-page";
+import { AdminDashboard } from "./pages/dashboard/admin-dashboard";
 
 export const App = () => (
   <Admin
@@ -25,6 +26,11 @@ export const App = () => (
       name={QueryNames.GET_ALL_DASHBOARD_DATA}
       list={Dashboard}
       options={{ label: "Dashboard" }}
+    />
+    <Resource
+      name={QueryNames.GET_ALL_ADMIN_DASHBOARD_DATA}
+      list={AdminDashboard}
+      options={{ label: "Admin Dashboard" }}
     />
     <Resource
       name={QueryNames.GET_ALL_GAME_PLATFORM_DATA}

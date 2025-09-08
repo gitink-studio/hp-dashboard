@@ -1,7 +1,9 @@
 import { DataProvider } from "react-admin";
 import { graphqlDataProvider } from "./graphql-data-provider";
 import { restDataProvider } from "./rest-data-provider";
-import { QueryNames } from "../common/constants";
+import { QueryNames, ROOT_URL } from "../common/constants";
+import { Queries } from "../graphql/queries";
+import { print } from "graphql";
 
 export const dataProvider: DataProvider = {
   getOne: (resource, params) => {
@@ -55,6 +57,25 @@ export const dataProvider: DataProvider = {
     });
 
     const { data } = await response.json();
+    console.log("Is valid user", data);
     return data[QueryNames.IS_VALID_USER];
   },
 };
+
+const isDataAlreadyExist = (_modelName: string, _fieldName: string, _value: string,) => {
+  const query = print(Queries.IsDataAlreadyExist);
+  const variables = { modelName: _modelName, fieldName: _fieldName, value: _value.trim(), };
+  const isDataExist = dataProvider.isDataExistOrNot(ROOT_URL + "/graphql", { query: query, variables: variables, });
+
+  return isDataExist;
+};
+
+const isValidUser = (_email: string, _password: string) => {
+  const query = print(Queries.IsValidUser);
+  const variables = { email: _email, password: _password, };
+  const isValidUser = dataProvider.isValidUser(ROOT_URL + "/graphql", { query: query, variables: variables, });
+
+  return isValidUser;
+};
+
+export const FetchData = { isDataAlreadyExist, isValidUser, };

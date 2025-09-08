@@ -1,15 +1,12 @@
 import { Close } from "@mui/icons-material";
 import {
-  Alert,
   Dialog,
   DialogContent,
   IconButton,
-  Snackbar,
   Stack,
   Typography,
 } from "@mui/material";
 import {
-  Create,
   email,
   minLength,
   PasswordInput,
@@ -21,11 +18,7 @@ import {
   useNotify,
 } from "react-admin";
 import { isUserAlreadyExist, sendRequest } from "../../common/utils";
-import {
-  CREATE_GAME_PLATFORM_URL,
-  CREATE_USER_URL,
-  HTTP_METHODS,
-} from "../../common/constants";
+import { CREATE_USER_URL, HTTP_METHODS } from "../../common/constants";
 
 export const SignUpForm = ({
   enable,
@@ -39,7 +32,7 @@ export const SignUpForm = ({
     setState(false);
   };
 
-  const CustomToolbar = ({ signUp }: { signUp: any }) => (
+  const CustomToolbar = () => (
     <Toolbar sx={{ backgroundColor: "transparent", boxShadow: "none" }}>
       <SaveButton
         fullWidth
@@ -47,19 +40,12 @@ export const SignUpForm = ({
         size="large"
         label="Sign Up"
         icon={false}
-        onClick={signUp}
-        mutationOptions={{
-          onSuccess: (data, variables) => {
-            console.log("Form submitted:", data, variables); // 👈 values are here
-          },
-        }}
       />
     </Toolbar>
   );
 
   const createAccount = async (data: any) => {
     console.log(data);
-
     try {
       await sendRequest(HTTP_METHODS.POST, CREATE_USER_URL, data);
       console.log("Account created successfully!");
@@ -70,21 +56,18 @@ export const SignUpForm = ({
     }
   };
 
-  const handleSignUp = async (event: any) => {
-    event.preventDefault();
-    const form = event.target.closest("form");
-    const formData = new FormData(form);
-    let email: any = formData.get("email");
-
+  const handleSignUp = async (data: any) => {
+    let email: any = data.email;
+    console.log(data);
     if (await isUserAlreadyExist(email)) {
       return notify("User already exist!", { type: "error" });
     }
 
     createAccount({
-      name: formData.get("name"),
-      studio: formData.get("studio"),
+      name: data.name,
+      studio: data.studio,
       email: email,
-      password: formData.get("password"),
+      password: data.password,
       role: "Admin",
     });
     console.log("Signup button clicked");
@@ -94,8 +77,7 @@ export const SignUpForm = ({
     <>
       <Dialog open={enable}>
         <DialogContent sx={{ background: "#1e1e1e" }}>
-          <SimpleForm toolbar={<CustomToolbar signUp={handleSignUp} />}>
-            {/* <SimpleForm onSubmit={handleSignUp}> */}
+          <SimpleForm toolbar={<CustomToolbar />} onSubmit={handleSignUp}>
             <IconButton
               aria-label="close"
               onClick={handleClose}

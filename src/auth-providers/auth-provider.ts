@@ -1,10 +1,10 @@
 import { AuthProvider } from "react-admin";
-import { isValidUser, sendRequest } from "../common/utils";
-import { HTTP_METHODS } from "../common/constants";
+import { FetchData } from "../data-providers/data-provider";
 
 export const authProvider: AuthProvider = {
   login: async ({ username, password }) => {
-    let isValidCredentials = await isValidUser(username, password);
+    let isValidCredentials = await FetchData.isValidUser(username, password);
+    console.log("login...", username, password, isValidCredentials);
 
     if (isValidCredentials) {
       localStorage.setItem("userName", username);

@@ -1,6 +1,5 @@
 import {
   email,
-  Form,
   Login,
   minLength,
   PasswordInput,
@@ -15,14 +14,17 @@ import {
 import { Button, Stack, Typography } from "@mui/material";
 import { useState } from "react";
 import { SignUpForm } from "./signup-form";
-import { useNavigate } from "react-router";
+import { ForgotPasswordPage } from "./forgot-password-page";
 
 export const LoginPage = (props: any) => {
-  const [canOpenForm, setFormState] = useState(() => false);
+  const [canOpenSignUpPage, setSignUpPageState] = useState(() => false);
+  const [canOpenForgotPasswordPage, setForgotPasswordPageState] = useState(
+    () => false,
+  );
   const login = useLogin();
   const notify = useNotify();
 
-  const CustomToolBar = ({ login }: { login: any }) => {
+  const CustomToolBar = () => {
     return (
       <Toolbar
         sx={{
@@ -32,29 +34,19 @@ export const LoginPage = (props: any) => {
           boxShadow: "none",
         }}
       >
-        <SaveButton
-          size="large"
-          fullWidth
-          label="Login"
-          onClick={login}
-          icon={false}
-          mutationOptions={{
-            onSuccess: () => {
-              console.log("Logged in successfully!");
-            },
-            onError: (error) => {
-              console.error("Login failed", error);
-            },
-          }}
-        />
+        <SaveButton size="large" fullWidth label="Login" icon={false} />
         <Stack direction="row" spacing={2} sx={{ pt: 2, pb: 3 }}>
-          <Button color="primary" variant="text">
+          <Button
+            color="primary"
+            variant="text"
+            onClick={() => setForgotPasswordPageState(true)}
+          >
             Forgot Password?
           </Button>
           <Button
             color="primary"
             variant="text"
-            onClick={() => setFormState(true)}
+            onClick={() => setSignUpPageState(true)}
           >
             New User? [Sign Up]
           </Button>
@@ -63,31 +55,23 @@ export const LoginPage = (props: any) => {
     );
   };
 
-  const handleLogin = async (event: any) => {
-    event.preventDefault();
-    const form = event.target.closest("form");
-    const formData = new FormData(form);
-
+  const handleLogin = async (data: any) => {
     try {
       await login({
-        username: formData.get("email"),
-        password: formData.get("password"),
+        username: data?.email,
+        password: data?.password,
       });
       notify("Logged in successfully", { type: "success" });
     } catch (error) {
       notify("Invalid credentials", { type: "error" });
     }
-    console.log(
-      "Login button clicked!",
-      formData.get("email"),
-      formData.get("password"),
-    );
+    console.log("Login button clicked!", data);
   };
 
   return (
     <>
       <Login {...props} backgroundImage={false}>
-        <SimpleForm toolbar={<CustomToolBar login={handleLogin} />}>
+        <SimpleForm toolbar={<CustomToolBar />} onSubmit={handleLogin}>
           <Stack sx={{ width: "100%", pl: 1, pr: 1 }}>
             <Typography
               variant="h5"
@@ -116,8 +100,19 @@ export const LoginPage = (props: any) => {
               validate={[required(), minLength(8)]}
             />
           </Stack>
-          {canOpenForm ? (
-            <SignUpForm enable={canOpenForm} setState={setFormState} />
+
+          {canOpenSignUpPage ? (
+            <SignUpForm
+              enable={canOpenSignUpPage}
+              setState={setSignUpPageState}
+            />
+          ) : null}
+
+          {canOpenForgotPasswordPage ? (
+            <ForgotPasswordPage
+              enable={canOpenForgotPasswordPage}
+              setState={setForgotPasswordPageState}
+            />
           ) : null}
         </SimpleForm>
       </Login>

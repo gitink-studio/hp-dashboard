@@ -4,7 +4,7 @@ import {
   UserMenu,
   Logout,
   ToggleThemeButton,
-  Button,
+  RefreshButton,
 } from "react-admin";
 import {
   AppBar,
@@ -20,6 +20,7 @@ import { CircleNotifications } from "@mui/icons-material";
 const CustomAppBar = () => {
   const resources = useResourceDefinitions();
   const userName = localStorage.getItem("userName");
+
   return (
     <AppBar
       position="fixed"
@@ -74,6 +75,7 @@ const CustomAppBar = () => {
             <Logout />
           </UserMenu>
           <ToggleThemeButton />
+          <RefreshButton sx={{ color: "white" }} />
         </Box>
       </Toolbar>
     </AppBar>

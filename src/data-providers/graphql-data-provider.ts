@@ -1,10 +1,7 @@
 import buildGraphQLProvider, { BuildQueryResult } from "ra-data-graphql";
 import { Queries } from "../graphql/queries";
-import {
-  GRAPHQL_CLIENT_OPTION,
-  MIN_DATE,
-  QueryNames,
-} from "../common/constants";
+import { GRAPHQL_CLIENT_OPTION, QueryNames } from "../common/constants";
+import { Variables } from "../graphql/variables";
 
 let resource = "";
 let responseJsonDataQueryList = [
@@ -50,75 +47,20 @@ const getQuery: any = (resource: string) => {
 };
 
 const getVariable: any = (resource: string, params: any) => {
-  if (resource === QueryNames.GET_ALL_DATA_BY_USERNAME_OR_VALUE) {
-    // console.log(resource);
-    if (params?.filter?.[resource] || params?.filter?.name) {
-      console.log(`Filter value: ${resource} ${params}`);
-      return {
-        modelName: "eventLog",
-        fieldName: "eventType",
-        userName: params?.filter?.name ? params?.filter?.name : "",
-        value: params?.filter?.[resource] ? params?.filter?.[resource] : "",
-      };
-    } else {
-      console.log("No filter");
-      return {
-        modelName: "eventLog",
-        fieldName: "",
-        userName: "",
-        value: "",
-      };
-    }
+  switch (resource) {
+    case QueryNames.GET_ALL_DATA_BY_USERNAME_OR_VALUE:
+      return Variables.GET_ALL_DATA_BY_USERNAME_OR_VALUE(resource, params);
+    case QueryNames.GET_ALL_DATA_SUGGESTION:
+      return Variables.GET_ALL_DATA_SUGGESTION(params);
+    case QueryNames.GET_SUB_PLATFORM_FILTER:
+      return Variables.GET_SUB_PLATFORM_FILTER(params);
+    case QueryNames.GET_GAME_FILTER:
+      return Variables.GET_GAMES_FILTER(params);
+    case QueryNames.GET_ALL_DASHBOARD_DATA:
+      return Variables.GET_ALL_DASHBOARD_DATA(params);
+    default:
+      return {};
   }
-
-  if (resource === QueryNames.GET_ALL_DATA_SUGGESTION) {
-    if (params?.filter?.q) {
-      return {
-        modelName: "user",
-        fieldName: "name",
-        value: params?.filter?.q ? params?.filter?.q : "",
-      };
-    } else {
-      return {
-        modelName: "user",
-        fieldName: "name",
-        value: "",
-      };
-    }
-  }
-
-  // if (resource === QueryNames.GET_PLATFORM_FILTER) {
-  //   console.log("SubPlatformFilter: ", resource, params);
-  // }
-
-  if (resource === QueryNames.GET_ALL_DASHBOARD_DATA) {
-    console.log("Filter:", params);
-    if (params?.filter.q) {
-      return {
-        filter: {
-          platform: params.filter.platform,
-          subPlatform: params.filter.subPlatform,
-          game: params.filter.game,
-          startDate: params.filter.startDate,
-          endDate: params.filter.endDate,
-        },
-      };
-    }
-
-    return {
-      filter: {
-        data: {
-          platform: "All",
-          subPlatform: "All",
-          game: "All",
-          startDate: new Date(MIN_DATE).getTime(),
-          endDate: new Date().getTime(),
-        },
-      },
-    };
-  }
-
-  return {};
 };
 
 const isResponseJsonData = (data: any) => {
@@ -137,13 +79,11 @@ export const graphqlDataProvider = buildGraphQLProvider({
 
       if (fetchType == "GET_LIST" || fetchType == "GET_MANY") {
         // console.log(`params : ${JSON.stringify(params)} resource: ${resource}`);
-
         return {
           query: getQuery(resource),
           variables: customVariables,
           parseResponse: (res) => {
             // console.log(`response data: ${JSON.stringify(res)}`);
-
             return {
               data: isResponseJsonData(res.data)
                 ? res.data[resource].data

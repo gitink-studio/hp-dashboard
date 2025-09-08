@@ -1,41 +1,6 @@
 import { fetchUtils } from "react-admin";
-import { dataProvider } from "../data-providers/data-provider";
-import { Queries } from "../graphql/queries";
-import { DECIMAL_LENGTH, ROOT_URL } from "./constants";
-import { print } from "graphql";
-
-const isDataAlreadyExist = (
-  _modelName: string,
-  _fieldName: string,
-  _value: string,
-) => {
-  const query = print(Queries.IsDataAlreadyExist);
-  const variables = {
-    modelName: _modelName,
-    fieldName: _fieldName,
-    value: _value.trim(),
-  };
-  const isDataExist = dataProvider.isDataExistOrNot(ROOT_URL + "/graphql", {
-    query: query,
-    variables: variables,
-  });
-
-  return isDataExist;
-};
-
-export const isValidUser = (_email: string, _password: string) => {
-  const query = print(Queries.IsValidUser);
-  const variables = {
-    email: _email,
-    password: _password,
-  };
-  const isValidUser = dataProvider.isValidUser(ROOT_URL + "/graphql", {
-    query: query,
-    variables: variables,
-  });
-
-  return isValidUser;
-};
+import { DECIMAL_LENGTH } from "./constants";
+import { FetchData } from "../data-providers/data-provider";
 
 export const validateValue = async (
   modelName: string,
@@ -52,13 +17,13 @@ export const validateValue = async (
     return `Name must be at least 3 characters`;
   }
 
-  if (await isDataAlreadyExist(modelName, fieldName, value)) {
+  if (await FetchData.isDataAlreadyExist(modelName, fieldName, value)) {
     return "Name already taken";
   }
 };
 
 export const isUserAlreadyExist = async (value: string) => {
-  return await isDataAlreadyExist("user", "email", value);
+  return await FetchData.isDataAlreadyExist("user", "email", value);
 };
 
 export const formatNumber = (_value: number | string): string => {

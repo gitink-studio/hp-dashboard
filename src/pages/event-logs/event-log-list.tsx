@@ -39,7 +39,7 @@ export const EventLogList = () => {
 
   return (
     <InfiniteList filters={eventFilters}>
-      <div
+      {/* <div
         style={{
           display: "flex",
           justifyContent: "flex-end",
@@ -69,7 +69,7 @@ export const EventLogList = () => {
             render={(record) => `${record.link?.device?.user?.name}`}
           />
         </DataTable.Col>
-      </DataTable>
+      </DataTable> */}
     </InfiniteList>
   );
 };
