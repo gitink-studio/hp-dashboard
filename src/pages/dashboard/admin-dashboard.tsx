@@ -15,7 +15,7 @@ import { SubPlatformFilter } from "../../components/dashboard/sub-platform-filte
 import { GamesFilter } from "../../components/dashboard/games-filter";
 import { DateFilter } from "../../components/dashboard/date-filter";
 import { StudioFilter } from "../../components/dashboard/studio-filter";
-import { RegionFilter } from "../../components/dashboard/Region-filter";
+import { RegionFilter } from "../../components/dashboard/region-filter";
 import { CurrencyFilter } from "../../components/dashboard/currency-filter";
 import { SavedViewFilter } from "../../components/dashboard/saved-view-filter";
 import { PublishKPIs } from "../../components/dashboard/publisher-kpis";

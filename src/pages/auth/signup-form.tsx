@@ -68,7 +68,6 @@ export const SignUpForm = ({
       studio: data.studio,
       email: email,
       password: data.password,
-      role: "Admin",
     });
     console.log("Signup button clicked");
   };

@@ -71,6 +71,7 @@ const isDataAlreadyExist = (_modelName: string, _fieldName: string, _value: stri
 };
 
 const isValidUser = (_email: string, _password: string) => {
+  console.log("isValidUser");
   const query = print(Queries.IsValidUser);
   const variables = { email: _email, password: _password, };
   const isValidUser = dataProvider.isValidUser(ROOT_URL + "/graphql", { query: query, variables: variables, });
