@@ -15,6 +15,8 @@ let responseJsonDataQueryList = [
 
 const getQuery: any = (resource: string) => {
   switch (resource) {
+    case QueryNames.GET_ALL_DATE_OPTION_DATA:
+      return Queries.GetAllDateOptionData;
     case QueryNames.GET_PLATFORM_FILTER:
       return Queries.GetPlatformFilter;
     case QueryNames.GET_SUB_PLATFORM_FILTER:
@@ -72,37 +74,37 @@ export const graphqlDataProvider = buildGraphQLProvider({
   clientOptions: GRAPHQL_CLIENT_OPTION,
   buildQuery:
     () =>
-    (fetchType: string, _resource: string, params: any): BuildQueryResult => {
-      resource = _resource;
-      const customVariables = getVariable(resource, params);
-      // console.log("Fetch Type: ", fetchType, resource);
+      (fetchType: string, _resource: string, params: any): BuildQueryResult => {
+        resource = _resource;
+        const customVariables = getVariable(resource, params);
+        // console.log("Fetch Type: ", fetchType, resource);
 
-      if (fetchType == "GET_LIST" || fetchType == "GET_MANY") {
-        // console.log(`params : ${JSON.stringify(params)} resource: ${resource}`);
-        return {
-          query: getQuery(resource),
-          variables: customVariables,
-          parseResponse: (res) => {
-            // console.log(`response data: ${JSON.stringify(res)}`);
-            return {
-              data: isResponseJsonData(res.data)
-                ? res.data[resource].data
-                : res.data[resource],
-              total: isResponseJsonData(res.data)
-                ? res.data[resource].data.total
-                : res.data[resource].total,
-            };
-          },
-        };
-      } else {
-        return {
-          query: getQuery(resource),
-          variables: customVariables,
-          parseResponse: () => {
-            data: "";
-            total: 0;
-          },
-        };
-      }
-    },
+        if (fetchType == "GET_LIST" || fetchType == "GET_MANY") {
+          // console.log(`params : ${JSON.stringify(params)} resource: ${resource}`);
+          return {
+            query: getQuery(resource),
+            variables: customVariables,
+            parseResponse: (res) => {
+              // console.log(`response data: ${JSON.stringify(res)}`);
+              return {
+                data: isResponseJsonData(res.data)
+                  ? res.data[resource].data
+                  : res.data[resource],
+                total: isResponseJsonData(res.data)
+                  ? res.data[resource].data.total
+                  : res.data[resource].total,
+              };
+            },
+          };
+        } else {
+          return {
+            query: getQuery(resource),
+            variables: customVariables,
+            parseResponse: () => {
+              data: "";
+              total: 0;
+            },
+          };
+        }
+      },
 });

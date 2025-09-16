@@ -184,6 +184,19 @@ const GetAllDataSuggestion = gql`
   }
 `;
 
+const GetAllDateOptionData = gql`
+  query GetAllDateOptionData {
+    getAllDateOptionData {
+      id
+      name 
+      numberOfDays
+      additionalDateOptionData
+      createdAt
+      updatedAt
+    }
+  }
+`
+
 const GetPlatformFilter = gql`
   query GetPlatformFilter {
     getPlatformFilter {
@@ -247,6 +260,7 @@ export const Queries = {
   GetAllDataByValue,
   GetAllDataByUserNameOrValue,
   GetAllDataSuggestion,
+  GetAllDateOptionData,
   GetPlatformFilter,
   GetSubPlatformFilter,
   GetGameFilter,

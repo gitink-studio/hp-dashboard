@@ -1,16 +1,19 @@
 import { Typography } from "@mui/material"
 import { formatNumber } from "../../common/utils";
 import { DECIMAL_LENGTH } from "../../common/constants";
+import { useListContext } from "react-admin";
+import { FetchData } from "../../data-providers/data-provider";
 
-export const PortfolioKPIs = (props: any) => {
-    const Text = ({ data, ...props }: { data: string; }) => {
-        return (<Typography sx={{ p: 2, pt: 0, }
+export const PortfolioKPIs = (props: any,) => {
+    const { data, filterValues } = useListContext();
+    const Text = ({ data, canDisable, ...props }: { data: string; canDisable: boolean }) => {
+        return (<Typography sx={{ p: 2, pt: 0, display: canDisable ? "none" : "block" }
         } {...props}> {data} </Typography>);
     }
+    const selectedPlatform = filterValues.platform;
 
-    const data = props.data;
+    const isWebPlatformSelected = () => FetchData.getWebPlatformId() === selectedPlatform;
 
-    // if (isLoading) return null;
     let totalInstalls = 0;
     let totalCPI = 0;
     let totalRevenue = 0;
@@ -30,13 +33,13 @@ export const PortfolioKPIs = (props: any) => {
 
     return (
         <>
-            {/* <Text data={"Games: " + data?.length} /> */}
-            < Text data={"Installs: " + formatNumber(totalInstalls)} />
-            <Text data={"CPI: $" + formatNumber(totalCPI)} />
-            < Text data={"Revenue: $" + formatNumber(totalRevenue)} />
-            <Text data={"ROAS: " + roasD7 + "%"} />
-            < Text data={"CrashRates: " + totalCrashRates + "%"} />
-            <Text data={"Retention D1: " + formatNumber(retentionD1) + "%"} />
+            <Text data={"Games: " + data?.length} canDisable={false} />
+            < Text data={"Installs: " + formatNumber(totalInstalls)} canDisable={isWebPlatformSelected()} />
+            <Text data={"CPI: $" + formatNumber(totalCPI)} canDisable={isWebPlatformSelected()} />
+            < Text data={"Revenue: $" + formatNumber(totalRevenue)} canDisable={false} />
+            <Text data={"ROAS: " + roasD7 + "%"} canDisable={isWebPlatformSelected()} />
+            < Text data={"CrashRates: " + totalCrashRates + "%"} canDisable={false} />
+            <Text data={"Retention D1: " + formatNumber(retentionD1) + "%"} canDisable={false} />
         </>
     )
 };

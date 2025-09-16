@@ -5,6 +5,9 @@ import { QueryNames, ROOT_URL } from "../common/constants";
 import { Queries } from "../graphql/queries";
 import { print } from "graphql";
 
+let webPlatformId: string = "";
+let dateOptionList: any[] = [];
+
 export const dataProvider: DataProvider = {
   getOne: (resource, params) => {
     return graphqlDataProvider.getOne(resource, params);
@@ -79,4 +82,42 @@ const isValidUser = (_email: string, _password: string) => {
   return isValidUser;
 };
 
-export const FetchData = { isDataAlreadyExist, isValidUser, };
+const getWebPlatformId = (): any => {
+  return webPlatformId === "" ? getPlatformId("Web") : webPlatformId;
+}
+
+const getPlatformId = async (platformName: string) => {
+  let responseData = await dataProvider.getList(QueryNames.GET_PLATFORM_FILTER, {});
+  // console.log(`ResponseDataPlatform: ${JSON.stringify(responseData)}`);
+
+  let platformData = responseData?.data.find(data => data.name === platformName);
+
+  if (platformData) {
+    webPlatformId = platformData?.id;
+    return webPlatformId;
+  }
+  else {
+    return "All";
+  }
+
+}
+
+const setDateOptionList = async () => {
+  if (dateOptionList.length === 0) {
+    dateOptionList = (await dataProvider.getList(QueryNames.GET_ALL_DATE_OPTION_DATA, {})).data;
+  }
+}
+
+const getDateOptionValue = (dateOptionName: string) => {
+  if (dateOptionList.length === 0) setDateOptionList();
+
+  let dateOptionData = dateOptionList.find(data => data.name === dateOptionName);
+  return dateOptionData ? dateOptionData.numberOfDays : 0;
+}
+
+export const FetchData = {
+  isDataAlreadyExist,
+  isValidUser,
+  getWebPlatformId,
+  getDateOptionValue,
+};

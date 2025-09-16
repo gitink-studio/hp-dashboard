@@ -47,7 +47,15 @@ export const SignUpForm = ({
   const createAccount = async (data: any) => {
     console.log(data);
     try {
-      await sendRequest(HTTP_METHODS.POST, CREATE_USER_URL, data);
+      let responseData = await sendRequest(HTTP_METHODS.POST, CREATE_USER_URL, data);
+      console.log(responseData);
+
+      if (responseData.status !== 200) {
+        console.log("Something went wrong!");
+        notify("Something went wrong!", { type: "error" });
+        return;
+      }
+
       console.log("Account created successfully!");
       notify("Account created successfully!", { type: "success" });
       handleClose();

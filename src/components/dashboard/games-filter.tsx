@@ -1,19 +1,38 @@
 import { QueryNames } from "../../common/constants"
-import { SelectInput, useGetList } from "react-admin";
+import { SelectInput, useGetList, useListContext } from "react-admin";
+import { useEffect, useMemo, useRef } from "react";
 
 export const GamesFilter = (props: any) => {
-    const { data, isLoading, error } = useGetList(QueryNames.GET_GAME_FILTER, {});
+    const { filterValues, setFilters } = useListContext();
+    const selectedPlatform = filterValues?.platform ?? "All";
+    const selectedSubPlatform = filterValues?.subPlatform ?? "All";
+    const previousSubPlatformRef = useRef<string>(selectedSubPlatform);
 
-    if (isLoading) return;
-    if (error) console.log(error);
+    useEffect(() => {
+        const previousSubPlatform = previousSubPlatformRef.current;
+        if (selectedSubPlatform !== previousSubPlatform) {
+            previousSubPlatformRef.current = selectedSubPlatform;
+            const nextFilters = { ...filterValues, games: "All" };
+            setFilters(nextFilters, {});
+        }
+    }, [selectedSubPlatform]);
 
-    return <SelectInput
-        source="games"
-        optionText="name"
-        label="Games"
-        defaultValue="All"
-        emptyText="All"
-        emptyValue="All"
-        choices={data}  {...props}
-    />
+    const { data, isLoading } = useGetList(
+        QueryNames.GET_GAME_FILTER,
+        { filter: { platform: selectedPlatform, subPlatform: selectedSubPlatform } }
+    );
+
+    const choices = useMemo(() => Array.isArray(data) ? data : [], [data]);
+
+    return (
+        <SelectInput
+            source="games"
+            optionText="name"
+            label="Games"
+            emptyText="All"
+            emptyValue="All"
+            disabled={isLoading}
+            choices={choices}  {...props}
+        />
+    );
 }

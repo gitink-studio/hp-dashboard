@@ -1,3 +1,5 @@
+import { FetchData } from "../data-providers/data-provider";
+
 const GET_ALL_DATA_BY_USERNAME_OR_VALUE = (resource: string, params: any) => {
   return params?.filter?.[resource] || params?.filter?.name
     ? {
@@ -29,23 +31,28 @@ const GET_ALL_DATA_SUGGESTION = (params: any) => {
 };
 
 const GET_SUB_PLATFORM_FILTER = (params: any) => {
-  console.log("Sub Platform Params: ", params.filter);
   return { platform: params.filter?.platform ?? "All" };
 };
 
 const GET_GAMES_FILTER = (params: any) => {
-  // console.log("Game Filter:", params);
   return {
     platform: params.filter.platform ?? "All",
     subPlatform: params.filter.subPlatform ?? "All",
   };
 };
 
-const getDateRange = (dateRange: any) => {
-  if (dateRange !== "Custom") {
+const getDateRange = (filter: any, isEndDate: boolean) => {
+  let dateRange: any = FetchData.getDateOptionValue(filter.dateRange);
+
+  if (filter.dateRange !== "Custom") {
     let date = new Date();
+
+    if (isEndDate) return date.toISOString().split('T')[0];
+
     date.setDate(date.getDate() - dateRange);
-    return date.toISOString().split("T")[0];
+    return date.toISOString().split('T')[0];
+  } else {
+    return isEndDate ? filter.endDate : filter.startDate;
   }
 };
 
@@ -56,12 +63,8 @@ const GET_ALL_DASHBOARD_DATA = (params: any) => {
         platform: params.filter.platform ?? "All",
         subPlatform: params.filter.subPlatform ?? "All",
         game: params.filter.game ?? "All",
-        startDate:
-          params.filter.dateRange ??
-          params.filter.startDate ??
-          getDateRange(30),
-        endDate:
-          params.filter.dateRange ?? params.filter.startDate ?? getDateRange(0),
+        startDate: getDateRange(params.filter, false),
+        endDate: getDateRange(params.filter, true),
       },
     },
   };

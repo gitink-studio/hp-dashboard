@@ -1,31 +1,34 @@
-import { DateInput, SelectInput } from "react-admin";
-import { DATE_RANGE_NAMES } from "../../common/constants";
-
+import { DateInput, required, SelectInput, useGetList } from "react-admin";
+import { useWatch } from "react-hook-form";
+import { Stack } from "@mui/material";
+import { DEFAULT_CUSTOM_START_DATE, QueryNames } from "../../common/constants";
+import { FetchData } from "../../data-providers/data-provider";
+import { useEffect, useState } from "react";
 
 export const DateFilter = (props: any) => {
-    const getDate = (data: any) => data === "Custom"
-        ? data : data === 0
-            ? "Today" : data === 1
-                ? "Yesterday" : `Last ${data} days`;
+    const selectedDateRange = useWatch({ name: "dateRange" });
+    const { data, isLoading } = useGetList(QueryNames.GET_ALL_DATE_OPTION_DATA, {});
 
     return (
-        <>
-            <SelectInput source="dateRange"
+        <Stack direction="row" gap={2}>
+            <SelectInput
+                key="dateRange"
+                source="dateRange"
                 label="Date Range"
-                alwaysOn
-                choices={DATE_RANGE_NAMES.map((data: any) => ({
-                    id: data, name: getDate(data),
-                }))}
+                validate={required()}
+                optionValue="name"
+                {...props}
+                choices={data}
+                disabled={isLoading}
             />
-
             {
-                props.dateRange === "Custom" ? (
+                selectedDateRange === "Custom" ? (
                     <>
-                        <DateInput source="startDate" label="From" />
-                        <DateInput source="endDate" label="to" />
+                        <DateInput source="startDate" key="startDate" label="From" alwaysOn />
+                        <DateInput source="endDate" key="endDate" label="To" alwaysOn />
                     </>
                 ) : null
             }
-        </>
+        </Stack>
     )
 }

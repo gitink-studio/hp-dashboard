@@ -10,6 +10,7 @@ const GET_EVENT_LOG_BY_USER_DATA = "getEventLogByUserData";
 const GET_ALL_DATA_BY_VALUE = "getAllDataByValue";
 const GET_ALL_DATA_BY_USERNAME_OR_VALUE = "getAllDataByUserNameOrValue";
 const GET_ALL_DATA_SUGGESTION = "getAllDataSuggestion";
+const GET_ALL_DATE_OPTION_DATA = "getAllDateOptionData";
 const GET_PLATFORM_FILTER = "getPlatformFilter";
 const GET_SUB_PLATFORM_FILTER = "getSubPlatformFilter";
 const GET_GAME_FILTER = "getGameFilter";
@@ -36,6 +37,7 @@ export const QueryNames = {
   GET_ALL_USER_DATA,
   GET_ALL_LINK_DATA,
   GET_ALL_EVENT_LOG_DATA,
+  GET_ALL_DATE_OPTION_DATA,
   GET_ALL_GAME_PLATFORM_DATA,
   GET_ALL_GAME_DATA,
   GET_DEVICE_DATA,
@@ -52,7 +54,8 @@ export const QueryNames = {
   IS_VALID_USER,
 };
 
-export const DATE_RANGE_NAMES = [0, 1, 7, 14, 30, "Custom"];
-export const SUB_PLATFORMS = ["All", "Poki", "CrazyGames"];
-export const GAMES = ["All", "PickleBall", "FoodJam"];
 export const HTTP_METHODS = { GET, POST };
+export const THREE_MONTH_IN_DAYS = 84;
+export const CURRENT_DAY = 0;
+export const DEFAULT_DATE_OPTION = "Last 30 days";
+export const DEFAULT_CUSTOM_START_DATE = 30;

@@ -1,6 +1,8 @@
 import { fetchUtils } from "react-admin";
-import { DECIMAL_LENGTH } from "./constants";
-import { FetchData } from "../data-providers/data-provider";
+import { DECIMAL_LENGTH, QueryNames } from "./constants";
+import { dataProvider, FetchData } from "../data-providers/data-provider";
+
+let webPlatformId = "";
 
 export const validateValue = async (
   modelName: string,
@@ -51,3 +53,4 @@ export const sendRequest = async (method: string, url: string, data: any) => {
 
   return json;
 };
+
