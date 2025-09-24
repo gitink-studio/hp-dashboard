@@ -1,0 +1,87 @@
+import React, { useState } from 'react';
+import { Box, Button, Typography, Alert, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+
+export const AdminRoleSetter: React.FC = () => {
+  const [selectedRole, setSelectedRole] = useState(localStorage.getItem("userRole") || '');
+  const [message, setMessage] = useState('');
+
+  const handleSetRole = () => {
+    localStorage.setItem("userRole", selectedRole);
+    setMessage(`Role set to: ${selectedRole}. Please refresh the page.`);
+  };
+
+  const handleClearRole = () => {
+    localStorage.removeItem("userRole");
+    setSelectedRole('');
+    setMessage('Role cleared. Please refresh the page.');
+  };
+
+  const handleLogout = () => {
+    // Clear all user data from localStorage
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("userRoleId");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("userStudio");
+    setMessage('Logged out successfully. Redirecting to login...');
+    // Redirect to login page after a short delay
+    setTimeout(() => {
+      window.location.href = '/#/login';
+    }, 1000);
+  };
+
+  return (
+    <Box sx={{ p: 2, maxWidth: 400, mx: 'auto', mt: 4 }}>
+      <Typography variant="h6" gutterBottom>
+        Admin Role Setter (Testing Only)
+      </Typography>
+      
+      <FormControl fullWidth sx={{ mb: 2 }}>
+        <InputLabel>Select Role</InputLabel>
+        <Select
+          value={selectedRole}
+          onChange={(e) => setSelectedRole(e.target.value)}
+        >
+          <MenuItem value="admin">Admin</MenuItem>
+          <MenuItem value="administrator">Administrator</MenuItem>
+          <MenuItem value="developer">Developer</MenuItem>
+          <MenuItem value="publisher">Publisher</MenuItem>
+          <MenuItem value="user">User</MenuItem>
+        </Select>
+      </FormControl>
+
+      <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+        <Button 
+          variant="contained" 
+          onClick={handleSetRole}
+          disabled={!selectedRole}
+        >
+          Set Role
+        </Button>
+        <Button 
+          variant="outlined" 
+          onClick={handleClearRole}
+        >
+          Clear Role
+        </Button>
+        <Button 
+          variant="outlined" 
+          color="error"
+          onClick={handleLogout}
+        >
+          Logout
+        </Button>
+      </Box>
+
+      {message && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          {message}
+        </Alert>
+      )}
+
+      <Typography variant="body2" color="text.secondary">
+        Current role: {localStorage.getItem("userRole") || 'Not set'}
+      </Typography>
+    </Box>
+  );
+};
