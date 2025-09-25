@@ -60,6 +60,7 @@ const GET = "GET";
 
 // URLs
 const LOCAL_HOST_URL = "http://localhost:3000";
+const HR_WELOADIN_URL = "https://hr.weloadin.lol";
 
 // Exports
 export const ROOT_URL = LOCAL_HOST_URL;

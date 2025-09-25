@@ -47,7 +47,13 @@ export const SignUpForm = ({
   const createAccount = async (data: any) => {
     console.log(data);
     try {
-      await sendRequest(HTTP_METHODS.POST, CREATE_USER_URL, data);
+      let response: any = await sendRequest(HTTP_METHODS.POST, CREATE_USER_URL, data);
+
+      if (response.data.status !== 200) {
+        notify("Something went wrong!", { type: "error" });
+        return;
+      }
+
       console.log("Account created successfully!");
       notify("Account created successfully!", { type: "success" });
       handleClose();
@@ -68,7 +74,6 @@ export const SignUpForm = ({
       studio: data.studio,
       email: email,
       password: data.password,
-      role: "Admin",
     });
     console.log("Signup button clicked");
   };
