@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { 
-  Box, 
-  Typography, 
+import {
+  Box,
+  Typography,
   Chip,
   Button,
   Dialog,
@@ -23,12 +23,16 @@ interface AdvancedDateFilterProps {
   source?: string;
   label?: string;
   alwaysOn?: boolean;
+  hideQuickButtons?: boolean;
+  size?: 'small' | 'medium';
 }
 
-export const AdvancedDateFilter: React.FC<AdvancedDateFilterProps> = ({ 
-  source = "dateRange", 
+export const AdvancedDateFilter: React.FC<AdvancedDateFilterProps> = ({
+  source: _source = "dateRange",
   label = "Date Range",
-  alwaysOn = false 
+  alwaysOn: _alwaysOn = false,
+  hideQuickButtons = false,
+  size = 'small'
 }) => {
   const [customDialogOpen, setCustomDialogOpen] = useState(false);
   const [customStartDate, setCustomStartDate] = useState<Date | null>(null);
@@ -41,12 +45,12 @@ export const AdvancedDateFilter: React.FC<AdvancedDateFilterProps> = ({
   if (error) console.log(error);
 
   const dateRanges = data?.[0]?.dateRanges || [
-    'Today', 
-    'Yesterday', 
-    'Last 7d', 
-    'Last 14d', 
-    'Last 30d', 
-    'Last 90d', 
+    'Today',
+    'Yesterday',
+    'Last 7d',
+    'Last 14d',
+    'Last 30d',
+    'Last 90d',
     'Custom'
   ];
 
@@ -63,74 +67,49 @@ export const AdvancedDateFilter: React.FC<AdvancedDateFilterProps> = ({
     }
   };
 
-  const getDateRangeChip = (range: string) => {
-    const today = new Date();
-    let startDate: Date;
-    let endDate = today;
+  // (Chip rendering for selected ranges is currently unused in this context)
 
-    switch (range) {
-      case 'Today':
-        startDate = new Date(today);
-        break;
-      case 'Yesterday':
-        startDate = new Date(today);
-        startDate.setDate(today.getDate() - 1);
-        endDate = new Date(startDate);
-        break;
-      case 'Last 7d':
-        startDate = new Date(today);
-        startDate.setDate(today.getDate() - 7);
-        break;
-      case 'Last 14d':
-        startDate = new Date(today);
-        startDate.setDate(today.getDate() - 14);
-        break;
-      case 'Last 30d':
-        startDate = new Date(today);
-        startDate.setDate(today.getDate() - 30);
-        break;
-      case 'Last 90d':
-        startDate = new Date(today);
-        startDate.setDate(today.getDate() - 90);
-        break;
-      default:
-        return null;
-    }
-
-    return (
-      <Chip
-        icon={<CalendarToday />}
-        label={`${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`}
-        size="small"
-        variant="outlined"
-        sx={{ mt: 1 }}
-      />
-    );
-  };
-
-  const handleDateRangeChange = (event: any) => {
+  const handleDateRangeChange = (event: { target: { value: string } }) => {
     const value = event.target.value;
     setSelectedDateRange(value);
-    
+
     if (value === 'Custom') {
       setCustomDialogOpen(true);
     }
   };
 
   return (
-    <Box>
-      <FormControl sx={{ minWidth: 200 }}>
+    <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
+      <FormControl sx={{ minWidth: 200 }} size={size}>
         <InputLabel>{label}</InputLabel>
         <Select
+          size={size}
           value={selectedDateRange}
           onChange={handleDateRangeChange}
           label={label}
         >
-          {choices.map((choice) => (
-            <MenuItem key={choice.id} value={choice.id}>
-              {choice.name}
-            </MenuItem>
-          ))}
+          {choices.map((choice: { id: string; name: string }) => {
+            if (choice.id === 'Custom') {
+              return (
+                <MenuItem
+                  key={choice.id}
+                  value={choice.id}
+                  onClick={() => {
+                    // Ensure dialog opens even if already on 'Custom'
+                    setSelectedDateRange('Custom');
+                    setCustomDialogOpen(true);
+                  }}
+                >
+                  {choice.name}
+                </MenuItem>
+              );
+            }
+            return (
+              <MenuItem key={choice.id} value={choice.id}>
+                {choice.name}
+              </MenuItem>
+            );
+          })}
         </Select>
       </FormControl>
 
@@ -182,8 +161,8 @@ export const AdvancedDateFilter: React.FC<AdvancedDateFilterProps> = ({
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setCustomDialogOpen(false)}>Cancel</Button>
-          <Button 
-            onClick={handleCustomDateSave} 
+          <Button
+            onClick={handleCustomDateSave}
             variant="contained"
             disabled={!customStartDate || !customEndDate}
           >
@@ -193,30 +172,32 @@ export const AdvancedDateFilter: React.FC<AdvancedDateFilterProps> = ({
       </Dialog>
 
       {/* Quick Date Range Buttons */}
-      <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-        {['Last 7d', 'Last 30d', 'Last 90d'].map((range) => (
+      {!hideQuickButtons && (
+        <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          {['Last 7d', 'Last 30d', 'Last 90d'].map((range) => (
+            <Button
+              key={range}
+              size="small"
+              variant="outlined"
+              onClick={() => {
+                // In real implementation, this would update the filter
+                console.log('Quick select:', range);
+              }}
+              sx={{ minWidth: 'auto' }}
+            >
+              {range}
+            </Button>
+          ))}
           <Button
-            key={range}
             size="small"
             variant="outlined"
-            onClick={() => {
-              // In real implementation, this would update the filter
-              console.log('Quick select:', range);
-            }}
-            sx={{ minWidth: 'auto' }}
+            startIcon={<DateRange />}
+            onClick={() => setCustomDialogOpen(true)}
           >
-            {range}
+            Custom
           </Button>
-        ))}
-        <Button
-          size="small"
-          variant="outlined"
-          startIcon={<DateRange />}
-          onClick={() => setCustomDialogOpen(true)}
-        >
-          Custom
-        </Button>
-      </Box>
+        </Box>
+      )}
     </Box>
   );
 };

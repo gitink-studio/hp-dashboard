@@ -19,11 +19,16 @@ import { DashboardRouter } from "./pages/dashboard/dashboard-router";
 import { ReportsPage } from "./pages/reports/reports-page";
 import { ReportConfigurationPage } from "./pages/admin/report-configuration-page";
 import { AdminRoleSetter } from "./components/admin-role-setter";
+import { TestsHub } from "./pages/tests/tests-hub";
+import { DeveloperTestDetail } from "./pages/tests/developer-test-detail";
+import { PublisherTestDetail } from "./pages/tests/publisher-test-detail";
+import { Route } from "react-router";
+import { CustomRoutes } from "react-admin";
 
 export const App = () => {
   const userRole = localStorage.getItem("userRole");
   const isAdmin = userRole?.toLowerCase().includes('admin') || userRole?.toLowerCase().includes('administrator');
-  
+
   return (
     <Admin
       layout={CustomLayout}
@@ -37,8 +42,8 @@ export const App = () => {
         list={DashboardRouter}
         options={{ label: "Dashboard" }}
       />
-      
-      
+
+
       {/* Dashboard Resources - Always available, access controlled by components */}
       <Resource
         name={QueryNames.GET_DEVELOPER_DASHBOARD_DATA}
@@ -58,20 +63,33 @@ export const App = () => {
         list={AdminDashboard}
         options={{ label: "Admin Dashboard" }}
       />
-      <Resource
+      {/* <Resource
         name={QueryNames.GET_ALL_USER_DATA}
         list={UserList}
         options={{ label: "Users" }}
-      />
-      
+      /> */}
+
       {/* Reports - Available for all authenticated users */}
       <Resource
         name="reports"
         list={ReportsPage}
         options={{ label: "Reports" }}
       />
-      
-      {/* Role-based menu items */}
+
+      {/* Tests Hub */}
+      <Resource
+        name="tests"
+        list={TestsHub}
+        options={{ label: "Tests" }}
+      />
+
+      {/* Tests detail routes */}
+      <CustomRoutes>
+        <Route path="tests/developer/:id" element={<DeveloperTestDetail />} />
+        <Route path="tests/publisher/:id" element={<PublisherTestDetail />} />
+      </CustomRoutes>
+
+      {/* Role-based menu items
       {(userRole === 'admin' || userRole === 'publisher') && (
         <>
           <Resource
@@ -97,8 +115,8 @@ export const App = () => {
             options={{ label: "Links" }}
           />
         </>
-      )}
-      
+      )} */}
+
       {/* Admin-only menu items */}
       {isAdmin && (
         <>
@@ -114,7 +132,7 @@ export const App = () => {
           />
         </>
       )}
-      
+
       {/* Testing component - remove in production */}
       <Resource
         name="admin-role-setter"
