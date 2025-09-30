@@ -72,7 +72,6 @@ export const TestsHub: React.FC = () => {
     });
 
     const [platforms, setPlatforms] = useState<any[]>([]);
-    const [subPlatforms, _setSubPlatforms] = useState<any[]>([]);
     const [games, setGames] = useState<any[]>([]);
     const [, setLoading] = useState<boolean>(false);
 
@@ -113,12 +112,9 @@ export const TestsHub: React.FC = () => {
                         { id: 'All', name: 'All' },
                         { id: 'apple', name: 'App Store (Apple)' },
                         { id: 'android', name: 'Play Store (Android)' },
-                        { id: 'web', name: 'Web' },
                     ]);
-                    _setSubPlatforms([]);
                 } else {
                     setPlatforms([{ id: 'All', name: 'All' }, ...(result.data.platforms || [])]);
-                    _setSubPlatforms(result.data.gamePlatforms || []);
                 }
             } catch (error) {
                 console.error('Error fetching platforms:', error);
@@ -126,9 +122,7 @@ export const TestsHub: React.FC = () => {
                     { id: 'All', name: 'All' },
                     { id: 'apple', name: 'App Store (Apple)' },
                     { id: 'android', name: 'Play Store (Android)' },
-                    { id: 'web', name: 'Web' },
                 ]);
-                _setSubPlatforms([]);
             } finally {
                 setLoading(false);
             }
@@ -272,7 +266,7 @@ export const TestsHub: React.FC = () => {
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {SAMPLE_TESTS.filter((t) => (testStatus === "All" || t.status === testStatus) && (testType === "All" || t.type === testType as any)).map((row) => (
+                    {platform !== "Web" && SAMPLE_TESTS.filter((t) => (testStatus === "All" || t.status === testStatus) && (testType === "All" || t.type === testType as any)).map((row) => (
                         <TableRow key={row.id} hover sx={{ cursor: "pointer" }} onClick={() => handleOpenDetail(row)}>
                             <TableCell sx={{ color: "primary.main", textDecoration: "underline" }}>{row.title}</TableCell>
                             <TableCell>{row.type}</TableCell>
@@ -287,11 +281,13 @@ export const TestsHub: React.FC = () => {
                 </TableBody>
             </Table>
 
-            <Box mt={2}>
-                <Button variant="contained" onClick={() => {/* future: open wizard */ }}>
-                    + New Test
-                </Button>
-            </Box>
+            {platform !== "Web" && (
+                <Box mt={2}>
+                    <Button variant="contained" onClick={() => {/* future: open wizard */ }}>
+                        + New Test
+                    </Button>
+                </Box>
+            )}
         </Box>
     );
 };

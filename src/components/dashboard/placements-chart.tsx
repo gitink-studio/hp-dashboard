@@ -84,12 +84,12 @@ export const PlacementsChart: React.FC<Props> = ({
     return (
         <Box sx={{ p: 2, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
             <Stack direction="row" alignItems="center" spacing={2} sx={{ mt: 3, mb: 5 }}>
-                <Typography variant="subtitle1" fontWeight="bold">{title}</Typography>
-                <Chip size="small" label="Ads" />
-                <Chip size="small" label="Date: 23/08/2025-29/08/2025" />
+                {/* <Typography variant="subtitle1" fontWeight="bold">{title}</Typography> */}
+                {/* <Chip size="small" label="Ads" /> */}
+                <Chip size="small" label="Date: 23/08/2025 - 29/09/2025" />
             </Stack>
 
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+            {/* <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
                 <Chip
                     label="Impressions"
                     color="primary"
@@ -108,12 +108,12 @@ export const PlacementsChart: React.FC<Props> = ({
                     size="small"
                     sx={{ opacity: 0.7 }}
                 />
-            </Stack>
+            </Stack> */}
 
             <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                 <Box sx={{ flex: 1, minHeight: 320 }}>
-                    <ResponsiveContainer width="100%" height={320}>
-                        <BarChart data={filteredData} barGap={8} barCategoryGap={20}>
+                    <ResponsiveContainer width="100%" height={320} >
+                        <BarChart data={filteredData} barGap={8} barCategoryGap={20} >
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis
                                 dataKey="network"
@@ -136,7 +136,7 @@ export const PlacementsChart: React.FC<Props> = ({
                                     style: {
                                         textAnchor: 'middle',
                                         fontSize: '12px',
-                                        fill: 'rgba(0,0,0,0.6)'
+                                        fill: 'rgba(0,0,0,0.6)',
                                     }
                                 }}
                             />
@@ -146,7 +146,6 @@ export const PlacementsChart: React.FC<Props> = ({
                                 name="Impressions"
                                 fill={theme.palette.primary.light}
                                 radius={[2, 2, 0, 0]}
-
                             />
                             <Bar
                                 dataKey="installs"

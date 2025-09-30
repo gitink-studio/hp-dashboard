@@ -3,10 +3,10 @@ import { FetchData } from "../data-providers/data-provider";
 
 export const authProvider: AuthProvider = {
   login: async ({ username, password }) => {
-    let response = await FetchData.isValidUser(username, password);
-    console.log("login...", username, password, response);
+    let isValidUser = await FetchData.isValidUser(username, password);
+    console.log("login...", username, password, isValidUser);
 
-    if (response.data.isValidUser) {
+    if (isValidUser) {
       // Get user details including role information
       let userDetails = await FetchData.getUserDetails(username, password);
       console.log("User details:", userDetails);
@@ -20,7 +20,6 @@ export const authProvider: AuthProvider = {
 
       // Redirect to dashboard router after successful login
       window.location.href = '/#/getAllDashboardData';
-
       return Promise.resolve();
     }
 

@@ -1,9 +1,30 @@
 import React from "react";
-import { Box, Tabs, Tab, Typography, Stack, Tooltip, IconButton, Table, TableBody, TableCell, TableHead, TableRow, Divider, Button } from "@mui/material";
+import {
+    Box,
+    Typography,
+    Stack,
+    Tooltip,
+    IconButton,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableRow,
+    Divider,
+    Button,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
+    Tabs,
+    Tab
+} from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { useParams, useNavigate } from "react-router-dom";
 import DemographicsChart, { DemographicDatum, GenderSummary } from "../../components/dashboard/demographics-chart";
 import PlacementsChart, { PlacementDatum } from "../../components/dashboard/placements-chart";
+import { TestOverallValues } from "../../components/tests/test-overall-values";
+import { TestHeatmapDetails } from "../../components/tests/test-heatmap-details";
 
 type VariantRow = {
     name: string;
@@ -35,9 +56,42 @@ const tooltip = {
 };
 
 export const DeveloperTestDetail: React.FC = () => {
-    const { id: _id } = useParams();
+    const { id } = useParams();
     const navigate = useNavigate();
-    const [tab, setTab] = React.useState(0);
+
+    // Test details mapping
+    const TEST_DETAILS = {
+        "cpi-hook-test": {
+            title: "CPI Hook Test – Pickle Ball Clash",
+            cpi: "$0.79",
+            gender: { male: 82, female: 18 },
+            age: { range: "13-44", percentage: 29 },
+            placements: { q: 7, f: 83, o: 9 }
+        },
+        "onboarding-flow-ux": {
+            title: "Onboarding Flow UX – Game Onboarding",
+            cpi: "$0.65",
+            gender: { male: 75, female: 25 },
+            age: { range: "18-34", percentage: 45 },
+            placements: { q: 12, f: 75, o: 13 }
+        },
+        "monetization-pack-a": {
+            title: "Monetization Pack A – Revenue Optimization",
+            cpi: "$0.92",
+            gender: { male: 70, female: 30 },
+            age: { range: "25-44", percentage: 35 },
+            placements: { q: 5, f: 88, o: 7 }
+        }
+    };
+
+    // Get test details or use default
+    const testDetails = TEST_DETAILS[id as keyof typeof TEST_DETAILS] || {
+        title: "Unknown Test",
+        cpi: "$0.00",
+        gender: { male: 0, female: 0 },
+        age: { range: "N/A", percentage: 0 },
+        placements: { q: 0, f: 0, o: 0 }
+    };
 
     // Static demo data for Placements chart
     const placementsData: PlacementDatum[] = [
@@ -75,130 +129,196 @@ export const DeveloperTestDetail: React.FC = () => {
         { label: "F", percent: 20, installs: 227, spend: 184.17, color: "#ffd54f" },
     ];
 
+    const [expandedPanels, setExpandedPanels] = React.useState<{ [key: string]: boolean }>({
+        charts: false,
+        heatmaps: false,
+        facebook: false
+    });
+
+    const handleChange = (panel: string) => (_: React.SyntheticEvent, isExpanded: boolean) => {
+        setExpandedPanels(prev => ({
+            ...prev,
+            [panel]: isExpanded
+        }));
+    };
+
+    const [chartTab, setChartTab] = React.useState(0);
+
+    const handleChartTabChange = (_: React.SyntheticEvent, newValue: number) => {
+        setChartTab(newValue);
+    };
+
+    // Date range from the reference image
+    const startDate = "23/08/2025";
+    const endDate = "29/09/2025";
+
     return (
         <Box p={3} mt={6}>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="h6" fontWeight="bold">Test: CPI Hook Test – Pickle Ball Clash</Typography>
+                <Typography variant="h6" fontWeight="bold">{testDetails.title}</Typography>
+                <TestOverallValues
+                    cpi={testDetails.cpi}
+                    gender={testDetails.gender}
+                    age={testDetails.age}
+                    placements={testDetails.placements}
+                />
             </Stack>
-
-            <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mt: 2 }}>
-                <Tab label="Performance" />
-                <Tab label="Demographics" />
-                <Tab label="Placements" />
-                <Tab label="Heatmaps" />
-                <Tab label="Facebook Campaign" />
-            </Tabs>
 
             <Divider sx={{ my: 2 }} />
 
-            {tab === 0 && (
-                <Box>
-                    <Typography variant="subtitle1" fontWeight="bold">Performance</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        Dual-axis line chart: Installs (left) and CPI (right) vs Date
-                    </Typography>
+            <Accordion
+                expanded={expandedPanels.charts}
+                onChange={handleChange('charts')}
+            >
+                <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls="charts-content"
+                    id="charts-header"
+                >
+                    <Typography>Charts - {startDate} - {endDate}</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                    <Tabs
+                        value={chartTab}
+                        onChange={handleChartTabChange}
+                        sx={{ mb: 2 }}
+                    //centered
+                    >
+                        <Tab label="Performance" />
+                        <Tab label="Demographics" />
+                        <Tab label="Placements" />
+                    </Tabs>
 
-                    <Table size="small">
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Variant</TableCell>
-                                <TableCell>Installs</TableCell>
-                                <TableCell>Spend</TableCell>
-                                <TableCell>
-                                    CPI
-                                    <Tooltip title={tooltip.cpi}><IconButton size="small" sx={{ ml: 0.5 }}><InfoOutlinedIcon fontSize="inherit" /></IconButton></Tooltip>
-                                </TableCell>
-                                <TableCell>D1 Ret</TableCell>
-                                <TableCell>
-                                    ROAS D7
-                                    <Tooltip title={tooltip.roas7}><IconButton size="small" sx={{ ml: 0.5 }}><InfoOutlinedIcon fontSize="inherit" /></IconButton></Tooltip>
-                                </TableCell>
-                                <TableCell>
-                                    Lift vs Control
-                                    <Tooltip title={tooltip.lift}><IconButton size="small" sx={{ ml: 0.5 }}><InfoOutlinedIcon fontSize="inherit" /></IconButton></Tooltip>
-                                </TableCell>
-                                <TableCell>p-value</TableCell>
-                                <TableCell>Signif%</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {VARIANTS.map((v) => (
-                                <TableRow key={v.name}>
-                                    <TableCell>{v.name}</TableCell>
-                                    <TableCell>{v.installs.toLocaleString()}</TableCell>
-                                    <TableCell>${v.spend.toLocaleString()}</TableCell>
-                                    <TableCell>{v.cpi.toFixed(2)}</TableCell>
-                                    <TableCell>{v.d1}</TableCell>
-                                    <TableCell>{v.roas7}</TableCell>
-                                    <TableCell>{v.lift}</TableCell>
-                                    <TableCell>{v.p}</TableCell>
-                                    <TableCell>{v.signif}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </Box>
-            )}
+                    {chartTab === 0 && (
+                        <Box>
+                            <Typography variant="subtitle1" fontWeight="bold">Performance</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                Dual-axis line chart: Installs (left) and CPI (right) vs Date
+                            </Typography>
 
-            {tab === 1 && (
-                <Box>
-                    <DemographicsChart title="Demographics" data={demoData} genderSummary={genderSummary} />
-                </Box>
-            )}
+                            <Table size="small">
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>Variant</TableCell>
+                                        <TableCell>Installs</TableCell>
+                                        <TableCell>Spend</TableCell>
+                                        <TableCell>
+                                            CPI
+                                            <Tooltip title={tooltip.cpi}><IconButton size="small" sx={{ ml: 0.5 }}><InfoOutlinedIcon fontSize="inherit" /></IconButton></Tooltip>
+                                        </TableCell>
+                                        <TableCell>D1 Ret</TableCell>
+                                        <TableCell>
+                                            ROAS D7
+                                            <Tooltip title={tooltip.roas7}><IconButton size="small" sx={{ ml: 0.5 }}><InfoOutlinedIcon fontSize="inherit" /></IconButton></Tooltip>
+                                        </TableCell>
+                                        <TableCell>
+                                            Lift vs Control
+                                            <Tooltip title={tooltip.lift}><IconButton size="small" sx={{ ml: 0.5 }}><InfoOutlinedIcon fontSize="inherit" /></IconButton></Tooltip>
+                                        </TableCell>
+                                        <TableCell>p-value</TableCell>
+                                        <TableCell>Signif%</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {VARIANTS.map((v) => (
+                                        <TableRow key={v.name}>
+                                            <TableCell>{v.name}</TableCell>
+                                            <TableCell>{v.installs.toLocaleString()}</TableCell>
+                                            <TableCell>${v.spend.toLocaleString()}</TableCell>
+                                            <TableCell>{v.cpi.toFixed(2)}</TableCell>
+                                            <TableCell>{v.d1}</TableCell>
+                                            <TableCell>{v.roas7}</TableCell>
+                                            <TableCell>{v.lift}</TableCell>
+                                            <TableCell>{v.p}</TableCell>
+                                            <TableCell>{v.signif}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </Box>
+                    )}
 
-            {tab === 2 && (
-                <Box>
-                    <PlacementsChart title="Placements" data={placementsData} />
-                </Box>
-            )}
+                    {chartTab === 1 && (
+                        <DemographicsChart title="Demographics" data={demoData} genderSummary={genderSummary} />
+                    )}
 
-            {tab === 3 && (
-                <Box>
-                    <Typography variant="subtitle1" fontWeight="bold">Heatmaps</Typography>
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                        1) APPU (Average Playtime Per User – seconds)
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        Days → D0 D1 D2 D3 | Mean 331 368 392 397
-                    </Typography>
-                    <Typography variant="body2" sx={{ mt: 2 }}>2) Retention (%)</Typography>
-                    <Typography variant="body2" color="text.secondary">Days → D1 D2 D3 | Mean 7.04 5.04 3.82</Typography>
-                    <Typography variant="body2" sx={{ mt: 2 }}>3) Playtime (Mean Seconds)</Typography>
-                    <Typography variant="body2" color="text.secondary">Days → D0 D1 D2 D3 | Mean 331 540 465 153</Typography>
-                </Box>
-            )}
+                    {chartTab === 2 && (
+                        <PlacementsChart title="Placements" data={placementsData} />
+                    )}
+                </AccordionDetails>
+            </Accordion>
 
-            {tab === 4 && (
-                <Box>
+            <Accordion
+                expanded={expandedPanels.heatmaps}
+                onChange={handleChange('heatmaps')}
+                sx={{ mt: 2 }}
+            >
+                <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls="heatmaps-content"
+                    id="heatmaps-header"
+                >
+                    <Typography>Heatmaps</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                    <TestHeatmapDetails
+                        appu={{
+                            mean: [308, 359, 381, 357, 358, 355, 372, 0, 0],
+                            dates: [
+                                { date: "23 Aug", values: [262, 297, 326, 332, 335, 324, 316, 297, 284], users: 131 },
+                                { date: "24 Aug", values: [331, 371, 391, 389, 377, 406, 265, 373, 328], users: 207 },
+                                { date: "25 Aug", values: [351, 385, 323, 400, 398, 311, 403, 431, 425], users: 160 },
+                                { date: "26 Aug", values: [362, 433, 419, 342, 391, 367, 258, 368, 272], users: 195 },
+                                { date: "27 Aug", values: [362, 428, 430, 398, 442, 251, 279, 331, 300], users: 185 },
+                                { date: "28 Aug", values: [362, 343, 446, 253, 401, 291, 358, 374, 364], users: 169 },
+                                { date: "29 Aug", values: [362, 433, 443, 290, 387, 270, 309, 450, 407], users: 47 }
+                            ]
+                        }}
+                        retention={{
+                            mean: [7.04, 5.04, 3.82, 0, 0, 0, 0, 0, 0],
+                            dates: [
+                                { date: "23 Aug", values: [8.40, 5.34, 3.82, 3.05, 3.82, 2.29, 3.05, 1.53, 0.76], users: 131 },
+                                { date: "24 Aug", values: [5.83, 4.85, 2.91, 2.43, 0.97, 0.49, 0.00, 0.97, 0.00], users: 207 },
+                                { date: "25 Aug", values: [7.50, 2.50, 0.63, 1.25, 1.25, 0.63, 0.00, 0.00, 0.00], users: 160 },
+                                { date: "26 Aug", values: [11.79, 8.21, 5.64, 4.10, 5.13, 3.59, 0.00, 0.00, 0.00], users: 195 },
+                                { date: "27 Aug", values: [13.04, 7.61, 3.80, 4.89, 4.35, 0.00, 0.00, 0.00, 0.00], users: 185 },
+                                { date: "28 Aug", values: [8.33, 4.76, 4.76, 2.38, 0.00, 0.00, 0.00, 0.00, 0.00], users: 169 },
+                                { date: "29 Aug", values: [0.00, 2.13, 2.13, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00], users: 47 }
+                            ]
+                        }}
+                        playtime={{
+                            mean: [331, 540, 465, 153, 0, 0, 0, 0, 0],
+                            dates: [
+                                { date: "23 Aug", values: [262, 412, 540, 153, 495, 339, 358, 249, 190], users: 131 },
+                                { date: "24 Aug", values: [331, 683, 417, 110, 407, 560, 278, 0, 156], users: 207 },
+                                { date: "25 Aug", values: [351, 459, 331, 468, 478, 190, 35, 124, 0], users: 160 },
+                                { date: "26 Aug", values: [362, 762, 291, 441, 254, 331, 377, 0, 0], users: 195 },
+                                { date: "27 Aug", values: [362, 428, 430, 398, 442, 251, 279, 331, 300], users: 185 },
+                                { date: "28 Aug", values: [362, 343, 446, 253, 401, 291, 358, 374, 364], users: 169 },
+                                { date: "29 Aug", values: [362, 433, 443, 290, 387, 270, 309, 450, 407], users: 47 }
+                            ]
+                        }}
+                    />
+                </AccordionDetails>
+            </Accordion>
+
+            <Accordion
+                expanded={expandedPanels.facebook}
+                onChange={handleChange('facebook')}
+                sx={{ mt: 2 }}
+            >
+                <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls="facebook-content"
+                    id="facebook-header"
+                >
+                    <Typography>Facebook Campaign</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
                     <Typography variant="subtitle1" fontWeight="bold">Facebook Campaign</Typography>
-                    <Table size="small" sx={{ mt: 1 }}>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Type</TableCell>
-                                <TableCell>Creative ID</TableCell>
-                                <TableCell>Status</TableCell>
-                                <TableCell>Impr</TableCell>
-                                <TableCell>Clicks</TableCell>
-                                <TableCell>Installs</TableCell>
-                                <TableCell>CPI</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {[{ t: 1, id: "PICK_v1_1080x1350…_004037", s: "Active", i: 55697, c: 1143, ins: 789, cpi: 0.79 }, { t: 2, id: "PICK_v1_1080x1350…_004035", s: "Active", i: 51738, c: 1056, ins: 738, cpi: 0.77 }, { t: 3, id: "PICK_Ad2_1080x1350…_004036", s: "Active", i: 3580, c: 75, ins: 44, cpi: 1.05 }, { t: 4, id: "PICK_Ad1_1080x1350…_004034", s: "Active", i: 110, c: 2, ins: 1, cpi: 1.94 }].map((r) => (
-                                <TableRow key={r.t}>
-                                    <TableCell>{r.t}</TableCell>
-                                    <TableCell>{r.id}</TableCell>
-                                    <TableCell>{r.s}</TableCell>
-                                    <TableCell>{r.i.toLocaleString()}</TableCell>
-                                    <TableCell>{r.c.toLocaleString()}</TableCell>
-                                    <TableCell>{r.ins.toLocaleString()}</TableCell>
-                                    <TableCell>${r.cpi.toFixed(2)}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </Box>
-            )}
+                    <Typography variant="body2" color="text.secondary">Campaign details will be displayed here.</Typography>
+                </AccordionDetails>
+            </Accordion>
 
             <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
                 <Button variant="outlined" onClick={() => {/* export */ }}>Export CSV</Button>

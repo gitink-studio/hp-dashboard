@@ -65,8 +65,8 @@ export const DemographicsChart: React.FC<Props> = ({ title = "Demographics", dat
     return (
         <Box sx={{ p: 2, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
             <Stack direction="row" alignItems="center" spacing={2} sx={{ mt: 3, mb: 5 }}>
-                <Typography variant="subtitle1" fontWeight="bold">{title}</Typography>
-                <Chip size="small" label="Ads" />
+                {/* <Typography variant="subtitle1" fontWeight="bold">{title}</Typography> */}
+                {/* <Chip size="small" label="Ads" /> */}
                 <Chip size="small" label={`Gender: ${getGenderLabel()}`} />
                 <Chip size="small" label="Metrics: Installs" />
                 <Chip size="small" label={`Date: 23/08/2025-29/08/2025`} />
