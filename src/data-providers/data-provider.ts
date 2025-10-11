@@ -34,7 +34,7 @@ export const dataProvider: DataProvider = {
     return restDataProvider.deleteMany(resource, params);
   },
   isDataExistOrNot: async (resource: string, params: any) => {
-    console.log(resource , params);
+    console.log(resource, params);
     const response = await fetch(resource, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -60,17 +60,17 @@ export const dataProvider: DataProvider = {
 
     const result = await response.json();
     console.log("isValidUser response:", result);
-    
+
     if (result.errors) {
       console.error("GraphQL errors:", result.errors);
       return false;
     }
-    
+
     const { data } = result;
     console.log("isValidUser data:", data);
     console.log("QueryNames.IS_VALID_USER:", QueryNames.IS_VALID_USER);
     console.log("Accessing data[QueryNames.IS_VALID_USER]:", data[QueryNames.IS_VALID_USER]);
-    
+
     return data[QueryNames.IS_VALID_USER];
   },
   getUserDetails: async (resource: string, params: any) => {
@@ -86,18 +86,41 @@ export const dataProvider: DataProvider = {
 
     const result = await response.json();
     console.log("getUserDetails response:", result);
-    
+
     if (result.errors) {
       console.error("GraphQL errors:", result.errors);
       return null;
     }
-    
+
     const { data } = result;
     console.log("getUserDetails data:", data);
     console.log("QueryNames.GET_USER_DETAILS:", QueryNames.GET_USER_DETAILS);
     console.log("Accessing data[QueryNames.GET_USER_DETAILS]:", data[QueryNames.GET_USER_DETAILS]);
-    
+
     return data[QueryNames.GET_USER_DETAILS];
+  },
+  getPlayStoreGameDetails: async (resource: string, params: any) => {
+    console.log("getPlayStoreGameDetails called with:", resource, params);
+    const response = await fetch(resource, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: params.query,
+        variables: params.variables,
+      }),
+    });
+
+    const result = await response.json();
+    console.log("getPlayStoreGameDetails response:", result);
+
+    if (result.errors) {
+      console.error("GraphQL errors:", result.errors);
+      return null;
+    }
+
+    const { data } = result;
+    console.log("getPlayStoreGameDetails data:", data);
+    return data[QueryNames.GET_PLAY_STORE_GAME_DETAILS];
   },
 };
 
@@ -125,4 +148,11 @@ const getUserDetails = async (_email: string, _password: string) => {
   return userDetails;
 };
 
-export const FetchData = { isDataAlreadyExist, isValidUser, getUserDetails };
+const getPlayStoreGameDetails = async (_url: string) => {
+  const query = print(Queries.GetPlayStoreGameDetails);
+  const variables = { url: _url };
+  const playStoreDetails = await dataProvider.getPlayStoreGameDetails(ROOT_URL + "/graphql", { query: query, variables: variables });
+  return playStoreDetails;
+}
+
+export const FetchData = { isDataAlreadyExist, isValidUser, getUserDetails, getPlayStoreGameDetails };

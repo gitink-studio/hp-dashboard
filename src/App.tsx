@@ -24,6 +24,7 @@ import { DeveloperTestDetail } from "./pages/tests/developer-test-detail";
 import { PublisherTestDetail } from "./pages/tests/publisher-test-detail";
 import { Route } from "react-router";
 import { CustomRoutes } from "react-admin";
+import { SDKDetails } from "./pages/sdk/sdk-details";
 
 export const App = () => {
   const userRole = localStorage.getItem("userRole");
@@ -32,6 +33,11 @@ export const App = () => {
   return (
     <Admin
       layout={CustomLayout}
+      theme={{
+        palette: {
+          mode: 'light',
+        }
+      }}
       dataProvider={dataProvider}
       authProvider={authProvider}
       loginPage={<LoginPage />}
@@ -81,6 +87,13 @@ export const App = () => {
         name="tests"
         list={TestsHub}
         options={{ label: "Tests" }}
+      />
+
+      {/* SDK Submission */}
+      <Resource
+        name="sdk"
+        list={SDKDetails}
+        options={{ label: "SDK" }}
       />
 
       {/* Tests detail routes */}

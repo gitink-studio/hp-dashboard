@@ -1,0 +1,20 @@
+import { create } from "zustand";
+
+type SDKDetailsAction = {
+    setCurrentStep: (currentStep: number) => void;
+}
+
+type SDKDetailsState = {
+    currentStep: number;
+    actions: SDKDetailsAction;
+}
+
+const useSDKDetailsStore = create<SDKDetailsState>((set) => ({
+    currentStep: 1,
+    actions: {
+        setCurrentStep: (currentStep: number) => set({ currentStep }),
+    }
+}))
+
+export const useCurrentStep = () => useSDKDetailsStore((state) => state.currentStep);
+export const useGameSubmissionActions = () => useSDKDetailsStore((state) => state.actions);

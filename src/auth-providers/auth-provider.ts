@@ -10,6 +10,7 @@ export const authProvider: AuthProvider = {
       // Get user details including role information
       let userDetails = await FetchData.getUserDetails(username, password);
       console.log("User details:", userDetails);
+      return Promise.resolve();
 
       // Store user information in localStorage
       localStorage.setItem("userName", username);
@@ -20,7 +21,6 @@ export const authProvider: AuthProvider = {
 
       // Redirect to dashboard router after successful login
       window.location.href = '/#/getAllDashboardData';
-      return Promise.resolve();
     }
 
     return Promise.reject();

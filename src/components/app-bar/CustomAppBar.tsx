@@ -28,7 +28,7 @@ const CustomAppBar = () => {
   return (
     <AppBar
       position="fixed"
-      color="secondary"
+      color="primary"
       sx={{
         maxHeight: "48px",
         display: "flex",
@@ -128,7 +128,7 @@ const CustomAppBar = () => {
             Logout
           </Button>
 
-          <ToggleThemeButton />
+          {/* <ToggleThemeButton /> */}
           {/* <RefreshButton sx={{ color: "white" }} /> */}
         </Box>
       </Toolbar>

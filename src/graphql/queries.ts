@@ -772,6 +772,14 @@ const AlertRules = gql`
   }
 `;
 
+const GetPlayStoreGameDetails = gql`
+  query GetPlayStoreGameDetails($url: String!) {
+    getPlayStoreGameDetails(url: $url) {
+      data
+    }
+  }
+`;
+
 export const Queries = {
   DeviceList,
   Device,
@@ -791,6 +799,7 @@ export const Queries = {
   IsDataAlreadyExist,
   IsValidUser,
   GetUserDetails,
+  GetPlayStoreGameDetails,
   // New Dashboard Queries
   DashboardFilters,
   PortfolioKPIs,

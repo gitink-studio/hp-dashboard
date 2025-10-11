@@ -20,6 +20,7 @@ const GET_PUBLISHER_DASHBOARD_DATA = "getPublisherDashboardData";
 const CHECK_DATA_EXIST_OR_NOT = "checkDataExistOrNot";
 const IS_VALID_USER = "isValidUser";
 const GET_USER_DETAILS = "getUserDetails";
+const GET_PLAY_STORE_GAME_DETAILS = "getPlayStoreGameDetails";
 
 // New Dashboard Query Names
 const DASHBOARD_FILTERS = "dashboardFilters";
@@ -91,6 +92,7 @@ export const QueryNames = {
   CHECK_DATA_EXIST_OR_NOT,
   IS_VALID_USER,
   GET_USER_DETAILS,
+  GET_PLAY_STORE_GAME_DETAILS,
   // New Dashboard Query Names
   DASHBOARD_FILTERS,
   PORTFOLIO_KPIS,
@@ -139,3 +141,8 @@ export const APPROVAL_PRIORITIES = ["low", "normal", "high", "urgent"];
 export const NOTIFICATION_TYPES = ["approval", "payout", "alert", "system"];
 export const NOTIFICATION_PRIORITIES = ["low", "normal", "high", "urgent"];
 export const ALERT_RULE_TYPES = ["kpi_threshold", "anomaly", "compliance"];
+
+export const PlayStoreDataFetchState = {
+  INPROGRESS: "inprogress",
+  COMPLETED: "completed"
+}
