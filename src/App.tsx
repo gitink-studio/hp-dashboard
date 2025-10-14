@@ -22,26 +22,37 @@ import { AdvancedReportConfiguration } from "./pages/admin/advanced-report-confi
 import { SDKConfigurationPage } from "./pages/admin/sdk-configuration-page";
 import { GameAnalyticsImportExport } from "./components/admin/game-analytics-import-export";
 import { AdminRoleSetter } from "./components/admin-role-setter";
+import { TestsHub } from "./pages/tests/tests-hub";
+import { DeveloperTestDetail } from "./pages/tests/developer-test-detail";
+import { PublisherTestDetail } from "./pages/tests/publisher-test-detail";
+import { Route } from "react-router";
+import { CustomRoutes } from "react-admin";
+import { SDKDetails } from "./pages/sdk/sdk-details";
 
 export const App = () => {
   const userRole = localStorage.getItem("userRole");
   const isAdmin = userRole?.toLowerCase().includes('admin') || userRole?.toLowerCase().includes('administrator');
-  
+
   return (
     <Admin
       layout={CustomLayout}
+      theme={{
+        palette: {
+          mode: 'light',
+        }
+      }}
       dataProvider={dataProvider}
       authProvider={authProvider}
       loginPage={<LoginPage />}
     >
       {/* Dashboard Router - Redirects to appropriate dashboard */}
-      <Resource
+      {/* <Resource
         name={QueryNames.GET_ALL_DASHBOARD_DATA}
         list={DashboardRouter}
         options={{ label: "Dashboard" }}
-      />
-      
-      
+      /> */}
+
+
       {/* Dashboard Resources - Always available, access controlled by components */}
       <Resource
         name={QueryNames.GET_DEVELOPER_DASHBOARD_DATA}
@@ -56,25 +67,45 @@ export const App = () => {
       />
 
       {/* Admin-only resources */}
-      <Resource
+      {/* <Resource
         name={QueryNames.GET_ALL_ADMIN_DASHBOARD_DATA}
         list={AdminDashboard}
         options={{ label: "Admin Dashboard" }}
-      />
-      <Resource
+      /> */}
+      {/* <Resource
         name={QueryNames.GET_ALL_USER_DATA}
         list={UserList}
         options={{ label: "Users" }}
-      />
-      
+      /> */}
+
       {/* Reports - Available for all authenticated users */}
       <Resource
         name="reports"
         list={ReportsPage}
         options={{ label: "Reports" }}
       />
-      
-      {/* Role-based menu items */}
+
+      {/* Tests Hub */}
+      <Resource
+        name="tests"
+        list={TestsHub}
+        options={{ label: "Tests" }}
+      />
+
+      {/* SDK Submission */}
+      <Resource
+        name="sdk"
+        list={SDKDetails}
+        options={{ label: "SDK" }}
+      />
+
+      {/* Tests detail routes */}
+      <CustomRoutes>
+        <Route path="tests/developer/:id" element={<DeveloperTestDetail />} />
+        <Route path="tests/publisher/:id" element={<PublisherTestDetail />} />
+      </CustomRoutes>
+
+      {/* Role-based menu items
       {(userRole === 'admin' || userRole === 'publisher') && (
         <>
           <Resource
@@ -100,8 +131,8 @@ export const App = () => {
             options={{ label: "Links" }}
           />
         </>
-      )}
-      
+      )} */}
+
       {/* Admin-only menu items */}
       {isAdmin && (
         <>
@@ -132,7 +163,7 @@ export const App = () => {
           />
         </>
       )}
-      
+
       {/* Testing component - remove in production */}
       <Resource
         name="admin-role-setter"

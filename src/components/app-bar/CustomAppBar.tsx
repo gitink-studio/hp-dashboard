@@ -28,7 +28,7 @@ const CustomAppBar = () => {
   return (
     <AppBar
       position="fixed"
-      color="secondary"
+      color="primary"
       sx={{
         maxHeight: "48px",
         display: "flex",
@@ -69,10 +69,10 @@ const CustomAppBar = () => {
           ))}
         </Box>
         <Box display="flex" gap={2} alignItems="center">
-          <IconButton aria-label="notification" color="inherit">
+          {/* <IconButton aria-label="notification" color="inherit">
             <CircleNotifications />
-          </IconButton>
-          
+          </IconButton> */}
+
           {/* Admin indicator */}
           {isAdmin && (
             <Chip
@@ -83,7 +83,7 @@ const CustomAppBar = () => {
               sx={{ color: 'white', backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
             />
           )}
-          
+
           {/* User info and role */}
           <Box display="flex" alignItems="center" gap={1}>
             <Typography variant="body2" sx={{ color: 'white' }}>
@@ -93,15 +93,15 @@ const CustomAppBar = () => {
               <Chip
                 label={userRole}
                 size="small"
-                sx={{ 
-                  color: 'white', 
+                sx={{
+                  color: 'white',
                   backgroundColor: 'rgba(255, 255, 255, 0.1)',
                   fontSize: '0.7rem'
                 }}
               />
             )}
           </Box>
-          
+
           {/* Logout button */}
           <Button
             variant="outlined"
@@ -127,9 +127,9 @@ const CustomAppBar = () => {
           >
             Logout
           </Button>
-          
-          <ToggleThemeButton />
-          <RefreshButton sx={{ color: "white" }} />
+
+          {/* <ToggleThemeButton /> */}
+          {/* <RefreshButton sx={{ color: "white" }} /> */}
         </Box>
       </Toolbar>
     </AppBar>

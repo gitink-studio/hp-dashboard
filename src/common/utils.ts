@@ -31,9 +31,9 @@ export const formatNumber = (_value: number | string): string => {
   if (_value === undefined || _value === null || _value === '') {
     return '0';
   }
-  
+
   const value = typeof _value === "string" ? parseFloat(_value) : _value;
-  
+
   // Handle NaN values
   if (isNaN(value)) {
     return '0';
@@ -60,4 +60,11 @@ export const sendRequest = async (method: string, url: string, data: any) => {
   const { json } = await fetchUtils.fetchJson(url, options);
 
   return json;
+};
+
+export const waitForSeconds = (seconds: number) => {
+
+  return new Promise((resolve) => {
+    setTimeout(resolve, seconds * 1000);
+  });
 };
