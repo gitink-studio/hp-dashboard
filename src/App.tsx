@@ -18,6 +18,9 @@ import { PublisherDashboard } from "./pages/dashboard/publisher-dashboard";
 import { DashboardRouter } from "./pages/dashboard/dashboard-router";
 import { ReportsPage } from "./pages/reports/reports-page";
 import { ReportConfigurationPage } from "./pages/admin/report-configuration-page";
+import { AdvancedReportConfiguration } from "./pages/admin/advanced-report-configuration";
+import { SDKConfigurationPage } from "./pages/admin/sdk-configuration-page";
+import { GameAnalyticsImportExport } from "./components/admin/game-analytics-import-export";
 import { AdminRoleSetter } from "./components/admin-role-setter";
 
 export const App = () => {
@@ -111,6 +114,21 @@ export const App = () => {
             name="report-configuration"
             list={ReportConfigurationPage}
             options={{ label: "Report Configuration" }}
+          />
+          <Resource
+            name="advanced-report-configuration"
+            list={AdvancedReportConfiguration}
+            options={{ label: "Advanced Config" }}
+          />
+          <Resource
+            name="sdk-configuration"
+            list={SDKConfigurationPage}
+            options={{ label: "SDK Configuration" }}
+          />
+          <Resource
+            name="game-analytics-import"
+            list={GameAnalyticsImportExport}
+            options={{ label: "GA Import/Export" }}
           />
         </>
       )}

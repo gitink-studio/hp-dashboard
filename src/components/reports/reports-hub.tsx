@@ -34,7 +34,9 @@ import {
   GetApp, 
   Refresh,
   Search,
-  Visibility
+  Visibility,
+  Upload,
+  Analytics
 } from '@mui/icons-material';
 import { exportReportData } from '../../common/export-utils';
 
@@ -53,13 +55,15 @@ interface ReportsHubProps {
   filters?: any;
   onBack?: () => void;
   onOpenReport?: (reportType: string, gameName: string, studioName?: string) => void;
+  onOpenGameAnalyticsImport?: () => void;
 }
 
 export const ReportsHub: React.FC<ReportsHubProps> = ({
   gameName,
   filters = {},
   onBack,
-  onOpenReport
+  onOpenReport,
+  onOpenGameAnalyticsImport
 }) => {
   const userRole = localStorage.getItem("userRole") as 'developer' | 'publisher';
   
@@ -324,6 +328,33 @@ export const ReportsHub: React.FC<ReportsHubProps> = ({
           }}
         />
       </Box>
+
+      {/* Game Analytics Import Section */}
+      <Card sx={{ mb: 3, bgcolor: 'primary.50' }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Analytics sx={{ mr: 2, color: 'primary.main', fontSize: 32 }} />
+              <Box>
+                <Typography variant="h6" gutterBottom>
+                  Game Analytics Data Import
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Upload Excel/CSV files to import Game Analytics events into the EventLog table for tracking metrics
+                </Typography>
+              </Box>
+            </Box>
+            <Button
+              variant="contained"
+              startIcon={<Upload />}
+              onClick={onOpenGameAnalyticsImport}
+              size="large"
+            >
+              Import Data
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
 
       {/* Open Reports */}
       <Card sx={{ mb: 3 }}>

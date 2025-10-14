@@ -3,6 +3,7 @@ import { Box, Typography, Alert, Button } from '@mui/material';
 import { ReportsHub } from '../../components/reports/reports-hub';
 import { DeveloperReports } from '../../components/reports/developer-reports';
 import { PublisherReports } from '../../components/reports/publisher-reports';
+import { GameAnalyticsImportPage } from './game-analytics-import-page';
 
 interface ReportsPageProps {
   gameName?: string;
@@ -54,7 +55,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
   const urlCurrency = urlParams.get('currency');
   
   // Navigation state
-  const [currentView, setCurrentView] = useState<'hub' | 'report'>('hub');
+  const [currentView, setCurrentView] = useState<'hub' | 'report' | 'game-analytics-import'>('hub');
   const [selectedReport, setSelectedReport] = useState<ReportType | null>(null);
   const [selectedGame, setSelectedGame] = useState<string>(urlGame || gameName || '');
   const [selectedStudio, setSelectedStudio] = useState<string>('');
@@ -102,6 +103,10 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
     setSelectedStudio('');
   };
 
+  const handleOpenGameAnalyticsImport = () => {
+    setCurrentView('game-analytics-import');
+  };
+
 
   // Render the appropriate view
   if (currentView === 'hub') {
@@ -111,6 +116,15 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
         filters={filters}
         onBack={undefined} // No back button on main hub
         onOpenReport={handleOpenReport}
+        onOpenGameAnalyticsImport={handleOpenGameAnalyticsImport}
+      />
+    );
+  }
+
+  if (currentView === 'game-analytics-import') {
+    return (
+      <GameAnalyticsImportPage
+        onBack={handleBackToHub}
       />
     );
   }

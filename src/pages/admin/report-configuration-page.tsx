@@ -36,7 +36,8 @@ import {
   Cancel as CancelIcon,
   Add as AddIcon,
   Delete as DeleteIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Analytics as AnalyticsIcon
 } from '@mui/icons-material';
 import {
   ReportConfiguration,
@@ -45,6 +46,8 @@ import {
   PLATFORM_SUBPLATFORM_COMBINATIONS,
   getAvailableReports
 } from '../../common/report-config';
+import { getSDKName, getAllSDKTypes } from '../../common/sdk-report-config';
+import { GameAnalyticsImportPage } from '../reports/game-analytics-import-page';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -200,7 +203,9 @@ export const ReportConfigurationPage: React.FC = () => {
           <Tabs value={selectedTab} onChange={(_, newValue) => setSelectedTab(newValue)}>
             <Tab label="Platform Rules" />
             <Tab label="Report Definitions" />
+            <Tab label="SDK Types" />
             <Tab label="Preview" />
+            <Tab label="Game Analytics Import" />
           </Tabs>
         </Box>
 
@@ -367,6 +372,79 @@ export const ReportConfigurationPage: React.FC = () => {
         </TabPanel>
 
         <TabPanel value={selectedTab} index={2}>
+          <Typography variant="h6" sx={{ mb: 2 }}>SDK Types & Metrics</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Configure which SDK types and their associated metrics are available for each platform
+          </Typography>
+
+          <Grid container spacing={2}>
+            {getAllSDKTypes().map((sdkType) => (
+              <Grid item xs={12} key={sdkType}>
+                <Card>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Typography variant="h6">{getSDKName(sdkType)}</Typography>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => window.location.href = `#/advanced-report-configuration?sdk=${sdkType}&platform=Android`}
+                      >
+                        Configure Events & Metrics
+                      </Button>
+                    </Box>
+
+                    <Grid container spacing={2}>
+                      {['Android', 'iOS'].map((platform) => {
+                        const sdkReports = DEFAULT_REPORT_CONFIGS.filter(
+                          r => r.sdkType === sdkType && r.platforms.includes(platform)
+                        );
+
+                        return (
+                          <Grid item xs={12} md={6} key={platform}>
+                            <Box sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+                              <Typography variant="subtitle2" gutterBottom>
+                                {platform} Platform
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary" gutterBottom>
+                                Reports: {sdkReports.length}
+                              </Typography>
+                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
+                                {sdkReports.map((report) => (
+                                  <Chip
+                                    key={report.id}
+                                    label={report.name.replace(`${getSDKName(sdkType)} - `, '')}
+                                    size="small"
+                                    color={report.category === 'developer' ? 'primary' : 'info'}
+                                  />
+                                ))}
+                              </Box>
+                            </Box>
+                          </Grid>
+                        );
+                      })}
+                    </Grid>
+
+                    <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                      <Typography variant="caption" color="text.secondary">
+                        <strong>Event Types:</strong> {sdkType === 'hyper_rabbit' ? '16 events' : '11 events'} | {' '}
+                        <strong>Metrics:</strong> {sdkType === 'hyper_rabbit' ? '14 metrics' : '32 metrics'} | {' '}
+                        <strong>Reports:</strong> {DEFAULT_REPORT_CONFIGS.filter(r => r.sdkType === sdkType).length}
+                      </Typography>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+
+          <Box sx={{ mt: 3 }}>
+            <Alert severity="info">
+              <strong>Advanced Configuration:</strong> Click "Configure Events & Metrics" to edit event-to-metric mappings and customize which metrics are calculated from each event type.
+            </Alert>
+          </Box>
+        </TabPanel>
+
+        <TabPanel value={selectedTab} index={3}>
           <Typography variant="h6" sx={{ mb: 2 }}>Configuration Preview</Typography>
           <Grid container spacing={2}>
             {PLATFORM_SUBPLATFORM_COMBINATIONS.map((combo) => (
@@ -403,6 +481,22 @@ export const ReportConfigurationPage: React.FC = () => {
               </Grid>
             ))}
           </Grid>
+        </TabPanel>
+
+        <TabPanel value={selectedTab} index={4}>
+          <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+            <AnalyticsIcon sx={{ mr: 2, color: 'primary.main', fontSize: 32 }} />
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Game Analytics Data Import
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Upload Excel/CSV files to import Game Analytics events into the EventLog table for tracking metrics
+              </Typography>
+            </Box>
+          </Box>
+          
+          <GameAnalyticsImportPage />
         </TabPanel>
       </Card>
 
