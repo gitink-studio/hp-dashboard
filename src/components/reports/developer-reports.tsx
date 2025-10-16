@@ -47,6 +47,7 @@ import {
   Warning
 } from '@mui/icons-material';
 import { exportReportData } from '../../common/export-utils';
+import { reportsService } from '../../services/reports.service';
 
 interface DeveloperReportsProps {
   reportType: string;
@@ -86,14 +87,63 @@ export const DeveloperReports: React.FC<DeveloperReportsProps> = ({
   const [loading, setLoading] = useState(false);
   const [kpiSummary, setKpiSummary] = useState<any>({});
 
-  // Mock data generation based on report type
+  // Fetch report data from backend API
   useEffect(() => {
-    generateMockData();
-  }, [reportType, gameName]);
+    fetchReportData();
+  }, [reportType, gameName, filters]);
 
-  const generateMockData = () => {
+  const fetchReportData = async () => {
     setLoading(true);
     
+    try {
+      const queryParams = new URLSearchParams();
+      if (filters.platform) queryParams.append('platform', filters.platform);
+      if (filters.subPlatform) queryParams.append('subPlatform', filters.subPlatform);
+      if (gameName) queryParams.append('game', gameName);
+      if (filters.dateRange) queryParams.append('dateRange', filters.dateRange);
+      if (filters.startDate) queryParams.append('startDate', filters.startDate);
+      if (filters.endDate) queryParams.append('endDate', filters.endDate);
+      if (filters.currency) queryParams.append('currency', filters.currency);
+
+      let endpoint = '';
+      switch (reportType) {
+        case 'CPI Trends':
+          endpoint = '/reports/cpi-trends';
+          break;
+        case 'ROAS Trends':
+          endpoint = '/reports/roas-trends';
+          break;
+        case 'Retention':
+          endpoint = '/reports/retention';
+          break;
+        case 'Revenue Summary':
+          endpoint = '/reports/revenue-summary';
+          break;
+        case 'Crash Rate':
+          endpoint = '/reports/crash-rate';
+          break;
+        default:
+          throw new Error(`Unknown report type: ${reportType}`);
+      }
+
+      const response = await fetch(`http://localhost:3000${endpoint}?${queryParams}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ${reportType} data`);
+      }
+      
+      const result = await response.json();
+      setReportData(result.chartData || []);
+      setKpiSummary(result.kpiSummary || {});
+    } catch (error) {
+      console.error('Error fetching report data:', error);
+      // Fallback to mock data if API fails
+      generateMockData();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateMockData = () => {
     try {
       // Generate comprehensive mock data based on report type following group2.md specifications
       const data: ReportData[] = [];
@@ -203,18 +253,18 @@ export const DeveloperReports: React.FC<DeveloperReportsProps> = ({
       });
     }
 
-      console.log('Generated comprehensive data for', reportType, ':', data);
-      setReportData(data);
-      
-      // Calculate KPI summary
-      calculateKpiSummary(data);
-    } catch (error) {
-      console.error('Error generating mock data:', error);
-      setReportData([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    console.log('Generated comprehensive data for', reportType, ':', data);
+    setReportData(data);
+    
+    // Calculate KPI summary
+    calculateKpiSummary(data);
+  } catch (error) {
+    console.error('Error generating mock data:', error);
+    setReportData([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const calculateKpiSummary = (data: ReportData[]) => {
     switch (reportType) {

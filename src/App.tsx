@@ -46,11 +46,11 @@ export const App = () => {
       loginPage={<LoginPage />}
     >
       {/* Dashboard Router - Redirects to appropriate dashboard */}
-      {/* <Resource
+      <Resource
         name={QueryNames.GET_ALL_DASHBOARD_DATA}
         list={DashboardRouter}
         options={{ label: "Dashboard" }}
-      /> */}
+      />
 
 
       {/* Dashboard Resources - Always available, access controlled by components */}

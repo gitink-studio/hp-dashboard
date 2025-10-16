@@ -53,6 +53,7 @@ import {
   Error
 } from '@mui/icons-material';
 import { exportReportData } from '../../common/export-utils';
+import { reportsService } from '../../services/reports.service';
 
 interface PublisherReportsProps {
   reportType: 'Revenue by Geo' | 'Payout Summary' | 'eCPM & Fill Rate' | 'Compliance & IVT';

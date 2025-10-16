@@ -49,16 +49,17 @@ export const SignUpForm = ({
     try {
       let response: any = await sendRequest(HTTP_METHODS.POST, CREATE_USER_URL, data);
 
-      if (response.data.status !== 200) {
+      // Check if the response contains user data (successful creation)
+      if (response.data && response.data.id) {
+        console.log("Account created successfully!");
+        notify("Account created successfully!", { type: "success" });
+        handleClose();
+      } else {
         notify("Something went wrong!", { type: "error" });
-        return;
       }
-
-      console.log("Account created successfully!");
-      notify("Account created successfully!", { type: "success" });
-      handleClose();
     } catch (error) {
       console.log(error);
+      notify("Failed to create account. Please try again.", { type: "error" });
     }
   };
 
