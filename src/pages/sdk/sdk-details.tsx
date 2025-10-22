@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Box,
     Stepper,
@@ -9,196 +9,108 @@ import {
     Stack,
     Container,
     Alert,
+    useTheme,
 } from '@mui/material';
 import { SDKData } from './sdk-data';
-import { GameSubmissionStep } from './game-submission-step';
-import { ApprovalStep } from './approval-step';
+import { GameSubmissionStep } from './game-submission/game-submission-step';
+import { TestingTermsStep } from './testing-terms-step';
 import { FacebookSetupStep } from './facebook/facebook-setup-step';
-import { SDKIntegrationStep } from './sdk-integration/sdk-integration-step';
-import { StoreStep } from './store-step';
+import { SDKIntegrationSteps } from './sdk-integration/sdk-integration-steps';
+import { StoreStep } from './store-step/store-step';
 import { TestSetup } from './test/test-setup';
+import { useActiveStep, useCurrentStep, useSDKDetailActions } from '../../store/sdk/sdk-details-store';
+import { useValidateGameSubmissionInputs } from '../../store/sdk/game-submission-store';
 
 export const SDKDetails = () => {
-    const [activeStep, setActiveStep] = useState(0);
+    const currentStep = useCurrentStep();
+    const activeStep = useActiveStep();
+    const validateGameSubmissionInputs = useValidateGameSubmissionInputs();
+    const theme = useTheme();
+    const { setActiveStep, setCurrentStep, isStepCompleted } = useSDKDetailActions();
 
-    const handleNext = () => {
-        setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    useEffect(() => {
+        console.log(`Active Step: ${activeStep} Current Step: ${currentStep}`);
+    })
+
+    const stepContentList = [
+        { component: <GameSubmissionStep />, isAllDataEntered: validateGameSubmissionInputs },
+        { component: <TestingTermsStep />, isAllDataEntered: false },
+        { component: <FacebookSetupStep />, isAllDataEntered: false },
+        { component: <SDKIntegrationSteps />, isAllDataEntered: false },
+        { component: <StoreStep />, isAllDataEntered: false },
+        { component: <TestSetup />, isAllDataEntered: false },
+    ]
+
+    const DisplayCurrentStepContent = () => {
+        if (activeStep > stepContentList.length - 1) {
+            setActiveStep(activeStep - 1);
+        }
+
+        return stepContentList[activeStep].component;
     };
 
-    const handleBack = () => {
-        setActiveStep((prevActiveStep) => prevActiveStep - 1);
-    };
+    const handleDisable = () => {
+        return !isStepCompleted(activeStep);
+    }
+
+    const handleStepper = (index: number) => {
+        // setActiveStep(index);
+
+        if (index >= currentStep) {
+            setActiveStep(index);
+        }
+    }
 
     return (
         <Container sx={{ mt: 5, width: "100%" }}>
             <Typography component="h1" gutterBottom fontWeight="bold">New Game</Typography>
 
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={5} mt={3}>
-                <Box sx={{ width: { xs: '100%', md: '250px' }, flexShrink: 0 }}>
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} mt={3}>
+                <Box sx={{ width: { xs: '100%', md: '250px' }, }}>
                     <Stepper
                         activeStep={activeStep}
                         orientation="vertical"
                         sx={{
                             '& .MuiStepLabel-root': {
                                 padding: '8px 0'
-                            }
+                            },
                         }}
                     >
                         {SDKData.steps.map((label, index) => (
-                            <Step key={label}>
-                                <StepLabel onClick={() => setActiveStep(index)} sx={{ cursor: "pointer" }}>{label}</StepLabel>
+                            <Step key={label} active={currentStep == index} completed={isStepCompleted(index)}>
+                                <StepLabel
+                                    onClick={() => handleStepper(index)}
+                                    sx={{ cursor: activeStep >= currentStep ? "pointer" : "none" }}>{label}
+                                </StepLabel>
                             </Step>
                         ))}
                     </Stepper>
                 </Box>
 
                 <Box sx={{ p: 3, pl: 0, width: '100%' }}>
-                    {/* <Alert severity="warning" sx={{ mb: 2 }}>
-                        You need to complete previous steps
-                    </Alert> */}
-                    {activeStep === 0 ? (
-                        <>
-                            <GameSubmissionStep />
-                            <Box sx={{
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                mt: 3
-                            }}>
-                                <Button
-                                    variant="contained"
-                                    onClick={handleNext}
-                                    sx={{ px: 4, py: 1 }}
-                                >
-                                    Add Game
-                                </Button>
-                            </Box>
-                        </>
-                    ) : null}
+                    {
+                        activeStep > currentStep &&
+                        <Alert severity="warning" sx={{ mb: 2 }}>
+                            You need to complete previous steps
+                        </Alert>
+                    }
 
-                    {activeStep === 1 ? (
-                        <>
-                            <ApprovalStep />
-                            <Box sx={{
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                mt: 3
-                            }}>
-                                <Button
-                                    variant="contained"
-                                    onClick={handleNext}
-                                    sx={{ px: 4, py: 1 }}
-                                >
-                                    Complete Step
-                                </Button>
-                            </Box>
-                        </>
-                    ) : null}
+                    <DisplayCurrentStepContent />
 
-                    {activeStep === 2 ? (
-                        <>
-                            <FacebookSetupStep />
-                            <Box sx={{
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                mt: 3
-                            }}>
-                                <Button
-                                    variant="contained"
-                                    onClick={handleNext}
-                                    sx={{ px: 4, py: 1 }}
-                                >
-                                    Complete Step
-                                </Button>
-                            </Box>
-                        </>
-                    ) : null}
-
-                    {activeStep === 3 ? (
-                        <>
-                            <SDKIntegrationStep />
-                            <Box sx={{
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                mt: 3
-                            }}>
-                                <Button
-                                    variant="contained"
-                                    onClick={handleNext}
-                                    sx={{ px: 4, py: 1 }}
-                                >
-                                    Complete Step
-                                </Button>
-                            </Box>
-                        </>
-                    ) : null}
-
-                    {activeStep === 4 ? (
-                        <>
-                            <StoreStep />
-                            <Box sx={{
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                mt: 3
-                            }}>
-                                <Button
-                                    variant="contained"
-                                    onClick={handleNext}
-                                    sx={{ px: 4, py: 1 }}
-                                >
-                                    Complete Step
-                                </Button>
-                            </Box>
-                        </>
-                    ) : null}
-
-                    {activeStep === 5 ? (
-                        <>
-                            <TestSetup />
-                            <Box sx={{
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                mt: 3
-                            }}>
-                                <Button
-                                    variant="contained"
-                                    onClick={handleNext}
-                                    sx={{ px: 4, py: 1 }}
-                                >
-                                    Complete Step
-                                </Button>
-                            </Box>
-                        </>
-                    ) : null}
-
-                    {activeStep > 0 ? <Box sx={{
+                    {/* <Box sx={{
                         display: 'flex',
-                        justifyContent: 'space-between',
-                        mt: 2
+                        justifyContent: 'flex-end',
+                        mt: 3
                     }}>
                         <Button
-                            variant="outlined"
-                            onClick={handleBack}
-                            sx={{ mr: 2 }}
+                            variant="contained"
+                            onClick={handleNext}
+                            sx={{ px: 4, py: 1 }}
+                            disabled={disableStepCompleteButton()}
                         >
-                            Back
+                            {activeStep === 0 ? "Add Game" : "Complete Step"}
                         </Button>
-                    </Box> : null}
-
-                    {activeStep > 5 && (
-                        <Box>
-                            <Typography variant="h6" sx={{ mb: 2 }}>
-                                Step {activeStep + 1}: {SDKData.steps[activeStep]}
-                            </Typography>
-                            {activeStep < SDKData.steps.length - 1 && (
-                                <Button
-                                    variant="contained"
-                                    onClick={handleNext}
-                                >
-                                    Complete Step
-                                </Button>
-                            )}
-                        </Box>
-                    )}
+                    </Box> */}
                 </Box>
             </Stack>
         </Container >

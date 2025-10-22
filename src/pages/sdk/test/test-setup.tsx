@@ -8,18 +8,58 @@ import {
     Tooltip,
     IconButton,
     useTheme,
+    CircularProgress,
 } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import { SDKStyle } from "../sdk-style";
 import CreativesLibrary from "./creative-library";
+import { useActiveStep, useDataSending, useSDKDetailActions } from "../../../store/sdk/sdk-details-store";
+import { useDisplayCreativeLibrary, useTestSetupActions, useVideoFileUrls } from "../../../store/sdk/test-setup-store";
+import { CREATE_TEST_SETUP_DATA_URL, CURRENT_SDK_SETUP_STATE_ID, HttpMethod, SDK_SETUP_GAME_ID } from "../../../common/constants";
+import { sendRequest } from "../../../common/utils";
+import { useNotify } from "react-admin";
 
 export const TestSetup: React.FC = () => {
+    const notify = useNotify();
     const theme = useTheme();
-    const [showComponent, setShowComponent] = useState(false);
+    const activeStep = useActiveStep();
+    const videoFileUrls = useVideoFileUrls();
+    const isDataSending = useDataSending();
+    const { isStepCompleted, setCurrentStep, setDataSending } = useSDKDetailActions();
+    const canDisplayCreativeLibrary = useDisplayCreativeLibrary();
+    const { setDisplayCreativeLibrary } = useTestSetupActions();
 
     const handleUploadCreatives = () => {
-        setShowComponent(true);
+        setDisplayCreativeLibrary(true);
+    }
+
+    const handleDisable = () => {
+        return !isStepCompleted(activeStep);
+    }
+
+    const submitData = async () => {
+        setDataSending(true);
+
+        let response = await sendRequest(HttpMethod.POST, CREATE_TEST_SETUP_DATA_URL, {
+            currentSetupStateId: localStorage.getItem(CURRENT_SDK_SETUP_STATE_ID),
+            gameId: localStorage.getItem(SDK_SETUP_GAME_ID),
+            videoUrls: videoFileUrls
+        });
+        console.log(response);
+
+        if (response?.data?.id) {
+            console.log("FB data sent successfully!", response.data);
+            setCurrentStep();
+        } else {
+            notify("Something went wrong!", { type: "error" });
+        }
+
+        setDataSending(false);
+
+
+        window.location.href = '/#/tests';
+        setCurrentStep();
     }
 
     return (
@@ -54,6 +94,7 @@ export const TestSetup: React.FC = () => {
                     justifyContent={"center"}
                     alignItems={"center"}
                     gap={6}
+                    pt={10}
                 >
                     {/* Illustration */}
                     <Box
@@ -114,27 +155,36 @@ export const TestSetup: React.FC = () => {
                                     },
                                 }}
                                 onClick={handleUploadCreatives}
+                                disabled={isDataSending}
                             >
                                 Upload Creatives
                             </Button>
 
                             <Button
                                 variant="outlined"
-                                disabled
+                                disabled={videoFileUrls.length === 0 || isDataSending}
                                 sx={{
                                     textTransform: "none",
                                     borderRadius: 20,
                                     px: 2.5,
-                                    color: "#bdbdbd",
+                                    color: theme.palette.primary.main,
                                 }}
+                                onClick={submitData}
                             >
-                                Start Testing
+                                {
+                                    isDataSending ? (
+                                        <Stack gap={2} direction={'row'}>
+                                            <Typography>Processing</Typography>
+                                            <CircularProgress size={20} />
+                                        </Stack>
+                                    ) : "Start Testing"
+                                }
                             </Button>
                         </Stack>
                     </Stack>
                 </Stack>
             </Stack>
-            {showComponent ? <CreativesLibrary /> : null}
+            {canDisplayCreativeLibrary ? <CreativesLibrary /> : null}
         </Paper>
     );
 };

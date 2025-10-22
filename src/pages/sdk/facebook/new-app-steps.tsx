@@ -1,5 +1,8 @@
 import { Box, Checkbox, FormControlLabel, Stack, Typography, useTheme } from "@mui/material";
 import { SDKStyle } from "../sdk-style";
+import { ImageRootURL, ImageSize } from "../../../common/constants";
+import { useFacebookSetupActions, useNewAppStepCompleted } from "../../../store/sdk/facebook-setup-store";
+
 
 const newAppSteps = [
     {
@@ -7,13 +10,13 @@ const newAppSteps = [
             "Go to “My Apps” and create a new app",
             "Choose “Other”",
         ],
-        image: "/your-screenshot-path.png",
+        imageId: "160OqfTt881XUhR9EyiDXHr9GcooLFG7k",
     },
     {
         lines: [
             <>Select <strong>"Business"</strong> as an app type</>,
         ],
-        image: "/your-screenshot-path.png",
+        imageId: "1pH0W63YcHPR8QGD7Z35kgOK6b_Ql44Zx",
     },
     {
         lines: [
@@ -23,12 +26,14 @@ const newAppSteps = [
             '3. "Business Account"'
 
         ],
-        image: "/your-screenshot-path.png",
+        imageId: "1yEfWF-vGwqizUfdg3IDTvl-TQ9xQUMa8",
     },
 ];
 
 export const NewAppSteps = () => {
     const theme = useTheme();
+    const isNewAppSetupCompleted = useNewAppStepCompleted();
+    const { setNewAppStepCompleted } = useFacebookSetupActions();
 
     return <>
         {newAppSteps.map((step, index) => (
@@ -38,15 +43,16 @@ export const NewAppSteps = () => {
                 </Box>
                 <Stack>
                     {step.lines.map((line, idx) => (
-                        <Typography variant="body1" key={idx}>
+                        <Typography variant="body2" key={idx}>
                             {line}
                         </Typography>
                     ))}
                     <br />
                     <img
-                        src={step.image}
+                        src={ImageRootURL + step.imageId + ImageSize}
+                        key={index}
                         alt={`Step ${index + 1} screenshot`}
-                        style={SDKStyle.facebookImageStyle}
+                        style={SDKStyle.screenshotStyle}
                     />
                     <br />
                 </Stack>
@@ -55,12 +61,13 @@ export const NewAppSteps = () => {
         <FormControlLabel
             control={
                 <Checkbox
-                    // checked={false}
-                    // onChange={handleCheckboxChange}
+                    checked={isNewAppSetupCompleted}
+                    onChange={(event) => setNewAppStepCompleted(event.target.checked)}
                     name="acceptTerms"
                 />
             }
             label="Mark this step as done"
+            sx={SDKStyle.checkboxTextStyle}
         />
     </>
 }

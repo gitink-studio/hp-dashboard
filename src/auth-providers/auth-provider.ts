@@ -1,5 +1,6 @@
 import { AuthProvider } from "react-admin";
 import { FetchData } from "../data-providers/data-provider";
+import { STUDIO_ID } from "../common/constants";
 
 export const authProvider: AuthProvider = {
   login: async ({ username, password }) => {
@@ -7,6 +8,8 @@ export const authProvider: AuthProvider = {
     console.log("login...", username, password, isValidUser);
 
     if (isValidUser) {
+      console.log("login successful...");
+
       // Get user details including role information
       let userDetails = await FetchData.getUserDetails(username, password);
       console.log("User details:", userDetails);
@@ -17,10 +20,11 @@ export const authProvider: AuthProvider = {
       localStorage.setItem("userRoleId", userDetails.roleId || '');
       localStorage.setItem("userId", userDetails.id || '');
       localStorage.setItem("userStudio", userDetails.studio || '');
+      localStorage.setItem(STUDIO_ID, userDetails.studioId || '');
 
       // Redirect to dashboard router after successful login
       window.location.href = '/#/getAllDashboardData';
-      
+
       return Promise.resolve();
     }
 

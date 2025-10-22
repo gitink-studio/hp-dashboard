@@ -1,12 +1,13 @@
 import { Close } from "@mui/icons-material";
-import { Dialog, DialogContent, IconButton, Stack, Typography } from "@mui/material";
+import { Dialog, DialogContent, IconButton, Stack, Typography, useTheme } from "@mui/material";
 import { email, required, SaveButton, SimpleForm, TextInput, Toolbar, useNotify, } from "react-admin";
 import { isUserAlreadyExist, sendRequest } from "../../common/utils";
-import { CREATE_USER_URL, HTTP_METHODS } from "../../common/constants";
+import { CREATE_USER_URL, HttpMethod } from "../../common/constants";
 
 export const ForgotPasswordPage = ({ enable, setState, }: { enable: boolean; setState: any; }) => {
   const notify = useNotify();
   const handleClose = () => { setState(false); };
+  const theme = useTheme();
   const CustomToolbar = () => (
     <Toolbar sx={{ backgroundColor: "transparent" }}>
       <SaveButton
@@ -24,7 +25,7 @@ export const ForgotPasswordPage = ({ enable, setState, }: { enable: boolean; set
 
     try {
       let response = await sendRequest(
-        HTTP_METHODS.POST,
+        HttpMethod.POST,
         CREATE_USER_URL,
         data,
       );
@@ -60,8 +61,10 @@ export const ForgotPasswordPage = ({ enable, setState, }: { enable: boolean; set
 
   return (
     <>
-      <Dialog open={enable}>
-        <DialogContent sx={{ background: "#1e1e1e" }}>
+      <Dialog
+        open={enable}
+      >
+        <DialogContent sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
           <SimpleForm
             toolbar={<CustomToolbar />}
             onSubmit={handleForgotPassword}

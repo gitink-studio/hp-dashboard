@@ -8,12 +8,22 @@ import {
     Divider,
     Dialog,
     IconButton,
+    useTheme,
 } from "@mui/material";
 import { Close, FileUploadOutlined } from "@mui/icons-material";
+import { useDisplayCreativeLibrary, useTestSetupActions, useVideoFileUrls } from "../../../store/sdk/test-setup-store";
+import { useNotify } from "react-admin";
 
 const CreativesLibrary: React.FC = () => {
+    const notify = useNotify();
+    const canDisplayCreativeLibrary = useDisplayCreativeLibrary();
+    const videoFileUrls = useVideoFileUrls();
+    const { setDisplayCreativeLibrary, setVideoFileUrls } = useTestSetupActions();
     const [isDragOver, setIsDragOver] = useState(false);
     const [isOpen, setIsOpen] = useState(true);
+    const [videoFile, setVideoFile] = useState<File[] | null>(null);
+    const theme = useTheme();
+    let uploadedFiles: string[] = [];
 
     const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
@@ -29,11 +39,30 @@ const CreativesLibrary: React.FC = () => {
     const handleDragLeave = () => setIsDragOver(false);
 
     const handleClose = () => {
-        setIsOpen(false);
+        setDisplayCreativeLibrary(false);
     }
 
+    const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files: FileList = e.target.files || [];
+        uploadedFiles = [];
+        let totalFileSize = 0;
+
+        for (let i = 0; i < files.length; i++) {
+            let file = files[i];
+            totalFileSize += file?.size;
+            uploadedFiles.push(file.name);
+        }
+
+        if (totalFileSize > 100 * 1024 * 1024) {
+            notify("Videos must be 100 MB or less", { type: "warning" });
+            return;
+        }
+
+        setVideoFileUrls(uploadedFiles);
+    };
+
     return (
-        <Dialog open={isOpen}>
+        <Dialog open={canDisplayCreativeLibrary}>
             <Paper
                 elevation={0}
                 sx={{
@@ -71,13 +100,14 @@ const CreativesLibrary: React.FC = () => {
                         sx={{
                             textTransform: "none",
                             borderRadius: 20,
-                            borderColor: "#f26a2e",
-                            color: "#f26a2e",
+                            borderColor: theme.palette.primary.main,
+                            color: theme.palette.primary.main,
+                            mr: 2,
                             px: 2,
                             py: 0.5,
                             fontSize: "0.85rem",
                             "&:hover": {
-                                borderColor: "#f26a2e",
+                                borderColor: theme.palette.primary.main,
                                 backgroundColor: "#fff5f0",
                             },
                         }}
@@ -130,32 +160,31 @@ const CreativesLibrary: React.FC = () => {
                             mt: 2,
                             p: 3,
                             border: "2px dashed #ccc",
-                            borderColor: isDragOver ? "#f26a2e" : "#ccc",
+                            borderColor: isDragOver ? theme.palette.primary.main : "#ccc",
                             borderRadius: 2,
                             textAlign: "center",
                             cursor: "pointer",
                             transition: "border-color 0.2s ease",
                             "&:hover": {
-                                borderColor: "#f26a2e",
+                                borderColor: theme.palette.primary.main,
                             },
                         }}
                     >
-                        <Stack
-                            direction="row"
-                            alignItems="center"
-                            justifyContent="center"
-                            gap={1}
-                        >
-                            <FileUploadOutlined sx={{ color: "#f26a2e" }} />
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    color: "text.secondary",
-                                    fontSize: "0.9rem",
-                                }}
-                            >
-                                Drag & drop your files here or browse your computer
-                            </Typography>
+                        <Stack direction={"row"} sx={{ display: "flex", alignItems: "center", justifyContent: "center" }} gap={3}>
+                            <FileUploadOutlined fontSize="large" />
+                            <Stack>
+                                <Typography>
+                                    Drag & drop your files here or
+                                    <Button component="label" variant="text" sx={{ textTransform: 'none', textDecoration: "underline" }}>
+                                        browse
+                                        <input type="file" hidden accept="video/*" multiple onChange={handleVideoUpload} />
+                                    </Button>
+                                    your computer
+                                </Typography>
+                                {videoFileUrls && <Typography variant="caption" sx={{ whiteSpace: "pre-wrap" }}>
+                                    {videoFileUrls.map((file, index) => `${file.slice(0, 25)}${file.length > 25 ? "..." : ""}`).join("\n")}
+                                </Typography>}
+                            </Stack>
                         </Stack>
                     </Box>
 

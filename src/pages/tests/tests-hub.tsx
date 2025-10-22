@@ -283,7 +283,7 @@ export const TestsHub: React.FC = () => {
 
             {platform !== "Web" && (
                 <Box mt={2}>
-                    <Button variant="contained" onClick={() => {/* future: open wizard */ }}>
+                    <Button variant="contained" onClick={() => { window.location.href = '/#/sdk' }}>
                         + New Test
                     </Button>
                 </Box>

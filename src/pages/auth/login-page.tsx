@@ -70,8 +70,8 @@ export const LoginPage = (props: any) => {
 
   return (
     <>
-      <Login {...props} backgroundImage={false}>
-        <SimpleForm toolbar={<CustomToolBar />} onSubmit={handleLogin}>
+      <Login {...props} sx={{ display: "flex", justifyContent: "center", alignItems: "center", '& .RaLogin-card': { mt: 0 } }}>
+        <SimpleForm toolbar={<CustomToolBar />} onSubmit={handleLogin} >
           <Stack sx={{ width: "100%", pl: 1, pr: 1 }}>
             <Typography
               variant="h5"

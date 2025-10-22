@@ -70,6 +70,13 @@ export const MIN_DATE = "2025-07-21";
 export const CREATE_GAME_PLATFORM_URL = "/gamePlatforms/new";
 export const GRAPHQL_CLIENT_OPTION = { uri: ROOT_URL + "/graphql" };
 export const CREATE_USER_URL = ROOT_URL + "/users/new";
+export const CREATE_GAME_SUBMISSION_DATA_URL = ROOT_URL + "/sdk/game-submission/new"
+export const CREATE_TESTING_TERMS_URL = ROOT_URL + "/sdk/testing-terms/new"
+export const CREATE_FB_DATA_URL = ROOT_URL + "/sdk/facebook-setup/new"
+export const CREATE_SDK_INTEGRATION_DATA_URL = ROOT_URL + "/sdk/sdk-integration/new"
+export const CREATE_STORE_DATA_URL = ROOT_URL + "/sdk/store-setup/new"
+export const CREATE_TEST_SETUP_DATA_URL = ROOT_URL + "/sdk/test-setup/new"
+
 export const QueryNames = {
   GET_ALL_DEVICE_DATA,
   GET_ALL_USER_DATA,
@@ -129,7 +136,7 @@ export const QueryNames = {
 export const DATE_RANGE_NAMES = [0, 1, 7, 14, 30, "Custom"];
 export const SUB_PLATFORMS = ["All", "Poki", "CrazyGames"];
 export const GAME_NAMES = ["All", "PickleBall", "FoodJam"];
-export const HTTP_METHODS = { GET, POST };
+export const HttpMethod = { GET, POST };
 
 // Publisher-specific constants
 export const CONTRACT_TYPES = ["revenue_share", "minimum_guarantee", "hybrid"];
@@ -146,3 +153,13 @@ export const PlayStoreDataFetchState = {
   INPROGRESS: "inprogress",
   COMPLETED: "completed"
 }
+
+export const ImageRootURL = "https://drive.google.com/thumbnail?id=";
+export const ImageSize = '&sz=w1000';
+export const MINIMUM_FB_CLIENT_TOKEN_LENGTH = 8;
+export const FB_APP_ID_LENGTH = 15;
+export const MINIMUM_FB_REFERRER_DECRYPTION_KEY = 15;
+export const CURRENT_SDK_SETUP_STATE_ID = "currentSdkSetupStateId";
+export const SDK_SETUP_GAME_ID = "sdkSetupGameId";
+export const STUDIO_TOKEN = "studioToken";
+export const STUDIO_ID = "studioId";

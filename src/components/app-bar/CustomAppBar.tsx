@@ -128,7 +128,7 @@ const CustomAppBar = () => {
             Logout
           </Button>
 
-          {/* <ToggleThemeButton /> */}
+          <ToggleThemeButton />
           {/* <RefreshButton sx={{ color: "white" }} /> */}
         </Box>
       </Toolbar>

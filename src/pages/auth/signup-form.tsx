@@ -18,7 +18,7 @@ import {
   useNotify,
 } from "react-admin";
 import { isUserAlreadyExist, sendRequest } from "../../common/utils";
-import { CREATE_USER_URL, HTTP_METHODS } from "../../common/constants";
+import { CREATE_USER_URL, HttpMethod } from "../../common/constants";
 
 export const SignUpForm = ({
   enable,
@@ -47,7 +47,7 @@ export const SignUpForm = ({
   const createAccount = async (data: any) => {
     console.log(data);
     try {
-      let response: any = await sendRequest(HTTP_METHODS.POST, CREATE_USER_URL, data);
+      let response: any = await sendRequest(HttpMethod.POST, CREATE_USER_URL, data);
 
       // Check if the response contains user data (successful creation)
       if (response.data && response.data.id) {
@@ -82,7 +82,7 @@ export const SignUpForm = ({
   return (
     <>
       <Dialog open={enable}>
-        <DialogContent sx={{ background: "#1e1e1e" }}>
+        <DialogContent sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
           <SimpleForm toolbar={<CustomToolbar />} onSubmit={handleSignUp}>
             <IconButton
               aria-label="close"

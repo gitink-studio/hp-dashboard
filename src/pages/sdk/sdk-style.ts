@@ -1,6 +1,3 @@
-import { display, fontSize, width } from "@mui/system";
-import { Styles } from "../../common/styles";
-
 const leftRounded = {
     borderTopLeftRadius: '25px',
     borderBottomLeftRadius: '25px',
@@ -39,7 +36,7 @@ const textFieldStyle = {
 }
 
 const textFieldSmallStyle = {
-    height: '28.5px',
+    height: '35px',
 
     '& .MuiOutlinedInput-root': {
         height: '100%',
@@ -67,15 +64,14 @@ const selectStyle = {
 }
 
 const selectGroupStyle = {
-    width: "155px"
+    width: "200px"
 }
 
-const facebookImageStyle = {
-    marginLeft: "25px",
+const screenshotStyle = {
     marginRight: "100px",
     backgroundColor: "lightGrey",
     width: "640px",
-    height: "360px",
+    height: "auto",
 }
 
 const facebookIconStyle = {
@@ -95,9 +91,26 @@ const numberStyle = {
     justifyContent: "center",
     color: "white",
     borderRadius: "100%",
-    minWidth: 25,
-    maxHeight: 25,
+    minWidth: 20,
+    maxHeight: 20,
     fontSize: "12px"
+}
+
+const checkboxTextStyle = {
+    '& .MuiFormControlLabel-label': {
+        fontSize: 14,
+        color: 'text.secondary',
+    },
+}
+
+const listItemIconStyle = {
+    minWidth: 24
+}
+
+const codeStyle = {
+    fontSize: "14px",
+    border: "1px solid grey",
+    borderRadius: "10px",
 }
 
 export const SDKStyle = {
@@ -108,8 +121,11 @@ export const SDKStyle = {
     selectStyle,
     selectGroupStyle,
     paperStyle,
-    facebookImageStyle,
+    screenshotStyle,
     numberStyle,
     facebookIconStyle,
-    textFieldSmallStyle
+    textFieldSmallStyle,
+    checkboxTextStyle,
+    listItemIconStyle,
+    codeStyle
 }

@@ -1,5 +1,5 @@
 // FacebookSetup.tsx
-import { useTheme } from '@mui/material';
+import { Button, CircularProgress, LinearProgress, useTheme } from '@mui/material';
 import React, { useState, SyntheticEvent } from 'react';
 import {
     Box,
@@ -12,6 +12,12 @@ import {
 import { NewAppSteps } from './new-app-steps';
 import { BasicsSteps } from './basics-steps';
 import { AdvancedSteps } from './advanced-steps';
+import { useActiveStep, useCurrentSetupStateId, useCurrentStep, useDataSending, useGameId, useSDKDetailActions } from '../../../store/sdk/sdk-details-store';
+import { SDKStyle } from '../sdk-style';
+import { useAdvancedAppStepCompleted, useAppId, useBasicAppStepCompleted, useClientToken, useFacebookSetupActions, useNewAppStepCompleted, useProgress, useReferrerDecryptionKey } from '../../../store/sdk/facebook-setup-store';
+import { useNotify } from 'react-admin';
+import { CREATE_FB_DATA_URL, CREATE_GAME_SUBMISSION_DATA_URL, CURRENT_SDK_SETUP_STATE_ID, FB_APP_ID_LENGTH, HttpMethod, MINIMUM_FB_CLIENT_TOKEN_LENGTH, MINIMUM_FB_REFERRER_DECRYPTION_KEY, SDK_SETUP_GAME_ID, STUDIO_TOKEN } from '../../../common/constants';
+import { sendRequest } from '../../../common/utils';
 
 // Props for TabPanel component
 interface TabPanelProps {
@@ -42,34 +48,125 @@ const TabPanel = (props: TabPanelProps) => {
 
 export const FacebookSetupStep: React.FC = () => {
     const [tabIndex, setTabIndex] = useState<number>(0);
+    const activeStep = useActiveStep();
+    const isNewAppSetupCompleted = useNewAppStepCompleted();
+    const isBasicAppSetupCompleted = useBasicAppStepCompleted();
+    const isAdvancedAppSetupCompleted = useAdvancedAppStepCompleted();
+    const appId = useAppId();
+    const clientToken = useClientToken();
+    const referrerDecryptionKey = useReferrerDecryptionKey();
+    const isDataSending = useDataSending();
+    const gameId = useGameId();
+    const currentStep = useCurrentStep();
+    const { setCurrentStep, setDataSending } = useSDKDetailActions();
+    const notify = useNotify();
+    const progress = useProgress();
+    const { setBasicAppStepCompleted, setAdvancedAppStepCompleted } = useFacebookSetupActions();
 
     const handleTabChange = (event: SyntheticEvent, newValue: number): void => {
         setTabIndex(newValue);
     };
 
+    const handleCompleteStep = () => {
+        if (!isNewAppSetupCompleted) {
+            notify("Please complete the 'New App' tab before proceeding.", { type: "warning" });
+            return;
+        }
+
+        if (!isBasicAppSetupCompleted) {
+            notify("Please complete the 'Basic' tab before proceeding.", { type: "warning" });
+            return;
+        }
+
+        if (!isAdvancedAppSetupCompleted) {
+            notify("Please complete the 'Advanced' tab before proceeding.", { type: "warning" });
+            return;
+        }
+
+        if (isNaN(Number(appId))) {
+            notify("App ID must be a number", { type: "error" });
+            setBasicAppStepCompleted(false);
+            return;
+        }
+
+        if (appId.length < FB_APP_ID_LENGTH) {
+            notify("Invalid App ID", { type: "error" });
+            setBasicAppStepCompleted(false);
+            return;
+        }
+
+        if (referrerDecryptionKey.length < MINIMUM_FB_REFERRER_DECRYPTION_KEY) {
+            notify("Invalid Referrer Decryption Key", { type: "error" });
+            setBasicAppStepCompleted(false);
+            return;
+        }
+
+        if (clientToken.length < MINIMUM_FB_CLIENT_TOKEN_LENGTH) {
+            notify("Invalid Client Token", { type: "error" });
+            setAdvancedAppStepCompleted(false);
+            return;
+        }
+
+        // setCurrentStep();
+        submitData();
+    }
+
+    const submitData = async () => {
+        setDataSending(true);
+        setTabIndex(2);
+
+        let response = await sendRequest(HttpMethod.POST, CREATE_FB_DATA_URL, {
+            appId: appId,
+            referrerDecryptionKey: referrerDecryptionKey,
+            clientToken: clientToken,
+            gameId: localStorage.getItem(SDK_SETUP_GAME_ID),
+            currentSetupStateId: localStorage.getItem(CURRENT_SDK_SETUP_STATE_ID)
+        });
+        console.log(response);
+
+        if (response?.data?.data?.token) {
+            console.log("FB data sent successfully!", response.data);
+            localStorage.setItem(STUDIO_TOKEN, response.data.data.token);
+            setCurrentStep();
+        } else {
+            notify("Something went wrong!", { type: "error" });
+        }
+
+        setDataSending(false);
+    }
+
     return (
         <Box pb={4}>
-            <Typography variant="h5" fontWeight={"bold"} gutterBottom>
+            <Typography fontWeight={"bold"} gutterBottom>
                 Facebook Setup
             </Typography>
 
-            <Typography variant="body1" color="textSecondary" gutterBottom>
+            <Typography variant="body2" color="textSecondary" gutterBottom>
                 Step 3: Use the step-by-step guide below to create an app for your game on Facebook.
                 <br />
                 If you already have an existing app for this game on FB, please follow this guide and update the settings accordingly.
             </Typography>
 
-            {/* Tabs for New app | Basic | Advanced */}
-            <Tabs value={tabIndex} onChange={handleTabChange} aria-label="Facebook Setup Tabs">
-                <Tab label="New app" />
-                <Tab label="Basic" />
-                <Tab label="Advanced" />
-            </Tabs>
+
+            <Stack direction='row' sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                <Box>
+                    <Tabs value={tabIndex} onChange={handleTabChange} aria-label="Facebook Setup Tabs">
+                        <Tab label="New app" disabled={isDataSending} />
+                        <Tab label="Basic" disabled={isDataSending} />
+                        <Tab label="Advanced" disabled={isDataSending} />
+                    </Tabs>
+                </Box>
+
+                <Stack direction={"row"} gap={1} sx={{ ...SDKStyle.stackStyle, justifyContent: "flex-end" }} >
+                    <LinearProgress variant='determinate' value={progress} sx={{ width: "150px", height: "5px", borderRadius: "5px" }} />
+                    <Typography variant='body2'>{progress}%</Typography>
+                </Stack>
+            </Stack>
 
             <Divider sx={{ my: 2 }} />
 
             {/* Tab Content */}
-            <Box display="flex" flexDirection="column" gap={2} maxHeight={300} overflow={"auto"}>
+            <Box display="flex" flexDirection="column" gap={2} maxHeight={400} overflow={"auto"}>
                 <Stack gap={1} direction={"row"} >
                     <img
                         src="https://img.icons8.com/?size=100&id=uLWV5A9vXIPu&format=png&color=000000"
@@ -81,7 +178,7 @@ export const FacebookSetupStep: React.FC = () => {
                     <TabPanel value={tabIndex} index={0}>
                         <Stack gap={2}>
                             <Stack>
-                                <Typography variant="h6" fontWeight={"bold"}>Create a new app on Facebook</Typography>
+                                <Typography fontWeight={"bold"}>Create a new app on Facebook</Typography>
                                 <Typography variant="body2" color="textSecondary">
                                     (If you already set up an app, please skip this step)
                                 </Typography>
@@ -92,7 +189,7 @@ export const FacebookSetupStep: React.FC = () => {
                     <TabPanel value={tabIndex} index={1}>
                         <Stack gap={2}>
                             <Stack>
-                                <Typography variant="h6" fontWeight={"bold"}>Basic Settings</Typography>
+                                <Typography fontWeight={"bold"}>Basic Settings</Typography>
                             </Stack>
                             <BasicsSteps />
                         </Stack>
@@ -100,23 +197,34 @@ export const FacebookSetupStep: React.FC = () => {
                     <TabPanel value={tabIndex} index={2}>
                         <Stack gap={2}>
                             <Stack>
-                                <Typography variant="h6" fontWeight={"bold"}>Advanced Settings</Typography>
+                                <Typography fontWeight={"bold"}>Advanced Settings</Typography>
                             </Stack>
                             <AdvancedSteps />
                         </Stack>
                     </TabPanel>
                 </Stack>
             </Box>
-
-            {/* Placeholder content for other tabs */}
-            {/* <TabPanel value={tabIndex} index={1}>
-                <Typography variant="body1">Basic settings go here...</Typography>
-            </TabPanel> */}
-
-            <TabPanel value={tabIndex} index={2}>
-                <Typography variant="body1">Advanced settings go here...</Typography>
-            </TabPanel>
-
+            <Box sx={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                mt: 3
+            }}>
+                <Button
+                    variant="contained"
+                    onClick={handleCompleteStep}
+                    sx={{ px: 4, py: 1, textTransform: 'none' }}
+                    disabled={isDataSending || activeStep !== currentStep}
+                >
+                    {
+                        isDataSending ? (
+                            <Stack gap={2} direction={'row'}>
+                                <Typography>Processing</Typography>
+                                <CircularProgress size={20} />
+                            </Stack>
+                        ) : "Complete Step"
+                    }
+                </Button>
+            </Box>
         </Box>
     );
 };
