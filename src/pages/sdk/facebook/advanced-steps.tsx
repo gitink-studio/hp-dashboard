@@ -1,9 +1,8 @@
 import { Box, Checkbox, FormControlLabel, Stack, TextField, Typography, useTheme } from "@mui/material";
-import { SDKStyle } from "../sdk-style";
 import { useAdvancedAppStepCompleted, useClientToken, useFacebookSetupActions } from "../../../store/sdk/facebook-setup-store";
-import { MINIMUM_FB_CLIENT_TOKEN_LENGTH } from "../../../common/constants";
+import { Images, MINIMUM_FB_CLIENT_TOKEN_LENGTH } from "../../../common/constants";
 import { useDataSending } from "../../../store/sdk/sdk-details-store";
-
+import { Styles } from "../../../common/styles";
 
 
 export const AdvancedSteps = () => {
@@ -26,13 +25,13 @@ export const AdvancedSteps = () => {
             lines: [
                 <>Go to the "Settings" &rarr; "Advanced"</>
             ],
-            image: "/your-screenshot-path.png",
+            imageUrl: Images.fbSetup.advanced.image1,
         },
         {
             lines: [
                 <>Toggle on <strong>"Social Discover"</strong></>
             ],
-            image: "/your-screenshot-path.png",
+            imageUrl: Images.fbSetup.advanced.image2,
         },
         {
             lines: [
@@ -47,7 +46,7 @@ export const AdvancedSteps = () => {
                             onChange={(event) => setClientToken(event.target.value)}
                             disabled={isDataSending}
                             sx={{
-                                ...SDKStyle.textFieldSmallStyle,
+                                ...Styles.textFieldSmallStyle,
                                 position: "relative",
                                 bottom: "5px",
                                 width: "500px",
@@ -61,25 +60,25 @@ export const AdvancedSteps = () => {
                         />
                     </Stack></>
             ],
-            image: "/your-screenshot-path.png",
+            imageUrl: Images.fbSetup.advanced.image3,
         },
         {
             lines: [
                 <>Fill the <strong>968907902038316</strong> as an authorized ad account ID</>
             ],
-            image: "/your-screenshot-path.png",
+            imageUrl: Images.fbSetup.advanced.image4,
         },
         {
             lines: [
                 <>Switch the toggle from <strong>"in development"</strong> to <strong>"live"</strong> (Your app doesn\'t have to be live on the store at this point)</>
             ],
-            image: "/your-screenshot-path.png",
+            imageUrl: Images.fbSetup.advanced.image5,
         },
         {
             lines: [
                 'Don\'t forget to save your changes'
             ],
-            image: "/your-screenshot-path.png",
+            imageUrl: Images.fbSetup.advanced.image6,
         },
     ];
 
@@ -88,18 +87,20 @@ export const AdvancedSteps = () => {
             <Stack direction="row" gap={1} key={index}>
                 <Stack>
                     <Stack direction={'row'} gap={2} >
-                        <Box sx={SDKStyle.numberStyle} bgcolor={theme.palette.primary.main}>
+                        <Box sx={Styles.numberStyle} bgcolor={theme.palette.primary.main}>
                             {index + 1}
                         </Box>
                         <Stack>
                             {step.lines.map((line, idx) => (
-                                <p key={idx} style={{ fontSize: "14px", margin: 0 }}> {line}</p>
+                                <Typography component={'div'} key={idx} style={{ fontSize: "14px", margin: 0 }}> {line}</Typography>
                             ))}
                             <br />
-                            <img
-                                src={step.image}
+                            <Box
+                                component="img"
+                                key={index}
+                                src={step.imageUrl}
                                 alt={`Step ${index + 1} screenshot`}
-                                style={{ ...SDKStyle.screenshotStyle, objectFit: "cover" }}
+                                style={{ ...Styles.screenshotStyle, objectFit: "cover" }}
                             />
                             <br />
                         </Stack>
@@ -117,7 +118,7 @@ export const AdvancedSteps = () => {
                 />
             }
             label="Mark this step as done"
-            sx={SDKStyle.checkboxTextStyle}
+            sx={Styles.checkboxTextStyle}
         />
     </>
 }

@@ -13,11 +13,11 @@ import { NewAppSteps } from './new-app-steps';
 import { BasicsSteps } from './basics-steps';
 import { AdvancedSteps } from './advanced-steps';
 import { useActiveStep, useCurrentSetupStateId, useCurrentStep, useDataSending, useGameId, useSDKDetailActions } from '../../../store/sdk/sdk-details-store';
-import { SDKStyle } from '../sdk-style';
 import { useAdvancedAppStepCompleted, useAppId, useBasicAppStepCompleted, useClientToken, useFacebookSetupActions, useNewAppStepCompleted, useProgress, useReferrerDecryptionKey } from '../../../store/sdk/facebook-setup-store';
 import { useNotify } from 'react-admin';
 import { CREATE_FB_DATA_URL, CREATE_GAME_SUBMISSION_DATA_URL, CURRENT_SDK_SETUP_STATE_ID, FB_APP_ID_LENGTH, HttpMethod, MINIMUM_FB_CLIENT_TOKEN_LENGTH, MINIMUM_FB_REFERRER_DECRYPTION_KEY, SDK_SETUP_GAME_ID, STUDIO_TOKEN } from '../../../common/constants';
 import { sendRequest } from '../../../common/utils';
+import { Styles } from '../../../common/styles';
 
 // Props for TabPanel component
 interface TabPanelProps {
@@ -157,7 +157,7 @@ export const FacebookSetupStep: React.FC = () => {
                     </Tabs>
                 </Box>
 
-                <Stack direction={"row"} gap={1} sx={{ ...SDKStyle.stackStyle, justifyContent: "flex-end" }} >
+                <Stack direction={"row"} gap={1} sx={{ ...Styles.stackStyle, justifyContent: "flex-end" }} >
                     <LinearProgress variant='determinate' value={progress} sx={{ width: "150px", height: "5px", borderRadius: "5px" }} />
                     <Typography variant='body2'>{progress}%</Typography>
                 </Stack>

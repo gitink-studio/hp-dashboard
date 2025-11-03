@@ -11,8 +11,8 @@ type GameSubmissionActions = {
     setMechanics: (mechanics: string[]) => void;
     setOptionalTags: (optionalTags: string[]) => void;
     setGameType: (gameType: string) => void;
-    setGameIconUrl: (gameIconUrl: string) => void;
-    setGamePlayVideoUrl: (gamePlayVideoUrl: string) => void;
+    setGameIconFile: (gameIconFile: File | null) => void;
+    setGamePlayVideoFile: (gamePlayVideoFile: File | null) => void;
     setStoreUrlDisabled: (isStoreUrlDisabled: boolean) => void;
     setPlayStoreDataFetch: (isPlayStoreDataFetching: string) => void;
     setValidateInputs: (validateGameSubmissionInputs: boolean) => void;
@@ -29,8 +29,8 @@ type GameSubmissionState = {
     mechanics: string[];
     optionalTags: string[];
     gameType: string;
-    gameIconUrl: string;
-    gamePlayVideoUrl: string;
+    gameIconFile: File | null;
+    gamePlayVideoFile: File | null;
     isStoreUrlDisabled: boolean;
     validateGameSubmissionInputs: boolean;
     playStoreDataFetchState: string;
@@ -48,8 +48,8 @@ const useGameSubmissionStore = create<GameSubmissionState>((set) => ({
     mechanics: [],
     optionalTags: [],
     gameType: '',
-    gameIconUrl: '',
-    gamePlayVideoUrl: '',
+    gameIconFile: null,
+    gamePlayVideoFile: null,
     isStoreUrlDisabled: false,
     validateGameSubmissionInputs: false,
     playStoreDataFetchState: '',
@@ -64,8 +64,8 @@ const useGameSubmissionStore = create<GameSubmissionState>((set) => ({
         setMechanics: (mechanics: string[]) => set({ mechanics }),
         setGameType: (gameType: string) => set({ gameType }),
         setOptionalTags: (optionalTags: string[]) => set({ optionalTags }),
-        setGameIconUrl: (gameIconUrl: string) => set({ gameIconUrl }),
-        setGamePlayVideoUrl: (gamePlayVideoUrl: string) => set({ gamePlayVideoUrl }),
+        setGameIconFile: (gameIconFile: File | null) => set({ gameIconFile }),
+        setGamePlayVideoFile: (gamePlayVideoFile: File | null) => set({ gamePlayVideoFile }),
         setStoreUrlDisabled: (isStoreUrlDisabled: boolean) => set({ isStoreUrlDisabled }),
         setPlayStoreDataFetch: (isPlayStoreDataFetching: string) => set({ playStoreDataFetchState: isPlayStoreDataFetching }),
         setValidateInputs: (validateGameSubmissionInputs: boolean) => set({ validateGameSubmissionInputs })
@@ -84,7 +84,7 @@ export const useControl = () => useGameSubmissionStore((state) => state.control)
 export const useMechanics = () => useGameSubmissionStore((state) => state.mechanics);
 export const useOptionalTags = () => useGameSubmissionStore((state) => state.optionalTags);
 export const useGameType = () => useGameSubmissionStore((state) => state.gameType);
-export const useGameIconUrl = () => useGameSubmissionStore((state) => state.gameIconUrl);
-export const useGamePlayVideoUrl = () => useGameSubmissionStore((state) => state.gamePlayVideoUrl);
+export const useGameIconFile = () => useGameSubmissionStore((state) => state.gameIconFile);
+export const useGamePlayVideoFile = () => useGameSubmissionStore((state) => state.gamePlayVideoFile);
 export const useValidateGameSubmissionInputs = () => useGameSubmissionStore((state) => state.validateGameSubmissionInputs);
 export const useGameSubmissionActions = () => useGameSubmissionStore((state) => state.actions);

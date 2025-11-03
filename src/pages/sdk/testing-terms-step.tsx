@@ -9,12 +9,12 @@ import {
     Button,
     CircularProgress
 } from '@mui/material';
-import { SDKStyle } from './sdk-style';
 import { useAgreed, useTestingTermActions } from '../../store/sdk/testing-terms-store';
 import { useActiveStep, useCurrentSetupStateId, useCurrentStep, useDataSending, useGameId, useSDKDetailActions } from '../../store/sdk/sdk-details-store';
 import { sendRequest } from '../../common/utils';
 import { CREATE_TESTING_TERMS_URL, CURRENT_SDK_SETUP_STATE_ID, HttpMethod } from '../../common/constants';
 import { useNotify } from 'react-admin';
+import { Styles } from '../../common/styles';
 
 export const TestingTermsStep = () => {
     const notify = useNotify();
@@ -86,7 +86,7 @@ export const TestingTermsStep = () => {
                         />
                     }
                     label="I have read and agree to the Hyper Rabbit testing terms"
-                    sx={SDKStyle.checkboxTextStyle}
+                    sx={Styles.checkboxTextStyle}
                 />
 
                 <Box sx={{

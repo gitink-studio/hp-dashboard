@@ -1,9 +1,9 @@
 import { Box, Checkbox, FormControlLabel, IconButton, InputAdornment, Stack, TextField, Typography, useTheme } from "@mui/material"
-import { SDKStyle } from "../sdk-style"
 import { Check, ContentCopy, Visibility, VisibilityOff } from "@mui/icons-material";
 import { useCopied, useSDKIntegrationActions, useShowPassword, useStep2Completed } from "../../../store/sdk/sdk-integration-store";
 import { Light, Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { darcula, dark, docco, github, lightfair, monokai } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import { Styles } from "../../../common/styles";
 
 export const SDKIntegrationStep2 = () => {
     const theme = useTheme();
@@ -36,7 +36,7 @@ export const SDKIntegrationStep2 = () => {
                         placeholder="Token"
                         value="e862bb17e6fb3e0a9971fa518f1215bfc99cf6bc7c815e18abaffa4f1ebc0d22"
                         type={showPassword ? "text" : "password"}
-                        sx={{ ...SDKStyle.textFieldSmallStyle, width: "640px", mt: 1 }}
+                        sx={{ ...Styles.textFieldSmallStyle, width: "640px", mt: 1 }}
                         slotProps={{
                             inputLabel: {
                                 shrink: false, // prevents label from shrinking automatically
@@ -101,11 +101,11 @@ export const SDKIntegrationStep2 = () => {
                         </Typography>
                         <SyntaxHighlighter language="csharp"
                             style={dark}
-                            customStyle={SDKStyle.codeStyle}>
+                            customStyle={Styles.codeStyle}>
                             {code}
                         </SyntaxHighlighter>
                         <Box>
-                            For more information <a href="https://drive.google.com/uc?export=download&id=1AatZRBhjYqtzi9jnDxrkDBNDRwQdy04J5-GNpuxPGQU" download={"hyper-rabbit-sdk-doc"} style={{ textDecoration: "none", color: theme.palette.primary.main }} target="_blank">download</a> the sdk documentation.
+                            For more information <a href="https://drive.google.com/uc?export=download&id=17lRtdIrV1PW1-idJ1Dv43VJG_4lspuzQ" download={"hyper-rabbit-sdk-doc.pdf"} style={{ textDecoration: "none", color: theme.palette.primary.main }}>download</a> the sdk documentation.
                         </Box>
                     </Stack>
                 </Stack>
@@ -118,7 +118,7 @@ export const SDKIntegrationStep2 = () => {
                         />
                     }
                     label="Mark this step as done"
-                    sx={SDKStyle.checkboxTextStyle}
+                    sx={Styles.checkboxTextStyle}
                 />
             </Stack >
         </>

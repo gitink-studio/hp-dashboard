@@ -1,8 +1,8 @@
 import { Box, Checkbox, FormControlLabel, IconButton, InputAdornment, Stack, TextField, Typography, useTheme } from "@mui/material"
-import { SDKStyle } from "../sdk-style"
 import { Check, ContentCopy, Visibility, VisibilityOff } from "@mui/icons-material";
 import { useCopied, useSDKIntegrationActions, useShowPassword, useStep1Completed } from "../../../store/sdk/sdk-integration-store";
-import { STUDIO_TOKEN } from "../../../common/constants";
+import { Images, ImageSize, STUDIO_TOKEN } from "../../../common/constants";
+import { Styles } from "../../../common/styles";
 
 export const SDKIntegrationStep1 = () => {
     const theme = useTheme();
@@ -36,7 +36,7 @@ export const SDKIntegrationStep1 = () => {
                         placeholder="Token"
                         value={localStorage.getItem(STUDIO_TOKEN) || ''}
                         type={showPassword ? "text" : "password"}
-                        sx={{ ...SDKStyle.textFieldSmallStyle, width: "640px", mt: 1 }}
+                        sx={{ ...Styles.textFieldSmallStyle, width: "640px", mt: 1 }}
                         slotProps={{
                             inputLabel: {
                                 shrink: false, // prevents label from shrinking automatically
@@ -64,7 +64,7 @@ export const SDKIntegrationStep1 = () => {
                     />
                 </>
             ],
-            image: "/your-screenshot-path.png",
+            imageUrl: Images.sdkIntegration.image1,
         },
         {
             lines: [
@@ -73,14 +73,14 @@ export const SDKIntegrationStep1 = () => {
                     In the general tab - Facebook SDK App ID should be filled as well.
                 </>
             ],
-            image: "/your-screenshot-path.png",
+            imageUrl: Images.sdkIntegration.image2,
         },
     ]
 
     return (
         <>
             <Stack gap={5}>
-                <Stack direction={"row"} sx={SDKStyle.stackStyle} gap={2}>
+                <Stack direction={"row"} sx={Styles.stackStyle} gap={2}>
                     <Box>
                         <img
                             src="https://img.icons8.com/?size=100&id=EGUjkmeZxwn4&format=png&color=000000"
@@ -108,20 +108,20 @@ export const SDKIntegrationStep1 = () => {
                         <Typography variant={'h6'} fontWeight={"bold"}>Edit Settings</Typography>
                         {editSettingsInfo.map((step, index) => (
                             <Stack direction="row" gap={1} key={index}>
-                                <Box sx={SDKStyle.numberStyle} bgcolor={theme.palette.primary.main}>
+                                <Box sx={Styles.numberStyle} bgcolor={theme.palette.primary.main}>
                                     {index + 1}
                                 </Box>
                                 <Stack>
                                     {step.lines.map((line, idx) => (
-                                        <Typography variant="body2" key={idx}>
+                                        <Typography component={'div'} variant="body2" key={idx}>
                                             {line}
                                         </Typography>
                                     ))}
                                     <br />
                                     <img
-                                        src={step.image}
+                                        src={step.imageUrl}
                                         alt={`Step ${index + 1} screenshot`}
-                                        style={SDKStyle.screenshotStyle}
+                                        style={Styles.screenshotStyle}
                                     />
                                     <br />
                                 </Stack>
@@ -138,7 +138,7 @@ export const SDKIntegrationStep1 = () => {
                         />
                     }
                     label="Mark this step as done"
-                    sx={SDKStyle.checkboxTextStyle}
+                    sx={Styles.checkboxTextStyle}
                 />
             </Stack>
         </>

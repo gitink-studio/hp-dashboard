@@ -10,33 +10,41 @@ import {
     Divider,
 } from "@mui/material";
 import { useDisplayAdvertisingID, useStoreStepActions } from "../../../store/sdk/store-step-store";
-import { SDKStyle } from "../sdk-style";
-import { ImageRootURL, ImageSize } from "../../../common/constants";
+import { Images, ImageSize } from "../../../common/constants";
+import { Styles } from "../../../common/styles";
 
-const AdvertisingIDData = [
+const advertisingIDData = [
     {
         content: [
             "As of Android 13, developers will not be able to upload or update Android apps without answering the Advertising ID questionnaire.",
+            <Stack gap={2} mt={2}>
+                <img key="advertisingIDImage1" src={Images.storeSetup.advertisingId.image1} alt="Advertising ID Screenshot" style={Styles.screenshotStyle} />
+            </Stack>
         ],
-        image: "160OqfTt881XUhR9EyiDXHr9GcooLFG7k",
     },
     {
         content: [
-            'To answer the questionnaire, developers should go to the "App content" tab and press "Manage" in the "Advertising ID" section.'
+            'To answer the questionnaire, developers should go to the "App content" tab and press "Manage" in the "Advertising ID" section.',
+            <Stack gap={2} mt={2}>
+                <img key="advertisingIDImage2" src={Images.storeSetup.advertisingId.image2} alt="Advertising ID Screenshot" style={Styles.screenshotStyle} />
+                <img key="advertisingIDImage3" src={Images.storeSetup.advertisingId.image3} alt="Advertising ID Screenshot" style={Styles.screenshotStyle} />
+            </Stack>
         ],
-        image: "1pH0W63YcHPR8QGD7Z35kgOK6b_Ql44Zx",
     },
     {
         content: [
-            'After you click on "Manage", you will see a scroll-down screen with 2 questions. Please respond to these questions as detailed below:'
+            'After you click on "Manage", you will see a scroll-down screen with 2 questions. Please respond to these questions as detailed below:',
+            <Stack gap={2} mt={2}>
+                <img key="advertisingIDImage4" src={Images.storeSetup.advertisingId.image4} alt="Advertising ID Screenshot" style={Styles.screenshotStyle} />
+                <img key="advertisingIDImage5" src={Images.storeSetup.advertisingId.image5} alt="Advertising ID Screenshot" style={Styles.screenshotStyle} />
+            </Stack>
         ],
-        image: "1yEfWF-vGwqizUfdg3IDTvl-TQ9xQUMa8",
     },
     {
         content: [
             'After clicking "Save", you should see the following message at the left bottom of the page.'
         ],
-        image: "1yEfWF-vGwqizUfdg3IDTvl-TQ9xQUMa8",
+        imageUrl: Images.storeSetup.advertisingId.image6,
     },
 ];
 
@@ -61,41 +69,50 @@ export const AdvertisingID: React.FC = () => {
                     pt: 1,
                 }}
             >
-                <Stack gap={2}>
-                    <Typography
-                        variant="h6"
-                        fontWeight="bold"
-                        pl={4} pt={1}
+                <Stack gap={2} display={"flex"}>
+                    <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'flex-start',
+                        alignItems: "center",
+                        position: 'sticky',
+                        top: 0,
+                        height: "75px",
+                        width: "100%",
+                        backgroundColor: `${theme.palette.background.paper}`,
+                        borderBottom: `1px solid ${theme.palette.divider}`
+                    }}
                     >
-                        Android 13 - Advertising ID questionnaire
-                    </Typography>
+                        <Typography
+                            variant="h6"
+                            fontWeight="bold"
+                            pl={4}
+                        >
+                            Android 13 - Advertising ID questionnaire
+                        </Typography>
+                    </Box>
 
-                    <Divider variant="fullWidth" />
-
-                    <Stack height="440px" overflow={"auto"} gap={2} pl={2}>
+                    <Stack overflow={"auto"} >
                         <Stack gap={1} pl={2}>
                             <Typography variant="body2" fontWeight="bold" >Getting Started</Typography>
                             <Typography variant="body2" >Google Play added a new section under App content &rarr; Advertising ID.</Typography>
                         </Stack>
-                        {AdvertisingIDData.map((step, index) => (
-                            <Stack direction="row" gap={1} key={index} pl={2} pr={2}>
-                                <Box sx={SDKStyle.numberStyle} bgcolor={theme.palette.primary.main}>
+                        {advertisingIDData.map((step, index) => (
+                            <Stack direction="row" gap={1} key={index} pl={2} pr={2} mt={2}>
+                                <Box key={index} sx={Styles.numberStyle} bgcolor={theme.palette.primary.main}>
                                     {index + 1}
                                 </Box>
                                 <Stack>
                                     {step.content.map((line, idx) => (
-                                        <Typography variant="body2" key={idx}>
+                                        <Typography variant="body2" key={idx} component="div">
                                             {line}
                                         </Typography>
                                     ))}
-                                    <br />
-                                    <img
-                                        src={ImageRootURL + step.image + ImageSize}
-                                        key={index}
-                                        alt={`Step ${index + 1} screenshot`}
-                                        style={SDKStyle.screenshotStyle}
-                                    />
-                                    <br />
+                                    {step.imageUrl && <>
+                                        <br />
+                                        <Box
+                                            component="img" src={step.imageUrl} alt={`Step ${index + 1} screenshot`} style={Styles.screenshotStyle} />
+                                        <br />
+                                    </>}
                                 </Stack>
                             </Stack>
                         ))}
@@ -103,9 +120,19 @@ export const AdvertisingID: React.FC = () => {
 
                     </Stack>
 
-                    <Divider variant="fullWidth" />
 
-                    <Box display={"flex"} justifyContent={"flex-end"} pr={2}>
+                    <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        alignItems: "center",
+                        pr: 2,
+                        position: 'sticky',
+                        bottom: 0,
+                        height: "75px",
+                        width: "100%",
+                        backgroundColor: theme.palette.background.paper,
+                        borderTop: `1px solid ${theme.palette.divider}`
+                    }}>
                         <Button
                             variant="outlined"
                             sx={{
@@ -114,6 +141,7 @@ export const AdvertisingID: React.FC = () => {
                                 color: theme.palette.text.disabled,
                                 textTransform: "none",
                                 fontSize: "14px",
+                                height: "35px"
                             }}
                             onClick={handleClose}
                         >

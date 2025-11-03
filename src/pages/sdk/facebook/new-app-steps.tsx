@@ -1,7 +1,7 @@
 import { Box, Checkbox, FormControlLabel, Stack, Typography, useTheme } from "@mui/material";
-import { SDKStyle } from "../sdk-style";
-import { ImageRootURL, ImageSize } from "../../../common/constants";
+import { Images, ImageSize } from "../../../common/constants";
 import { useFacebookSetupActions, useNewAppStepCompleted } from "../../../store/sdk/facebook-setup-store";
+import { Styles } from "../../../common/styles";
 
 
 const newAppSteps = [
@@ -10,13 +10,13 @@ const newAppSteps = [
             "Go to “My Apps” and create a new app",
             "Choose “Other”",
         ],
-        imageId: "160OqfTt881XUhR9EyiDXHr9GcooLFG7k",
+        imageUrl: Images.fbSetup.newApp.image1,
     },
     {
         lines: [
             <>Select <strong>"Business"</strong> as an app type</>,
         ],
-        imageId: "1pH0W63YcHPR8QGD7Z35kgOK6b_Ql44Zx",
+        imageUrl: Images.fbSetup.newApp.image2,
     },
     {
         lines: [
@@ -26,7 +26,7 @@ const newAppSteps = [
             '3. "Business Account"'
 
         ],
-        imageId: "1yEfWF-vGwqizUfdg3IDTvl-TQ9xQUMa8",
+        imageUrl: Images.fbSetup.newApp.image3,
     },
 ];
 
@@ -38,21 +38,21 @@ export const NewAppSteps = () => {
     return <>
         {newAppSteps.map((step, index) => (
             <Stack direction="row" gap={1} key={index}>
-                <Box sx={SDKStyle.numberStyle} bgcolor={theme.palette.primary.main}>
+                <Box sx={Styles.numberStyle} bgcolor={theme.palette.primary.main}>
                     {index + 1}
                 </Box>
                 <Stack>
                     {step.lines.map((line, idx) => (
-                        <Typography variant="body2" key={idx}>
+                        <Typography component={'div'} variant="body2" key={idx}>
                             {line}
                         </Typography>
                     ))}
                     <br />
                     <img
-                        src={ImageRootURL + step.imageId + ImageSize}
+                        src={step.imageUrl}
                         key={index}
                         alt={`Step ${index + 1} screenshot`}
-                        style={SDKStyle.screenshotStyle}
+                        style={Styles.screenshotStyle}
                     />
                     <br />
                 </Stack>
@@ -67,7 +67,7 @@ export const NewAppSteps = () => {
                 />
             }
             label="Mark this step as done"
-            sx={SDKStyle.checkboxTextStyle}
+            sx={Styles.checkboxTextStyle}
         />
     </>
 }

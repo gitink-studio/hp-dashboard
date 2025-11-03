@@ -780,6 +780,22 @@ const GetPlayStoreGameDetails = gql`
   }
 `;
 
+const GetAllGameRequests = gql`
+  query GetAllGameRequests {
+  getAllGameRequests {
+    data
+  }
+}
+`;
+
+const GetAllGameRequestByStudioId = gql`
+  query GetAllGameRequestByStudioId($studioId: String!) {
+  getAllGameRequestByStudioId(studioId: $studioId) {
+    data
+  }
+}
+`;
+
 export const Queries = {
   DeviceList,
   Device,
@@ -835,4 +851,6 @@ export const Queries = {
   Approval,
   Notifications,
   AlertRules,
+  GetAllGameRequests,
+  GetAllGameRequestByStudioId,
 };

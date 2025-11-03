@@ -75,8 +75,6 @@ const optionalTags = [
     'Realistic',
     'Ropes',
     'Stickman',
-    // General
-    'Supersonic Concept',
     // Sub Genre
     'Adventure',
     'Aiming',

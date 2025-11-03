@@ -122,7 +122,9 @@ export const dataProvider: DataProvider = {
     console.log("getPlayStoreGameDetails data:", data);
     return data[QueryNames.GET_PLAY_STORE_GAME_DETAILS];
   },
-};
+
+
+}
 
 const isDataAlreadyExist = async (_modelName: string, _fieldName: string, _value: string,) => {
   const query = print(Queries.IsDataAlreadyExist);
@@ -130,7 +132,7 @@ const isDataAlreadyExist = async (_modelName: string, _fieldName: string, _value
   const isDataExist = await dataProvider.isDataExistOrNot(ROOT_URL + "/graphql", { query: query, variables: variables, });
 
   return isDataExist;
-};
+}
 
 const isValidUser = async (_email: string, _password: string) => {
   console.log("login auth-provider")
@@ -139,7 +141,7 @@ const isValidUser = async (_email: string, _password: string) => {
   const isValidUser = await dataProvider.isValidUser(ROOT_URL + "/graphql", { query: query, variables: variables, });
 
   return isValidUser;
-};
+}
 
 const getUserDetails = async (_email: string, _password: string) => {
   const query = print(Queries.GetUserDetails);
@@ -155,4 +157,9 @@ const getPlayStoreGameDetails = async (_url: string) => {
   return playStoreDetails;
 }
 
-export const FetchData = { isDataAlreadyExist, isValidUser, getUserDetails, getPlayStoreGameDetails };
+export const FetchData = {
+  isDataAlreadyExist,
+  isValidUser,
+  getUserDetails,
+  getPlayStoreGameDetails,
+};

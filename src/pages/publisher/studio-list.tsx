@@ -43,13 +43,13 @@ const StudioCard = () => {
             size="small"
           />
         </Box>
-        
+
         {record.description && (
           <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
             {record.description}
           </Typography>
         )}
-        
+
         <Box display="flex" flexWrap="wrap" gap={1} mb={2}>
           {record.contactEmail && (
             <Box display="flex" alignItems="center">
@@ -76,7 +76,7 @@ const StudioCard = () => {
             </Box>
           )}
         </Box>
-        
+
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="caption" color="textSecondary">
             Created: {new Date(record.createdAt).toLocaleDateString()}

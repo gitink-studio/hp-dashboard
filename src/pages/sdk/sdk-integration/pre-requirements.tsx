@@ -1,8 +1,7 @@
 import { Box, Checkbox, Divider, FormControlLabel, List, ListItem, ListItemIcon, ListItemText, Stack, Typography } from "@mui/material"
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
-import { SDKStyle } from "../sdk-style";
-import { useSDKDetailActions } from "../../../store/sdk/sdk-details-store";
 import { usePreRequirementsCompleted, useSDKIntegrationActions } from "../../../store/sdk/sdk-integration-store";
+import { Styles } from "../../../common/styles";
 
 export const PreRequirements = () => {
     const isPreRequirementsCompleted = usePreRequirementsCompleted();
@@ -19,19 +18,19 @@ export const PreRequirements = () => {
 
                     <List dense>
                         <ListItem>
-                            <ListItemIcon sx={SDKStyle.listItemIconStyle}>
+                            <ListItemIcon sx={Styles.listItemIconStyle}>
                                 <FiberManualRecordIcon fontSize="inherit" color="primary" />
                             </ListItemIcon>
                             <ListItemText primary="Unity version 6 or higher (LTS recommended)" />
                         </ListItem>
                         <ListItem>
-                            <ListItemIcon sx={SDKStyle.listItemIconStyle}>
+                            <ListItemIcon sx={Styles.listItemIconStyle}>
                                 <FiberManualRecordIcon fontSize="inherit" color="primary" />
                             </ListItemIcon>
                             <ListItemText primary="API compatibility level .NET 4.X OR .NET Framework" />
                         </ListItem>
                         <ListItem>
-                            <ListItemIcon sx={SDKStyle.listItemIconStyle}>
+                            <ListItemIcon sx={Styles.listItemIconStyle}>
                                 <FiberManualRecordIcon fontSize="inherit" color="primary" />
                             </ListItemIcon>
                             <ListItemText primary="Install Newtonsoft Json v.3.0.1 package" />
@@ -46,19 +45,19 @@ export const PreRequirements = () => {
 
                     <List dense>
                         <ListItem>
-                            <ListItemIcon sx={SDKStyle.listItemIconStyle}>
+                            <ListItemIcon sx={Styles.listItemIconStyle}>
                                 <FiberManualRecordIcon fontSize="inherit" color="primary" />
                             </ListItemIcon>
                             <ListItemText primary="Android operating systems version 6 (API level 23) or higher" />
                         </ListItem>
                         <ListItem>
-                            <ListItemIcon sx={SDKStyle.listItemIconStyle}>
+                            <ListItemIcon sx={Styles.listItemIconStyle}>
                                 <FiberManualRecordIcon fontSize="inherit" color="primary" />
                             </ListItemIcon>
                             <ListItemText primary="TargetSdkVersion 36 or higher" />
                         </ListItem>
                         <ListItem>
-                            <ListItemIcon sx={SDKStyle.listItemIconStyle}>
+                            <ListItemIcon sx={Styles.listItemIconStyle}>
                                 <FiberManualRecordIcon fontSize="inherit" color="primary" />
                             </ListItemIcon>
                             <ListItemText primary="The Gradle version is 6.7.1 or higher" />
@@ -73,19 +72,19 @@ export const PreRequirements = () => {
 
                     <List dense>
                         <ListItem>
-                            <ListItemIcon sx={SDKStyle.listItemIconStyle}>
+                            <ListItemIcon sx={Styles.listItemIconStyle}>
                                 <FiberManualRecordIcon fontSize="inherit" color="primary" />
                             </ListItemIcon>
                             <ListItemText primary="iOS Xcode version 15 or higher" />
                         </ListItem>
                         <ListItem>
-                            <ListItemIcon sx={SDKStyle.listItemIconStyle}>
+                            <ListItemIcon sx={Styles.listItemIconStyle}>
                                 <FiberManualRecordIcon fontSize="inherit" color="primary" />
                             </ListItemIcon>
                             <ListItemText primary="Cocoapods version ≥ 1.12.1" />
                         </ListItem>
                         <ListItem>
-                            <ListItemIcon sx={SDKStyle.listItemIconStyle}>
+                            <ListItemIcon sx={Styles.listItemIconStyle}>
                                 <FiberManualRecordIcon fontSize="inherit" color="primary" />
                             </ListItemIcon>
                             <ListItemText primary="The target minimum iOS Version 12.0 (iOSTargetOSVersionString)" />
@@ -101,7 +100,7 @@ export const PreRequirements = () => {
                         />
                     }
                     label="Mark this step as done"
-                    sx={SDKStyle.checkboxTextStyle}
+                    sx={Styles.checkboxTextStyle}
                 />
             </Stack>
 

@@ -1,17 +1,25 @@
 import React, { useEffect, useState } from "react";
 import { Box, Typography, Button, Paper, Stack } from "@mui/material";
 import { useNotify } from "react-admin";
-import { SDKStyle } from "./sdk-style";
 import { FileUploadOutlined } from "@mui/icons-material";
-import { useGameIconUrl, useStoreStatus } from "../../store/sdk/game-submission-store";
+import { useGameIconFile, useGamePlayVideoFile, useGameSubmissionActions, useStoreStatus } from "../../../store/sdk/game-submission-store";
+import { Styles } from "../../../common/styles";
 
 const GameAssetsForm = () => {
     const notify = useNotify();
-    const [iconFile, setIconFile] = useState<File | null>(null);
     const [videoFile, setVideoFile] = useState<File | null>(null);
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [previewFile, setPreviewFile] = useState<File | null>(null);
     const storeStatus = useStoreStatus();
-    const gameIconUrl = useGameIconUrl();
+    const gameIconFile = useGameIconFile();
+    const gamePlayVideoFile = useGamePlayVideoFile();
+    const { setGameIconFile, setGamePlayVideoFile } = useGameSubmissionActions();
+
+    useEffect(() => { console.log(`GameIconUrl Changed: ${gameIconFile}`) }, [gameIconFile]);
+
+    const resetIconFile = () => {
+        setPreviewFile(null);
+        setGameIconFile(null as unknown as File);
+    }
 
     const handleIconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -19,6 +27,7 @@ const GameAssetsForm = () => {
             const file = e.target.files[0];
             if (file.size > 10 * 1024 * 1024) {
                 notify("Icon must be 10 MB or less", { type: "warning" });
+                resetIconFile();
                 return;
             }
 
@@ -33,17 +42,20 @@ const GameAssetsForm = () => {
                 if (!isSquare) {
                     notify('Image must be square (equal width and height)', { type: 'warning' });
                     URL.revokeObjectURL(objectUrl); // Clean up
+                    resetIconFile();
                     return;
                 }
             }
 
             if (file.size > 10 * 1024 * 1024) {
                 notify("Icon must be 10 MB or less", { type: "warning" });
+                resetIconFile();
                 return;
             }
 
-            setIconFile(file);
-            setPreviewUrl(URL.createObjectURL(file));
+            setGameIconFile(file);
+            console.log("File name: ", gameIconFile);
+            setPreviewFile(file);
         }
     };
 
@@ -55,6 +67,7 @@ const GameAssetsForm = () => {
                 return;
             }
             setVideoFile(file);
+            setGamePlayVideoFile(file);
         }
     };
 
@@ -71,13 +84,13 @@ const GameAssetsForm = () => {
     };
 
     return (
-        <Paper elevation={0} sx={SDKStyle.paperStyle}>
+        <Paper elevation={0} sx={Styles.paperStyle}>
             <Stack gap={3}>
                 <Typography fontWeight={"bold"}>Game Assets</Typography>
 
-                <Stack direction={"row"} sx={SDKStyle.stackStyle} gap={3}>
+                <Stack direction={"row"} sx={Styles.stackStyle} gap={3}>
                     <Button
-                        variant={gameIconUrl === "" ? "outlined" : "text"}
+                        variant={gameIconFile === null ? "outlined" : "text"}
                         component="label"
                         sx={{
                             width: 75,
@@ -89,8 +102,8 @@ const GameAssetsForm = () => {
                         }}
                         disabled={storeStatus === 'Live'}
                     >
-                        {!previewUrl && (
-                            <Stack sx={SDKStyle.stackStyle} gap={1}>
+                        {!previewFile && (
+                            <Stack sx={Styles.stackStyle} gap={1}>
                                 <FileUploadOutlined />
                                 <Typography fontSize="12px" sx={{ textTransform: "none" }}>
                                     Upload
@@ -100,26 +113,26 @@ const GameAssetsForm = () => {
 
                         <input type="file" hidden accept="image/png" onChange={handleIconUpload} />
 
-                        {gameIconUrl !== '' && (
+                        {gameIconFile !== null && (
                             <Box
                                 component="img"
-                                src={gameIconUrl}
-                                alt="Uploaded icon preview"
+                                src={URL.createObjectURL(gameIconFile)}
+                                alt="Fetched icon preview"
                                 sx={{
-                                    position: "absolute",
-                                    inset: 0,
+                                    position: 'absolute',
                                     width: "100%",
                                     height: "100%",
-                                    objectFit: "contain", // fit nicely
-                                    backgroundColor: "#fafafa",
+                                    objectFit: "contain",
+                                    objectPosition: "center",
+                                    imageRendering: "auto",
                                 }}
                             />
                         )}
 
-                        {(previewUrl) && (
+                        {(previewFile) && (
                             <Box
                                 component="img"
-                                src={previewUrl}
+                                src={URL.createObjectURL(previewFile)}
                                 alt="Uploaded icon preview"
                                 sx={{
                                     position: "absolute",

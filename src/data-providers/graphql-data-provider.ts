@@ -191,6 +191,8 @@ const getVariable: any = (resource: string, params: any) => {
       return Variables.GET_PAYOUTS(params);
     case QueryNames.APPROVALS:
       return Variables.GET_APPROVALS(params);
+    case QueryNames.GET_ALL_GAME_REQUEST_BY_STUDIO_ID:
+      return Variables.GET_ALL_GAME_REQUEST_BY_STUDIO_ID();
     default:
       return {};
   }
@@ -205,124 +207,124 @@ export const graphqlDataProvider = buildGraphQLProvider({
   clientOptions: GRAPHQL_CLIENT_OPTION,
   buildQuery:
     () =>
-    (fetchType: string, _resource: string, params: any): BuildQueryResult => {
-      resource = _resource;
-      const customVariables = getVariable(resource, params);
-      // console.log("Fetch Type: ", fetchType, resource);
+      (fetchType: string, _resource: string, params: any): BuildQueryResult => {
+        resource = _resource;
+        const customVariables = getVariable(resource, params);
+        // console.log("Fetch Type: ", fetchType, resource);
 
-      if (fetchType == "GET_LIST" || fetchType == "GET_MANY") {
-        // console.log(`params : ${JSON.stringify(params)} resource: ${resource}`);
-        return {
-          query: getQuery(resource),
-          variables: customVariables,
-          parseResponse: (res) => {
-            const fieldName = getGraphQLFieldName(resource);
-            
-            // Debug logging for publisher dashboard filters
-            if (resource === QueryNames.PUBLISHER_DASHBOARD_FILTERS) {
-              console.log('🔍 Publisher Dashboard Filters Response:', res);
-              console.log('Field name:', fieldName);
-              console.log('Response data:', res.data);
-              console.log('Field data:', res.data?.[fieldName]);
-            }
-            
-            // Check for GraphQL errors
-            if (res.errors) {
-              console.error(`GraphQL errors for resource '${resource}':`, res.errors);
+        if (fetchType == "GET_LIST" || fetchType == "GET_MANY") {
+          // console.log(`params : ${JSON.stringify(params)} resource: ${resource}`);
+          return {
+            query: getQuery(resource),
+            variables: customVariables,
+            parseResponse: (res) => {
+              const fieldName = getGraphQLFieldName(resource);
+
+              // Debug logging for publisher dashboard filters
+              if (resource === QueryNames.PUBLISHER_DASHBOARD_FILTERS) {
+                console.log('🔍 Publisher Dashboard Filters Response:', res);
+                console.log('Field name:', fieldName);
+                console.log('Response data:', res.data);
+                console.log('Field data:', res.data?.[fieldName]);
+              }
+
+              // Check for GraphQL errors
+              if (res.errors) {
+                console.error(`GraphQL errors for resource '${resource}':`, res.errors);
+                return {
+                  data: [],
+                  total: 0,
+                };
+              }
+
+              // Check if the field exists in the response
+              if (!res.data || !res.data[fieldName]) {
+                console.warn(`Resource '${resource}' (field: '${fieldName}') not found in response:`, res.data);
+                return {
+                  data: [],
+                  total: 0,
+                };
+              }
+
+              let data = isResponseJsonData(res.data)
+                ? res.data[fieldName].data
+                : res.data[fieldName];
+
+              let total = isResponseJsonData(res.data)
+                ? res.data[fieldName].data?.total || 0
+                : res.data[fieldName]?.total || 0;
+
+              // Debug logging for portfolio KPIs
+              if (resource === QueryNames.PORTFOLIO_KPIS) {
+                console.log('🔍 Portfolio KPIs Response:', res.data);
+                console.log('🔍 Field name:', fieldName);
+                console.log('🔍 Raw data:', res.data[fieldName]);
+                console.log('🔍 Is response JSON data:', isResponseJsonData(res.data));
+                console.log('🔍 Processed data:', data);
+              }
+
+              // Debug logging for publisher dashboard filters
+              if (resource === QueryNames.PUBLISHER_DASHBOARD_FILTERS) {
+                console.log('🔍 Parsed data:', data);
+                console.log('🔍 Is response JSON data:', isResponseJsonData(res.data));
+                console.log('🔍 Data type:', typeof data);
+                console.log('🔍 Is array:', Array.isArray(data));
+              }
+
+              // Handle cases where data might be undefined
+              if (!data) {
+                data = [];
+                total = 0;
+              }
+
+              // Handle single object responses (like Portfolio KPIs) by wrapping in array
+              if (data && !Array.isArray(data)) {
+                data = [data];
+                total = 1;
+              }
+
+              // Debug logging for publisher dashboard filters after processing
+              if (resource === QueryNames.PUBLISHER_DASHBOARD_FILTERS) {
+                console.log('🔍 Final processed data:', data);
+                console.log('🔍 Final total:', total);
+              }
+
               return {
-                data: [],
-                total: 0,
+                data: data || [],
+                total: total || 0,
               };
-            }
-            
-            // Check if the field exists in the response
-            if (!res.data || !res.data[fieldName]) {
-              console.warn(`Resource '${resource}' (field: '${fieldName}') not found in response:`, res.data);
+            },
+          };
+        } else {
+          return {
+            query: getQuery(resource),
+            variables: customVariables,
+            parseResponse: (res) => {
+              const fieldName = getGraphQLFieldName(resource);
+
+              // Check for GraphQL errors
+              if (res.errors) {
+                console.error(`GraphQL errors for resource '${resource}':`, res.errors);
+                return {
+                  data: null,
+                  total: 0,
+                };
+              }
+
+              if (!res.data || !res.data[fieldName]) {
+                console.warn(`Resource '${resource}' (field: '${fieldName}') not found in response:`, res.data);
+                return {
+                  data: null,
+                  total: 0,
+                };
+              }
+
               return {
-                data: [],
-                total: 0,
+                data: res.data[fieldName],
+                total: 1,
               };
-            }
-
-            let data = isResponseJsonData(res.data)
-              ? res.data[fieldName].data
-              : res.data[fieldName];
-            
-            let total = isResponseJsonData(res.data)
-              ? res.data[fieldName].data?.total || 0
-              : res.data[fieldName]?.total || 0;
-
-            // Debug logging for portfolio KPIs
-            if (resource === QueryNames.PORTFOLIO_KPIS) {
-              console.log('🔍 Portfolio KPIs Response:', res.data);
-              console.log('🔍 Field name:', fieldName);
-              console.log('🔍 Raw data:', res.data[fieldName]);
-              console.log('🔍 Is response JSON data:', isResponseJsonData(res.data));
-              console.log('🔍 Processed data:', data);
-            }
-
-            // Debug logging for publisher dashboard filters
-            if (resource === QueryNames.PUBLISHER_DASHBOARD_FILTERS) {
-              console.log('🔍 Parsed data:', data);
-              console.log('🔍 Is response JSON data:', isResponseJsonData(res.data));
-              console.log('🔍 Data type:', typeof data);
-              console.log('🔍 Is array:', Array.isArray(data));
-            }
-
-            // Handle cases where data might be undefined
-            if (!data) {
-              data = [];
-              total = 0;
-            }
-
-            // Handle single object responses (like Portfolio KPIs) by wrapping in array
-            if (data && !Array.isArray(data)) {
-              data = [data];
-              total = 1;
-            }
-            
-            // Debug logging for publisher dashboard filters after processing
-            if (resource === QueryNames.PUBLISHER_DASHBOARD_FILTERS) {
-              console.log('🔍 Final processed data:', data);
-              console.log('🔍 Final total:', total);
-            }
-
-            return {
-              data: data || [],
-              total: total || 0,
-            };
-          },
-        };
-      } else {
-        return {
-          query: getQuery(resource),
-          variables: customVariables,
-          parseResponse: (res) => {
-            const fieldName = getGraphQLFieldName(resource);
-            
-            // Check for GraphQL errors
-            if (res.errors) {
-              console.error(`GraphQL errors for resource '${resource}':`, res.errors);
-              return {
-                data: null,
-                total: 0,
-              };
-            }
-            
-            if (!res.data || !res.data[fieldName]) {
-              console.warn(`Resource '${resource}' (field: '${fieldName}') not found in response:`, res.data);
-              return {
-                data: null,
-                total: 0,
-              };
-            }
-
-            return {
-              data: res.data[fieldName],
-              total: 1,
-            };
-          },
-        };
-      }
-    },
+            },
+          };
+        }
+      },
 });

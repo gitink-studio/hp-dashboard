@@ -12,7 +12,6 @@ import {
 } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
-import { SDKStyle } from "../sdk-style";
 import CreativesLibrary from "./creative-library";
 import { useActiveStep, useDataSending, useSDKDetailActions } from "../../../store/sdk/sdk-details-store";
 import { useDisplayCreativeLibrary, useTestSetupActions, useVideoFileUrls } from "../../../store/sdk/test-setup-store";

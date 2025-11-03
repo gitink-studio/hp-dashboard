@@ -1,15 +1,17 @@
 import { Box, CircularProgress, FormControl, InputAdornment, MenuItem, Paper, Select, Stack, styled, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material"
-import GameAssetsForm from "./game-assets-form"
+import GameAssetsForm from "./game-submission-creatives"
 import { SDKData } from "../sdk-data"
-import { SDKStyle } from "../sdk-style"
 import { useState } from "react";
-import { useGameSubmissionActions, useGameTitle, useMinOSCompatibility, usePlayStoreDataFetch, useStoreStatus, useStoreUrlDisabled, usePlatform, useStoreUrl, useGenre, useControl, useMechanics, useOptionalTags, useGameType, useGamePlayVideoUrl, useGameIconUrl, useValidateGameSubmissionInputs } from "../../../store/sdk/game-submission-store";
+import { useGameSubmissionActions, useGameTitle, useMinOSCompatibility, usePlayStoreDataFetch, useStoreStatus, useStoreUrlDisabled, usePlatform, useStoreUrl, useGenre, useControl, useMechanics, useOptionalTags, useGameType, useGamePlayVideoFile, useGameIconFile, useValidateGameSubmissionInputs } from "../../../store/sdk/game-submission-store";
 import { Button, useNotify } from "react-admin";
 import { FetchData } from "../../../data-providers/data-provider";
 import { sendRequest, waitForSeconds } from "../../../common/utils";
-import { CREATE_GAME_SUBMISSION_DATA_URL, CURRENT_SDK_SETUP_STATE_ID, HttpMethod, PlayStoreDataFetchState, ROOT_URL, SDK_SETUP_GAME_ID, STUDIO_ID } from "../../../common/constants";
+import { CREATE_GAME_SUBMISSION_DATA_URL, CREATIVES_ROOT_URL, CURRENT_SDK_SETUP_STATE_ID, FileTypes, HttpMethod, PlayStoreDataFetchState, ROOT_URL, SDK_SETUP_GAME_ID, STUDIO_ID } from "../../../common/constants";
 import { CheckCircleRounded } from "@mui/icons-material";
 import { useActiveStep, useCurrentSetupStateId, useCurrentStep, useDataSending, useDisableComponents, useGameId, useSDKDetailActions } from "../../../store/sdk/sdk-details-store";
+import { Styles } from "../../../common/styles";
+import { uploadFileToS3 } from "../../../common/s3";
+import { localStorageData } from "../../../common/localStorage";
 
 const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
     width: '100%',
@@ -18,16 +20,14 @@ const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
             color: theme.palette.common.white,
             backgroundColor: theme.palette.primary.main,
             '&:hover': {
-                backgroundColor: theme.palette.primary.main,
+                backgroundColor: theme.palette.primary.dark,
             },
         },
     },
-    // "&:hover": {
-    //     backgroundColor: 'transparent',
-    // }
 }));
 
 export const GameSubmissionStep = () => {
+    const submissionName = "test-submission";
     const storeStatus = useStoreStatus();
     const storeUrl = useStoreUrl();
     const gameTitle = useGameTitle();
@@ -39,8 +39,8 @@ export const GameSubmissionStep = () => {
     const controls = useControl();
     const mechanics = useMechanics();
     const optionalTags = useOptionalTags();
-    const gameIconUrl = useGameIconUrl();
-    const gamePlayVideoUrl = useGamePlayVideoUrl();
+    const gameIconFile = useGameIconFile();
+    const gamePlayVideoFile = useGamePlayVideoFile();
     const gameType = useGameType();
     const gameId = useGameId();
     const currentSetupStateId = useCurrentSetupStateId();
@@ -53,7 +53,8 @@ export const GameSubmissionStep = () => {
         setStoreUrl,
         setGameTitle,
         setMinOSCompatibility,
-        setGameIconUrl,
+        setGameIconFile,
+        setGamePlayVideoFile,
         setStoreUrlDisabled,
         setPlayStoreDataFetch,
         setPlatform,
@@ -107,7 +108,7 @@ export const GameSubmissionStep = () => {
                 if (response != null && response.data != null) {
                     setGameTitle(response.data.gameTitle);
                     setMinOSCompatibility(response.data.minOSCompatibility);
-                    setGameIconUrl(response.data.icon);
+                    setGameIconFile(response.data.icon);
                     setStoreUrlDisabled(true);
 
                     setPlayStoreDataFetch(PlayStoreDataFetchState.COMPLETED);
@@ -128,19 +129,32 @@ export const GameSubmissionStep = () => {
         setDisableComponents(true);
         setDataSending(true);
 
-        let response = await sendRequest(HttpMethod.POST, CREATE_GAME_SUBMISSION_DATA_URL, data);
-        console.log(response);
+        const uploadFileResponse = await uploadFileToS3(
+            gameIconFile as File,
+            `${CREATIVES_ROOT_URL}
+            /${localStorageData.studioId}
+            /${platform}
+            /${gameTitle}
+            /${submissionName}
+            /${FileTypes.images}
+            /${gameIconFile?.name}
+            `);
 
-        if (response?.data?.id) {
-            console.log("Game submission data sent successfully!", response.data);
-            setCurrentSetupStateId(response.data.id);
-            setGameId(response.data.gameId);
-            localStorage.setItem(SDK_SETUP_GAME_ID, response.data.gameId);
-            localStorage.setItem(CURRENT_SDK_SETUP_STATE_ID, response.data.id);
-            setCurrentStep();
-        } else {
-            notify("Something went wrong!", { type: "error" });
-        }
+        console.log("uploadFileResponse: ", uploadFileResponse);
+
+        // let response = await sendRequest(HttpMethod.POST, CREATE_GAME_SUBMISSION_DATA_URL, data);
+        // console.log(response);
+
+        // if (response?.data?.id) {
+        //     console.log("Game submission data sent successfully!", response.data);
+        //     setCurrentSetupStateId(response.data.id);
+        //     setGameId(response.data.gameId);
+        //     localStorage.setItem(SDK_SETUP_GAME_ID, response.data.gameId);
+        //     localStorage.setItem(CURRENT_SDK_SETUP_STATE_ID, response.data.id);
+        //     setCurrentStep();
+        // } else {
+        //     notify("Something went wrong!", { type: "error" });
+        // }
 
         setDisableComponents(false);
         setDataSending(false);
@@ -160,8 +174,8 @@ export const GameSubmissionStep = () => {
                 mechanics: mechanics,
                 optionalTags: optionalTags,
                 gameType: gameType,
-                gameIconUrl: gameIconUrl,
-                gamePlayVideoUrl: gamePlayVideoUrl
+                gameIconUrl: gameIconFile,
+                gamePlayVideoUrl: gamePlayVideoFile
             })
 
         }
@@ -205,12 +219,12 @@ export const GameSubmissionStep = () => {
             return false;
         }
 
-        if (gameIconUrl === '') {
+        if (gameIconFile === null) {
             notify("Game Icon is required!", { type: "error" });
             return false;
         }
 
-        if (gamePlayVideoUrl === '') {
+        if (gamePlayVideoFile === null) {
             notify("Game Play Video is required!", { type: "error" });
             return false;
         }
@@ -221,23 +235,23 @@ export const GameSubmissionStep = () => {
     return (
         <Box>
             <Stack gap={5}>
-                <Paper elevation={0} sx={SDKStyle.paperStyle}>
+                <Paper elevation={0} sx={Styles.paperStyle}>
                     <Typography fontWeight='bold' mb={3}> Game Details</Typography>
                     <Stack spacing={2}>
-                        <Stack direction="row" sx={SDKStyle.stackStyle}>
+                        <Stack direction="row" sx={Styles.stackStyle}>
                             <Typography width={250}>Store Status</Typography>
                             <StyledToggleButtonGroup
                                 value={storeStatus}
                                 exclusive
-                                onChange={(e, value) => setStoreStatus(value)}
+                                onChange={(e, value) => value !== null && setStoreStatus(value)}
                                 fullWidth
                             >
-                                <ToggleButton value="Live" sx={SDKStyle.leftRounded} disabled={canDisableAllComponents || isStepCompleted(activeStep)}>Live</ToggleButton>
-                                <ToggleButton value="Not Live" sx={SDKStyle.rightRounded} disabled={canDisableAllComponents || isStepCompleted(activeStep)}>Not Live</ToggleButton>
+                                <ToggleButton value="Live" sx={Styles.leftRounded} disabled={canDisableAllComponents || isStepCompleted(activeStep)}>Live</ToggleButton>
+                                <ToggleButton value="Not Live" sx={Styles.rightRounded} disabled={canDisableAllComponents || isStepCompleted(activeStep)}>Not Live</ToggleButton>
                             </StyledToggleButtonGroup>
                         </Stack>
                         {storeStatus === "Live" ?
-                            <Stack direction="row" sx={SDKStyle.stackStyle}>
+                            <Stack direction="row" sx={Styles.stackStyle}>
                                 <Typography width={250}>Store URL</Typography>
                                 <TextField
                                     fullWidth
@@ -247,7 +261,7 @@ export const GameSubmissionStep = () => {
                                     onChange={handleStoreURLChange}
                                     // value={storeUrl}
                                     disabled={canDisableAllComponents || isStepCompleted(activeStep)}
-                                    sx={SDKStyle.textFieldStyle}
+                                    sx={Styles.textFieldStyle}
                                     slotProps={{
                                         inputLabel: {
                                             shrink: false, // prevents label from shrinking automatically
@@ -264,7 +278,7 @@ export const GameSubmissionStep = () => {
                                 />
                             </Stack> : null}
 
-                        <Stack direction="row" sx={SDKStyle.stackStyle}>
+                        <Stack direction="row" sx={Styles.stackStyle}>
                             <Typography width={250}>Game Title</Typography>
                             <TextField
                                 fullWidth
@@ -274,27 +288,27 @@ export const GameSubmissionStep = () => {
                                 value={gameTitle}
                                 onChange={(e) => setGameTitle(e.target.value)}
                                 required
-                                sx={SDKStyle.textFieldStyle}
+                                sx={Styles.textFieldStyle}
                                 disabled={storeStatus === 'Live' || canDisableAllComponents || isStepCompleted(activeStep)}
                             />
                         </Stack>
 
-                        <Stack direction="row" sx={SDKStyle.stackStyle}>
+                        <Stack direction="row" sx={Styles.stackStyle}>
                             <Typography width={250}>Platform</Typography>
                             <StyledToggleButtonGroup
                                 value={platform}
                                 exclusive
-                                onChange={(e, value) => setPlatform(value)}
+                                onChange={(e, value) => value !== null && setPlatform(value)}
                                 fullWidth
                             >
-                                <ToggleButton value="Android" sx={SDKStyle.leftRounded}>Android</ToggleButton>
-                                <ToggleButton value="iOS" sx={SDKStyle.rightRounded} disabled={storeStatus === 'Live' || canDisableAllComponents || isStepCompleted(activeStep)}>iOS</ToggleButton>
+                                <ToggleButton value="Android" sx={Styles.leftRounded}>Android</ToggleButton>
+                                <ToggleButton value="iOS" sx={Styles.rightRounded} disabled={storeStatus === 'Live' || canDisableAllComponents || isStepCompleted(activeStep)}>iOS</ToggleButton>
                             </StyledToggleButtonGroup>
                         </Stack>
 
                         {storeStatus === "Live" ?
                             <FormControl fullWidth variant="outlined" >
-                                <Stack direction="row" sx={SDKStyle.stackStyle}>
+                                <Stack direction="row" sx={Styles.stackStyle}>
                                     <Typography width={250}>Min OS Compatibility</Typography >
                                     <Select
                                         name="minOSCompatibility"
@@ -302,7 +316,7 @@ export const GameSubmissionStep = () => {
                                         onChange={(e) => setMinOSCompatibility(e.target.value)}
                                         displayEmpty
                                         fullWidth
-                                        sx={SDKStyle.selectStyle}
+                                        sx={Styles.selectStyle}
                                         disabled={storeStatus === 'Live' || canDisableAllComponents || isStepCompleted(activeStep)}
                                     >
                                         <MenuItem value="" disabled>Please Select</MenuItem>
@@ -316,9 +330,9 @@ export const GameSubmissionStep = () => {
                             </FormControl> : null
                         }
 
-                        <Stack direction="row" sx={SDKStyle.stackStyle}>
+                        <Stack direction="row" sx={Styles.stackStyle}>
                             <Typography width={250}>Tags</Typography >
-                            <Stack direction="row" sx={{ ...SDKStyle.stackStyle, display: "flex", justifyContent: "space-between" }}>
+                            <Stack direction="row" sx={{ ...Styles.stackStyle, display: "flex", justifyContent: "space-between" }}>
                                 <FormControl variant="outlined">
                                     <Select
                                         name="genre"
@@ -326,8 +340,8 @@ export const GameSubmissionStep = () => {
                                         onChange={(e) => setGenre(e.target.value)}
                                         displayEmpty
                                         sx={{
-                                            ...SDKStyle.selectStyle,
-                                            ...SDKStyle.selectGroupStyle
+                                            ...Styles.selectStyle,
+                                            ...Styles.selectGroupStyle
                                         }}
                                         renderValue={(selected) => selected === '' ? 'Genre' : selected}
                                         disabled={canDisableAllComponents || isStepCompleted(activeStep)}
@@ -347,8 +361,8 @@ export const GameSubmissionStep = () => {
                                         displayEmpty
                                         renderValue={(selected): any => selected.length === 0 ? 'Control' : selected.join(', ')}
                                         sx={{
-                                            ...SDKStyle.selectStyle,
-                                            ...SDKStyle.selectGroupStyle
+                                            ...Styles.selectStyle,
+                                            ...Styles.selectGroupStyle
                                         }}
                                         disabled={canDisableAllComponents || isStepCompleted(activeStep)}
                                     >
@@ -367,8 +381,8 @@ export const GameSubmissionStep = () => {
                                         displayEmpty
                                         renderValue={(selected): any => selected.length === 0 ? 'Mechanic' : selected.join(', ')}
                                         sx={{
-                                            ...SDKStyle.selectStyle,
-                                            ...SDKStyle.selectGroupStyle
+                                            ...Styles.selectStyle,
+                                            ...Styles.selectGroupStyle
                                         }}
                                         disabled={canDisableAllComponents || isStepCompleted(activeStep)}
                                     >
@@ -380,7 +394,7 @@ export const GameSubmissionStep = () => {
                             </Stack>
                         </Stack>
 
-                        <Stack direction="row" sx={SDKStyle.stackStyle}>
+                        <Stack direction="row" sx={Styles.stackStyle}>
                             <Typography width={250}>Tags (Optional )</Typography >
                             <FormControl fullWidth variant="outlined">
                                 <Select
@@ -388,7 +402,7 @@ export const GameSubmissionStep = () => {
                                     value={optionalTags}
                                     onChange={(e) => setOptionalTags(e.target.value as string[])}
                                     displayEmpty
-                                    sx={SDKStyle.selectStyle}
+                                    sx={Styles.selectStyle}
                                     multiple
                                     renderValue={(selected): any => selected.length === 0 ? 'Please Select' : selected.join(', ')}
                                     disabled={canDisableAllComponents || isStepCompleted(activeStep)}
@@ -401,7 +415,7 @@ export const GameSubmissionStep = () => {
                             </FormControl>
                         </Stack>
 
-                        <Stack direction="row" sx={SDKStyle.stackStyle}>
+                        <Stack direction="row" sx={Styles.stackStyle}>
                             <Typography width={250}>Game Type</Typography >
                             <FormControl fullWidth variant="outlined">
                                 <Select
@@ -409,7 +423,7 @@ export const GameSubmissionStep = () => {
                                     value={gameType}
                                     onChange={(e) => setGameType(e.target.value)}
                                     displayEmpty
-                                    sx={SDKStyle.selectStyle}
+                                    sx={Styles.selectStyle}
                                     disabled={canDisableAllComponents || isStepCompleted(activeStep)}
                                 >
                                     <MenuItem value="" disabled>Please Select</MenuItem>

@@ -28,10 +28,14 @@ import { PublisherTestDetail } from "./pages/tests/publisher-test-detail";
 import { Route } from "react-router";
 import { CustomRoutes } from "react-admin";
 import { SDKDetails } from "./pages/sdk/sdk-details";
+import { SubmitWebGameDetails } from "./pages/submit-web-game/submit-web-game-details";
+import { PlayTests } from "./pages/play-tests/play-tests";
 
 export const App = () => {
   const userRole = localStorage.getItem("userRole");
   const isAdmin = userRole?.toLowerCase().includes('admin') || userRole?.toLowerCase().includes('administrator');
+  const isPublisher = userRole?.toLowerCase().includes('publisher');
+  const isDeveloper = userRole?.toLowerCase().includes('developer');
 
   return (
     <Admin
@@ -51,7 +55,6 @@ export const App = () => {
         list={DashboardRouter}
         options={{ label: "Dashboard" }}
       />
-
 
       {/* Dashboard Resources - Always available, access controlled by components */}
       <Resource
@@ -92,12 +95,31 @@ export const App = () => {
         options={{ label: "Tests" }}
       />
 
-      {/* SDK Submission */}
       <Resource
-        name="sdk"
-        list={SDKDetails}
-        options={{ label: "SDK" }}
+        name={QueryNames.GET_ALL_GAME_REQUESTS}
+        list={PlayTests}
+        options={{ label: "Play Tests" }}
       />
+
+      {
+        isDeveloper && (
+          <>
+            {/* SDK Submission */}
+            < Resource
+              name="sdk"
+              list={SDKDetails}
+              options={{ label: "SDK" }}
+            />
+
+            {/* Web Game Submission */}
+            <Resource
+              name="submit-web-game"
+              list={SubmitWebGameDetails}
+              options={{ label: "Submit Web Game" }}
+            />
+          </>
+        )
+      }
 
       {/* Tests detail routes */}
       <CustomRoutes>

@@ -219,6 +219,12 @@ const GET_APPROVALS = (params: any) => {
   };
 };
 
+const GET_ALL_GAME_REQUEST_BY_STUDIO_ID = () => {
+  return {
+    studioId: localStorage.getItem('studioId') ?? undefined,
+  };
+};
+
 export const Variables = {
   GET_ALL_DATA_BY_USERNAME_OR_VALUE,
   GET_ALL_DATA_SUGGESTION,
@@ -244,4 +250,5 @@ export const Variables = {
   GET_CONTRACTS,
   GET_PAYOUTS,
   GET_APPROVALS,
+  GET_ALL_GAME_REQUEST_BY_STUDIO_ID
 };
