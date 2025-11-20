@@ -18,15 +18,16 @@ import { FacebookSetupStep } from './facebook/facebook-setup-step';
 import { SDKIntegrationSteps } from './sdk-integration/sdk-integration-steps';
 import { StoreStep } from './store-step/store-step';
 import { TestSetup } from './test/test-setup';
-import { useActiveStep, useCurrentStep, useSDKDetailActions } from '../../store/sdk/sdk-details-store';
+import { useActiveStep, useCurrentGameSetupDetails, useCurrentStep, useSDKDetailActions } from '../../store/sdk/sdk-details-store';
 import { useValidateGameSubmissionInputs } from '../../store/sdk/game-submission-store';
 
 export const SDKDetails = () => {
     const currentStep = useCurrentStep();
     const activeStep = useActiveStep();
     const validateGameSubmissionInputs = useValidateGameSubmissionInputs();
-    const theme = useTheme();
-    const { setActiveStep, setCurrentStep, isStepCompleted } = useSDKDetailActions();
+    const currentSetupGameDetails = useCurrentGameSetupDetails();
+    const { setActiveStep, setCurrentStepWithIndex, isStepCompleted } = useSDKDetailActions();
+    let isStepSet = false;
 
     useEffect(() => {
         console.log(`Active Step: ${activeStep} Current Step: ${currentStep}`);
@@ -60,6 +61,14 @@ export const SDKDetails = () => {
             setActiveStep(index);
         }
     }
+
+    useEffect(() => {
+        if (!isStepSet && currentSetupGameDetails !== null) {
+            console.log("currentSetupGameDetails: ", currentSetupGameDetails);
+            setCurrentStepWithIndex(currentSetupGameDetails.currentSetupStateIndex);
+            isStepSet = true;
+        }
+    }, []);
 
     return (
         <Container sx={{ mt: 5, width: "100%" }}>

@@ -11,11 +11,12 @@ type GameSubmissionActions = {
     setMechanics: (mechanics: string[]) => void;
     setOptionalTags: (optionalTags: string[]) => void;
     setGameType: (gameType: string) => void;
-    setGameIconFile: (gameIconFile: File | null) => void;
+    setGameIconFile: (gameIconFile: File | string | null) => void;
     setGamePlayVideoFile: (gamePlayVideoFile: File | null) => void;
     setStoreUrlDisabled: (isStoreUrlDisabled: boolean) => void;
     setPlayStoreDataFetch: (isPlayStoreDataFetching: string) => void;
     setValidateInputs: (validateGameSubmissionInputs: boolean) => void;
+    resetGameSubmissionData: () => void;
 }
 
 type GameSubmissionState = {
@@ -29,7 +30,7 @@ type GameSubmissionState = {
     mechanics: string[];
     optionalTags: string[];
     gameType: string;
-    gameIconFile: File | null;
+    gameIconFile: File | string | null;
     gamePlayVideoFile: File | null;
     isStoreUrlDisabled: boolean;
     validateGameSubmissionInputs: boolean;
@@ -37,7 +38,7 @@ type GameSubmissionState = {
     actions: GameSubmissionActions;
 }
 
-const useGameSubmissionStore = create<GameSubmissionState>((set) => ({
+const initialState = {
     storeStatus: "Live",
     storeUrl: '',
     gameTitle: '',
@@ -53,6 +54,10 @@ const useGameSubmissionStore = create<GameSubmissionState>((set) => ({
     isStoreUrlDisabled: false,
     validateGameSubmissionInputs: false,
     playStoreDataFetchState: '',
+}
+
+const useGameSubmissionStore = create<GameSubmissionState>((set) => ({
+    ...initialState,
     actions: {
         setStoreStatus: (storeStatus: string) => set({ storeStatus }),
         setStoreUrl: (storeUrl: string) => set({ storeUrl }),
@@ -64,11 +69,12 @@ const useGameSubmissionStore = create<GameSubmissionState>((set) => ({
         setMechanics: (mechanics: string[]) => set({ mechanics }),
         setGameType: (gameType: string) => set({ gameType }),
         setOptionalTags: (optionalTags: string[]) => set({ optionalTags }),
-        setGameIconFile: (gameIconFile: File | null) => set({ gameIconFile }),
+        setGameIconFile: (gameIconFile: File | string | null) => set({ gameIconFile }),
         setGamePlayVideoFile: (gamePlayVideoFile: File | null) => set({ gamePlayVideoFile }),
         setStoreUrlDisabled: (isStoreUrlDisabled: boolean) => set({ isStoreUrlDisabled }),
         setPlayStoreDataFetch: (isPlayStoreDataFetching: string) => set({ playStoreDataFetchState: isPlayStoreDataFetching }),
-        setValidateInputs: (validateGameSubmissionInputs: boolean) => set({ validateGameSubmissionInputs })
+        setValidateInputs: (validateGameSubmissionInputs: boolean) => set({ validateGameSubmissionInputs }),
+        resetGameSubmissionData: () => set(initialState),
     }
 }))
 

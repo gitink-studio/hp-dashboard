@@ -6,6 +6,7 @@ type SDKIntegrationAction = {
     setPreRequirementsCompleted: (isPreRequirementsCompleted: boolean) => void;
     setStep1Completed: (isStep1Completed: boolean) => void;
     setStep2Completed: (isStep2Completed: boolean) => void;
+    resetSDKIntegrationData: () => void;
 }
 
 type SDKIntegrationState = {
@@ -17,18 +18,23 @@ type SDKIntegrationState = {
     actions: SDKIntegrationAction
 }
 
-const useSDKIntegrationStore = create<SDKIntegrationState>((set) => ({
+const initialState = {
     isPreRequirementsCompleted: false,
     isStep1Completed: false,
     isStep2Completed: false,
     copied: false,
     showPassword: false,
+}
+
+const useSDKIntegrationStore = create<SDKIntegrationState>((set) => ({
+    ...initialState,
     actions: {
         setCopied: (copied: boolean) => set({ copied }),
         setShowPassword: (showPassword: boolean) => set({ showPassword }),
         setPreRequirementsCompleted: (isPreRequirementsCompleted: boolean) => set({ isPreRequirementsCompleted }),
         setStep1Completed: (isStep1Completed: boolean) => set({ isStep1Completed }),
-        setStep2Completed: (isStep2Completed: boolean) => set({ isStep2Completed })
+        setStep2Completed: (isStep2Completed: boolean) => set({ isStep2Completed }),
+        resetSDKIntegrationData: () => set(initialState),
     }
 }))
 

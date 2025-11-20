@@ -50,7 +50,7 @@ const useSubmitWebGameStore = create<SubmitWebGameState>((set, get) => ({
         setCurrentStepWithIndex: (index: number) => set((state) => ({ currentStep: index, activeStep: index })),
         setActiveStep: (activeStep: number) => set({ activeStep }),
         setDisableComponents: (canDisableAllComponents: boolean) => set({ canDisableAllComponents }),
-        isStepCompleted: (step: number) => get().completedSteps.includes(step),
+        isStepCompleted: (step: number) => step < get().currentStep,
         setDataSending: (isDataSending: boolean) => set({ isDataSending }),
         setWebGameId: (gameId: string) => set({ webGameId: gameId }),
         setCurrentSetupStateId: (currentSetupStateId: string) => set({ currentSetupStateId }),

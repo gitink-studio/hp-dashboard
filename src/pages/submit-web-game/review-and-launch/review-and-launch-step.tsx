@@ -1,11 +1,11 @@
-import { Box, Button, CircularProgress, FormControl, InputAdornment, MenuItem, Paper, Select, Stack, TextField, Typography } from "@mui/material"
+import { Box, Button, CircularProgress, InputAdornment, Paper, Stack, TextField, Typography } from "@mui/material"
 import { Styles } from "../../../common/styles";
-import { CREATE_WEB_GAME_SUBMISSION_DATA_URL, Genres, HttpMethod, Languages, Regions, REVIEW_AND_LAUNCH_URL, SubGenres, WEB_GAME_SUBMISSION_SETUP_CURRENT_STATE_UPDATE_URL } from "../../../common/constants";
-import { useAgeRating, useGameTitle, useGenre, useLanguages, useLongDescription, useMetadataAndRatingsActions, usePrivacyPolicyUrl, useRegionalAvailability, useShortDescription, useSubGenre, useSupportUrl } from "../../../store/submit-web-game/metadata-and-ratings-store";
+import { HttpMethod, REVIEW_AND_LAUNCH_URL } from "../../../common/constants";
+import { useAgeRating, useGameTitle, useLanguages, usePrivacyPolicyUrl, useRegionalAvailability, useShortDescription, useSupportUrl } from "../../../store/submit-web-game/metadata-and-ratings-store";
 import { notify } from "../../../components/notify";
-import { useCurrentSetupGameDetails, useCurrentStep, useDataSending, useSubmitWebGameActions } from "../../../store/submit-web-game/submit-web-game-store";
+import { useCurrentSetupGameDetails, useDataSending, useSubmitWebGameActions } from "../../../store/submit-web-game/submit-web-game-store";
 import { useCrazyGamesSelected, useMetaSelected, useMsnSelected, usePokiSelected } from "../../../store/submit-web-game/select-platform-store";
-import { Close, Done } from "@mui/icons-material";
+import { Done } from "@mui/icons-material";
 import { sendRequest } from "../../../common/utils";
 
 export const ReviewAndLaunchStep = () => {
@@ -17,7 +17,7 @@ export const ReviewAndLaunchStep = () => {
     const privacyPolicyUrl = usePrivacyPolicyUrl();
     const supportUrl = useSupportUrl();
     const isDataSending = useDataSending();
-    const { setCurrentStep, setDataSending } = useSubmitWebGameActions();
+    const { setCurrentStep, setDataSending, setCurrentSetupGameDetails } = useSubmitWebGameActions();
     const currentSetupGameDetails = useCurrentSetupGameDetails();
 
     const isMetaSelected = useMetaSelected();
@@ -32,26 +32,25 @@ export const ReviewAndLaunchStep = () => {
     ]
 
     const submitData = async () => {
-        console.log("submitData", currentSetupGameDetails);
-        setDataSending(true);
+        try {
+            console.log("submitData", currentSetupGameDetails);
+            setDataSending(true);
 
-        let response = await sendRequest(HttpMethod.POST, REVIEW_AND_LAUNCH_URL, {
-            id: currentSetupGameDetails.webGameRequest.webGameSubmissionSetupCurrentState.id,
-            studioId: currentSetupGameDetails.studioId,
-            currentSetupIndex: currentSetupGameDetails.currentSetupStateIndex,
-            gameRequestId: currentSetupGameDetails.id,
-            webGameRequestId: currentSetupGameDetails.webGameRequest.id,
-        });
+            let response = await sendRequest(HttpMethod.POST, REVIEW_AND_LAUNCH_URL, {
+                webGameSubmissionSetupCurrentStateId: currentSetupGameDetails.webGameRequest.webGameSubmissionSetupCurrentState.id,
+                studioId: currentSetupGameDetails.studioId,
+                currentSetupIndex: currentSetupGameDetails.currentSetupStateIndex,
+                gameRequestId: currentSetupGameDetails.id,
+                webGameRequestId: currentSetupGameDetails.webGameRequest.id,
+            });
 
-        console.log(response);
-
-        if (response?.data?.id) {
-            console.log("Platform requirements data sent successfully!", response.data);
+            console.log(response);
+            setCurrentSetupGameDetails(response.data);
             window.location.href = '/#/getAllGameRequests'
-        } else {
+        } catch (err) {
+            console.error(err);
             notify("Something went wrong!", { type: "error" });
         }
-
         setDataSending(false);
     }
 
@@ -83,7 +82,7 @@ export const ReviewAndLaunchStep = () => {
         <Box>
             <Paper elevation={0} sx={Styles.paperStyle}>
                 <Stack gap={2}>
-                    <Typography fontWeight='bold' mb={3}> Review and Launch</Typography>
+                    <Typography variant="h6" fontWeight='bold' mb={3}> Review and Launch</Typography>
                     <Stack direction="row" sx={Styles.stackStyle}>
                         <Typography width={250}>Game Title</Typography>
                         <TextField
@@ -99,12 +98,12 @@ export const ReviewAndLaunchStep = () => {
                         <TextField
                             fullWidth
                             variant="outlined"
-                            value={getSelectedPlatforms()}
+                            value={currentSetupGameDetails.selectedPlatforms.map((platform: any) => platform.name).join(", ")}
                             disabled
                         />
                     </Stack>
 
-                    <Stack direction="row" sx={Styles.stackStyle}>
+                    {/* <Stack direction="row" sx={Styles.stackStyle}>
                         <Typography width={250}>Builds</Typography>
                         <TextField
                             fullWidth
@@ -112,34 +111,33 @@ export const ReviewAndLaunchStep = () => {
                             value={getSelectedPlatforms()}
                             disabled
                         />
-                    </Stack>
+                    </Stack> */}
 
                     <Typography mt={3} fontWeight='bold'> Tech Checks</Typography>
                     <Stack gap={2}>
                         {
-                            platforms.map((data, index) => (
-                                data.isSelected && (
-                                    <Stack direction="row" sx={Styles.stackStyle} key={index}>
-                                        <Typography width={250}>{data.label}</Typography>
-                                        <TextField
-                                            fullWidth
-                                            variant="outlined"
-                                            value={data.isSelected ? "Confirmed" : "Failed"}
-                                            disabled
-                                            slotProps={{
-                                                inputLabel: {
-                                                    shrink: false, // prevents label from shrinking automatically
-                                                },
-                                                input: {
-                                                    endAdornment: (
-                                                        <InputAdornment position="end">
-                                                            {data.isSelected ? <Done /> : <Close />}
-                                                        </InputAdornment>
-                                                    )
-                                                }
-                                            }}
-                                        />
-                                    </Stack>)
+                            currentSetupGameDetails.selectedPlatforms.map((data: any, index: any) => (
+                                <Stack direction="row" sx={Styles.stackStyle} key={index}>
+                                    <Typography width={250}>{data.name}</Typography>
+                                    <TextField
+                                        fullWidth
+                                        variant="outlined"
+                                        value={"Confirmed"}
+                                        disabled
+                                        slotProps={{
+                                            inputLabel: {
+                                                shrink: false, // prevents label from shrinking automatically
+                                            },
+                                            input: {
+                                                endAdornment: (
+                                                    <InputAdornment position="end">
+                                                        {<Done />}
+                                                    </InputAdornment>
+                                                )
+                                            }
+                                        }}
+                                    />
+                                </Stack>
                             ))
                         }
                     </Stack>

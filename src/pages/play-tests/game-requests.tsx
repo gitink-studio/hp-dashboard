@@ -1,25 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { DataGrid, GridColDef, useGridApiRef } from '@mui/x-data-grid';
 import { Box, Button, CircularProgress, FormControl, IconButton, InputAdornment, InputLabel, MenuItem, Select, Stack, TextField, Typography } from '@mui/material';
-import { Close, Done, PlayArrow, PlayArrowRounded, Search, Visibility } from '@mui/icons-material';
+import { Android, Close, Done, PlayArrow, PlayArrowRounded, Search, Visibility } from '@mui/icons-material';
 import { Styles } from '../../common/styles';
-import { useDataSending, useDisplayGameRequestDetails, useGameRequestDetails, useGameRequests, usePlayTestsActions } from '../../store/play-tests/play-tests-store';
+import { useDataSending, useDetailedView, useGameRequestDetails, useGameRequests, useOpenVideo, usePlayTestsActions } from '../../store/play-tests/play-tests-store';
 import { sendGraphqlRequest, sendRequest } from '../../common/utils';
 import { GRAPHQL_URL, HttpMethod, QueryNames, ROOT_URL, TOTAL_WEB_GAME_SUBMISSION_STEPS, WEB_GAME_SUBMISSION_STATUS_UPDATE_URL } from '../../common/constants';
 import { Queries } from '../../graphql/queries';
-import { GameRequestDetailedView } from './game-request-detailed-view';
+import { GameSubmissionDetailedView } from './game-submission-detailed-view';
+import { VideoPlayer } from '../../components/VideoPlayer';
 
 export const GameRequests = () => {
     const apiRef = useGridApiRef();
     let gameRequests = useGameRequests();
     let gameRequestDetails = useGameRequestDetails();
-    let displayGameRequestDetails = useDisplayGameRequestDetails();
+    let DetailedView = useDetailedView();
     let isDataSending = useDataSending();
+    const openVideo = useOpenVideo();
     const [data, setData] = useState<any[]>([]);
     const [searchValue, setSearchValue] = useState<string>("");
     const [status, setStatus] = useState<string>("All");
     const [filteredRows, setFilteredRows] = useState<any[]>([]);
-    const { setGameRequests, setDisplayGameRequestDetails, setGameRequestDetails, setDataSending } = usePlayTestsActions();
+    const { setGameRequests, setDetailedView: setDetailedView, setGameRequestDetails, setDataSending, setOpenVideo } = usePlayTestsActions();
+    let isPublisher = localStorage.getItem("userRole")?.toLowerCase().includes("publisher");
 
     const handleAcceptGameRequest = async (gameRequestDetails: any) => {
         setDataSending(true);
@@ -35,7 +38,7 @@ export const GameRequests = () => {
         console.log("Game Request Response: ", response);
 
         setDataSending(false);
-        setDisplayGameRequestDetails(false);
+        setDetailedView(false);
     }
 
     const handleRejectGameRequest = async (gameRequestDetails: any) => {
@@ -52,10 +55,15 @@ export const GameRequests = () => {
         console.log("Game Request Response: ", response);
 
         setDataSending(false);
-        setDisplayGameRequestDetails(false);
+        setDetailedView(false);
     }
 
     const columns: GridColDef[] = [
+        {
+            field: 'platform',
+            headerName: 'Platform',
+            flex: 1,
+        },
         {
             field: 'name',
             headerName: 'Game',
@@ -68,46 +76,81 @@ export const GameRequests = () => {
         },
         {
             field: 'playableLinkUrl',
-            headerName: 'Playable Link',
+            headerName: 'Link',
             flex: 1,
-            renderCell: (params) => (
-                <Button
-                    href={params.value}
-                    target="_blank"
-                    variant="outlined"
-                    sx={{ textTransform: "none", color: "primary.main" }}
-                    startIcon={<PlayArrow />}
-                    disabled={isDataSending}
-                >
-                    Play
-                </Button >
-            )
+            renderCell: (params) => {
+                const isWebPlatform = params.row.webGameRequest !== null;
+                const androidOrIOSGameRequestDetails = params.row.androidOrIOSGameRequest;
+                return (
+                    <>
+                        {isWebPlatform ? (
+                            <Button
+                                href={params.value}
+                                target="_blank"
+                                variant="outlined"
+                                sx={{ textTransform: "none", color: "primary.main" }}
+                                startIcon={<PlayArrow />}
+                                disabled={isDataSending}
+                            >
+                                Play
+                            </Button >
+                        ) :
+                            (androidOrIOSGameRequestDetails.storeUrl !== '' && <Button
+                                href={androidOrIOSGameRequestDetails.storeUrl}
+                                target="_blank"
+                                variant="outlined"
+                                sx={{ textTransform: "none", color: "primary.main" }}
+                                startIcon={
+                                    <img
+                                        src="https://img.icons8.com/?size=100&id=L1ws9zn2uD01&format=png&color=000000"
+                                        alt=""
+                                        style={{ width: 20, height: 20 }}
+                                    />
+                                }
+                                disabled={isDataSending}
+                            >
+                                Go to Store
+                            </Button >)
+                        }
+
+                    </>
+                )
+            }
         },
         {
             field: 'gamePlayVideoUrl',
             headerName: 'Gameplay Video',
             flex: 1,
-            renderCell: (params) => (
-                <Button
-                    href={params.value}
-                    target="_blank"
-                    variant="outlined"
-                    sx={{ textTransform: "none", color: "primary.main" }}
-                    startIcon={<PlayArrow />}
-                    disabled={isDataSending}
-                >
-                    Watch
-                </Button >
-            )
+            renderCell: (params) => {
+                const getVideoUrl = () => params.row.webGameRequest !== null ? params.row.webGameRequest.shortGameplayVideoUrl : params.row.androidOrIOSGameRequest.gamePlayVideoUrl;
+                return (
+                    <>
+                        <Button
+                            onClick={() => {
+                                console.log("Url: ", getVideoUrl());
+                                setOpenVideo(true);
+                            }}
+                            variant="outlined"
+                            sx={{ textTransform: "none", color: "primary.main" }}
+                            startIcon={<PlayArrow />}
+                            disabled={isDataSending}
+                        >
+                            Watch
+                        </Button >
+                        {openVideo &&
+                            <VideoPlayer
+                                open={true}
+                                onClose={() => setOpenVideo(false)}
+                                videoUrl={getVideoUrl()}
+                            />
+                        }
+                    </>
+                )
+            }
         },
         {
             field: 'status',
             headerName: 'Status',
-            flex: 1,
-        },
-        {
-            field: 'platform',
-            headerName: 'Platform',
             flex: 1,
         },
         {
@@ -116,7 +159,7 @@ export const GameRequests = () => {
             flex: 1,
             renderCell: (params: any) => (
                 <Stack direction="row" gap={1}>
-                    <IconButton onClick={() => handleDisplayGameRequestDetails(params.row)} disabled={isDataSending}>
+                    <IconButton onClick={() => handleDetailedView(params.row)} disabled={isDataSending}>
                         <Visibility />
                     </IconButton>
 
@@ -131,7 +174,8 @@ export const GameRequests = () => {
                                     <Close color="error" />
                                 </IconButton>
                             </>
-                        )}
+                        )
+                    }
                 </Stack>
             )
         },
@@ -163,8 +207,8 @@ export const GameRequests = () => {
         setStatus(value);
     }
 
-    const handleDisplayGameRequestDetails = (gameRequestDetails: any) => {
-        setDisplayGameRequestDetails(true);
+    const handleDetailedView = (gameRequestDetails: any) => {
+        setDetailedView(true);
         setGameRequestDetails(gameRequestDetails);
     }
 
@@ -241,12 +285,12 @@ export const GameRequests = () => {
                             }}
                             rowSelection={false}
                         // onRowClick={(params) => {
-                        //     handleDisplayGameRequestDetails(params.row);
+                        //     handleDetailedView(params.row);
                         //     console.log("params: ", params);
                         // }}
                         />
 
-                        {displayGameRequestDetails && <GameRequestDetailedView />}
+                        {DetailedView && <GameSubmissionDetailedView />}
                     </Box >)
             }
         </>

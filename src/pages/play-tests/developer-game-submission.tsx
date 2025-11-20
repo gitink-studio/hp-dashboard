@@ -1,27 +1,30 @@
 import React, { useEffect, useState } from 'react';
 import { DataGrid, GridColDef, useGridApiRef } from '@mui/x-data-grid';
-import { Box, Button, CircularProgress, IconButton, InputAdornment, Stack, TextField, Typography } from '@mui/material';
-import { Close, Done, PlayArrow, PlayArrowRounded, Search, Visibility } from '@mui/icons-material';
-import { Styles } from '../../common/styles';
-import { useDataSending, useDisplayGameRequestDetails, useGameRequestDetails, useGameRequests, usePlayTestsActions } from '../../store/play-tests/play-tests-store';
-import { sendGraphqlRequest, sendRequest } from '../../common/utils';
-import { GRAPHQL_URL, HttpMethod, QueryNames, ROOT_URL, TOTAL_WEB_GAME_SUBMISSION_STEPS, WEB_GAME_SUBMISSION_STATUS_UPDATE_URL } from '../../common/constants';
+import { Box, Button, CircularProgress, IconButton, InputAdornment, Stack, TextField } from '@mui/material';
+import { PlayArrow, Search, Visibility } from '@mui/icons-material';
+import { useDataSending, useDetailedView, useOpenVideo, usePlayTestsActions } from '../../store/play-tests/play-tests-store';
+import { sendGraphqlRequest } from '../../common/utils';
+import { GRAPHQL_URL, QueryNames, } from '../../common/constants';
 import { Queries } from '../../graphql/queries';
-import { GameRequestDetailedView } from './game-request-detailed-view';
+import { GameSubmissionDetailedView } from './game-submission-detailed-view';
 import { useSubmitWebGameActions, useWebGameSubmissionDetails } from '../../store/submit-web-game/submit-web-game-store';
+import { VideoPlayer } from '../../components/VideoPlayer';
 
 export const DeveloperGameSubmission = () => {
     const apiRef = useGridApiRef();
     let webGameSubmissionDetails = useWebGameSubmissionDetails();
-    let displayGameRequestDetails = useDisplayGameRequestDetails();
+    let DetailedView = useDetailedView();
     let isDataSending = useDataSending();
-    let isDeveloper = localStorage.getItem("userRole")?.toLowerCase().includes("developer");
-    const { setDisplayGameRequestDetails, setGameRequestDetails, setDataSending } = usePlayTestsActions();
+    const openVideo = useOpenVideo();
+    const { setDetailedView: setDetailedView, setGameRequestDetails, setOpenVideo } = usePlayTestsActions();
     const { setWebGameSubmissionDetails, setCurrentSetupGameDetails } = useSubmitWebGameActions();
+    const [data, setData] = useState<any[]>([]);
+    const [platform, setPlatform] = useState('All');
     const [filteredRows, setFilteredRows] = useState<any[]>([]);
 
-    const handleDisplayGameRequestDetails = (gameRequestDetails: any) => {
-        setDisplayGameRequestDetails(true);
+    const handleDetailedView = (gameRequestDetails: any) => {
+        console.log('Game Request Details: ', gameRequestDetails);
+        setDetailedView(true);
         setGameRequestDetails(gameRequestDetails);
     }
 
@@ -61,18 +64,32 @@ export const DeveloperGameSubmission = () => {
             field: 'gamePlayVideoUrl',
             headerName: 'Gameplay Video',
             flex: 1,
-            renderCell: (params) => (
-                <Button
-                    href={params.value}
-                    target="_blank"
-                    variant="outlined"
-                    sx={{ textTransform: "none", color: "primary.main" }}
-                    startIcon={<PlayArrow />}
-                    disabled={isDataSending}
-                >
-                    Watch
-                </Button >
-            )
+            renderCell: (params: any) => {
+                const getVideoUrl = () => params.row.webGameRequest !== null ? params.row.webGameRequest.shortGameplayVideoUrl : params.row.androidOrIOSGameRequest.gamePlayVideoUrl;
+                const gameplayVideoUrl = getVideoUrl();
+                return (
+                    <>
+                        <Button
+                            onClick={() => {
+                                console.log("Url: ", gameplayVideoUrl);
+                                setOpenVideo(true);
+                            }}
+                            variant="outlined"
+                            sx={{ textTransform: "none", color: "primary.main" }}
+                            startIcon={<PlayArrow />}
+                            disabled={isDataSending}
+                        >
+                            Watch
+                        </Button >
+                        {openVideo &&
+                            <VideoPlayer
+                                open={true}
+                                onClose={() => setOpenVideo(false)}
+                                videoUrl={gameplayVideoUrl}
+                            />}
+                    </>
+                )
+            }
         },
         {
             field: 'action',
@@ -80,7 +97,7 @@ export const DeveloperGameSubmission = () => {
             flex: 1,
             renderCell: (params: any) => (
                 <Stack direction="row" gap={1}>
-                    <IconButton onClick={() => handleDisplayGameRequestDetails(params.row)} disabled={isDataSending}>
+                    <IconButton onClick={() => handleDetailedView(params.row)} disabled={isDataSending}>
                         <Visibility />
                     </IconButton>
                 </Stack>
@@ -97,6 +114,11 @@ export const DeveloperGameSubmission = () => {
             const filteredRows = webGameSubmissionDetails.filter((row) => row.name.toLowerCase().includes(searchValue.toLowerCase()));
             setFilteredRows(filteredRows);
         }
+    }
+
+    const handlePlatformChange = (event: any) => {
+        let platform = event.target.value;
+        setPlatform(platform);
     }
 
     useEffect(() => {
@@ -121,51 +143,51 @@ export const DeveloperGameSubmission = () => {
                         <CircularProgress size={50} />
                     </Box>
                 ) :
-                    (<Box style={{ width: '100%' }}>
-                        <TextField variant="outlined" placeholder="Search Game" sx={{ mb: 2 }}
-                            onChange={handleSearch}
-                            slotProps={{
-                                inputLabel: {
-                                    shrink: false, // prevents label from shrinking automatically
-                                },
-                                input: {
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <Search />
-                                        </InputAdornment>
-                                    )
-                                }
-                            }}
-                        />
+                    (
+                        <Box style={{ width: '100%' }}>
+                            <TextField variant="outlined" placeholder="Search Game" sx={{ mb: 2 }}
+                                onChange={handleSearch}
+                                slotProps={{
+                                    inputLabel: {
+                                        shrink: false, // prevents label from shrinking automatically
+                                    },
+                                    input: {
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <Search />
+                                            </InputAdornment>
+                                        )
+                                    }
+                                }}
+                            />
 
-                        <DataGrid
-                            apiRef={apiRef}
-                            rows={filteredRows}
-                            columns={columns}
-                            initialState={{
-                                pagination: {
-                                    paginationModel: { pageSize: 20 }
-                                }
-                            }}
-                            pageSizeOptions={[5, 10, 20, 50, 100]}
-                            sx={{
-                                border: 1, borderColor: 'divider',
-                                '& .MuiDataGrid-cell:focus': {
-                                    outline: 'none',
-                                },
-                                '& .MuiDataGrid-cell:focus-within': {
-                                    outline: 'none',
-                                },
-                            }}
-                            rowSelection={false}
-                        // onRowClick={(params) => {
-                        //     handleDisplayGameRequestDetails(params.row);
-                        //     console.log("params: ", params);
-                        // }}
-                        />
-
-                        {displayGameRequestDetails && <GameRequestDetailedView />}
-                    </Box >)
+                            <DataGrid
+                                apiRef={apiRef}
+                                rows={filteredRows}
+                                columns={columns}
+                                initialState={{
+                                    pagination: {
+                                        paginationModel: { pageSize: 20 }
+                                    }
+                                }}
+                                pageSizeOptions={[5, 10, 20, 50, 100]}
+                                sx={{
+                                    border: 1, borderColor: 'divider',
+                                    '& .MuiDataGrid-cell:focus': {
+                                        outline: 'none',
+                                    },
+                                    '& .MuiDataGrid-cell:focus-within': {
+                                        outline: 'none',
+                                    },
+                                }}
+                                rowSelection={false}
+                            // onRowClick={(params) => {
+                            //     handleDetailedView(params.row);
+                            //     console.log("params: ", params);
+                            // }}
+                            />
+                            {DetailedView && <GameSubmissionDetailedView />}
+                        </Box >)
             }
         </>
     );

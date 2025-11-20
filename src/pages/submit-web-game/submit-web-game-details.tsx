@@ -20,33 +20,16 @@ import { PlatformRequirementsStep } from './platform-requirements/platform-requi
 import { CreativesStep } from './creatives/creatives-step';
 import { MetaDataAndRatingsStep } from './metadata-and-ratings/metadata-and-ratings-step';
 import { ReviewAndLaunchStep } from './review-and-launch/review-and-launch-step';
-import { sendGraphqlRequest } from '../../common/utils';
-import { GRAPHQL_URL, QueryNames } from '../../common/constants';
-import { Queries } from '../../graphql/queries';
+import { WebGameSubmissionSetup } from '../../common/constants';
 
 export const SubmitWebGameDetails = () => {
-    const theme = useTheme();
     const currentStep = useCurrentStep();
     const activeStep = useActiveStep();
-    const webGameSubmissionDetails = useWebGameSubmissionDetails();
     const currentSetupGameDetails = useCurrentSetupGameDetails();
-    const { setActiveStep, setCurrentStepWithIndex, isStepCompleted, setWebGameSubmissionDetails } = useSubmitWebGameActions();
+    const { setActiveStep, setCurrentStepWithIndex, isStepCompleted } = useSubmitWebGameActions();
     let isStepSet = false;
 
     useEffect(() => {
-
-        // if (webGameSubmissionDetails.length == 0) {
-        //     const fetchGameSubmissionRequests = async () => {
-        //         let response = await sendGraphqlRequest(GRAPHQL_URL, QueryNames.GET_ALL_GAME_REQUEST_BY_STUDIO_ID, {
-        //             query: Queries.GetAllGameRequestByStudioId,
-        //             variables: { studioId: localStorage.getItem('studioId') ?? undefined }
-        //         });
-
-        //         setWebGameSubmissionDetails(response.data);
-        //     }
-
-        //     fetchGameSubmissionRequests();
-        // }
         if (!isStepSet && currentSetupGameDetails !== "") {
             console.log("currentSetupGameDetails", currentSetupGameDetails.currentSetupStateIndex);
             setCurrentStepWithIndex(currentSetupGameDetails.currentSetupStateIndex);
@@ -77,6 +60,14 @@ export const SubmitWebGameDetails = () => {
     }
 
     const handleStepper = (index: number) => {
+        if (currentStep < WebGameSubmissionSetup.UPLOAD_WEB_BUILDS) return;
+
+        if (currentStep > index && (
+            index === WebGameSubmissionSetup.WEB_GAME_SUBMISSION ||
+            index === WebGameSubmissionSetup.UPLOAD_WEB_BUILDS ||
+            index === WebGameSubmissionSetup.CREATIVES
+        )) return;
+
         setActiveStep(index);
 
         // if (index >= currentStep) {
@@ -99,20 +90,30 @@ export const SubmitWebGameDetails = () => {
 
                     <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} mt={3}>
                         <Box sx={{ width: { xs: '100%', md: '250px' }, }}>
-                            <Stepper
-                                activeStep={activeStep}
-                                orientation="vertical"
-                                sx={{
-                                    '& .MuiStepLabel-root': {
-                                        padding: '8px 0'
-                                    },
-                                }}
-                            >
+                            <Stepper activeStep={activeStep} orientation="vertical">
                                 {steps.map((label, index) => (
-                                    <Step key={label.name} active={currentStep == index} completed={isStepCompleted(index)}>
+                                    <Step key={label.name} active={currentStep == index} completed={isStepCompleted(index)} >
                                         <StepLabel
                                             onClick={() => handleStepper(index)}
-                                            sx={{ cursor: activeStep >= currentStep ? "pointer" : "default" }}>{label.name}
+                                            slotProps={{
+                                                stepIcon: {
+                                                    sx: {
+                                                        "&.Mui-completed": {
+                                                            color: "grey !important",
+                                                        },
+                                                        "&.Mui-active": {
+                                                            color: "primary.main",
+                                                        }
+                                                    }
+                                                }
+                                            }}
+                                            sx={{
+                                                cursor: activeStep >= currentStep
+                                                    ? "pointer" : "default",
+                                                "& .MuiStepLabel-label.Mui-completed": {
+                                                    color: "grey !important",
+                                                }
+                                            }}>{label.name}
                                         </StepLabel>
                                     </Step>
                                 ))}

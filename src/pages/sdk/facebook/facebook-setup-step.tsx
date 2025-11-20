@@ -12,10 +12,10 @@ import {
 import { NewAppSteps } from './new-app-steps';
 import { BasicsSteps } from './basics-steps';
 import { AdvancedSteps } from './advanced-steps';
-import { useActiveStep, useCurrentSetupStateId, useCurrentStep, useDataSending, useGameId, useSDKDetailActions } from '../../../store/sdk/sdk-details-store';
+import { useActiveStep, useCurrentGameSetupDetails, useCurrentSetupStateId, useCurrentStep, useDataSending, useGameId, useSDKDetailActions } from '../../../store/sdk/sdk-details-store';
 import { useAdvancedAppStepCompleted, useAppId, useBasicAppStepCompleted, useClientToken, useFacebookSetupActions, useNewAppStepCompleted, useProgress, useReferrerDecryptionKey } from '../../../store/sdk/facebook-setup-store';
 import { useNotify } from 'react-admin';
-import { CREATE_FB_DATA_URL, CREATE_GAME_SUBMISSION_DATA_URL, CURRENT_SDK_SETUP_STATE_ID, FB_APP_ID_LENGTH, HttpMethod, MINIMUM_FB_CLIENT_TOKEN_LENGTH, MINIMUM_FB_REFERRER_DECRYPTION_KEY, SDK_SETUP_GAME_ID, STUDIO_TOKEN } from '../../../common/constants';
+import { UPDATE_FB_DATA_URL, CREATE_GAME_SUBMISSION_DATA_URL, CURRENT_SDK_SETUP_STATE_ID, FB_APP_ID_LENGTH, HttpMethod, MINIMUM_FB_CLIENT_TOKEN_LENGTH, MINIMUM_FB_REFERRER_DECRYPTION_KEY, SDK_SETUP_GAME_ID, STUDIO_TOKEN } from '../../../common/constants';
 import { sendRequest } from '../../../common/utils';
 import { Styles } from '../../../common/styles';
 
@@ -58,7 +58,8 @@ export const FacebookSetupStep: React.FC = () => {
     const isDataSending = useDataSending();
     const gameId = useGameId();
     const currentStep = useCurrentStep();
-    const { setCurrentStep, setDataSending } = useSDKDetailActions();
+    const currentGameSetupDetails = useCurrentGameSetupDetails();
+    const { setCurrentStep, setDataSending, setCurrentGameSetupDetails } = useSDKDetailActions();
     const notify = useNotify();
     const progress = useProgress();
     const { setBasicAppStepCompleted, setAdvancedAppStepCompleted } = useFacebookSetupActions();
@@ -112,23 +113,29 @@ export const FacebookSetupStep: React.FC = () => {
     }
 
     const submitData = async () => {
-        setDataSending(true);
-        setTabIndex(2);
+        try {
+            setDataSending(true);
+            setTabIndex(2);
 
-        let response = await sendRequest(HttpMethod.POST, CREATE_FB_DATA_URL, {
-            appId: appId,
-            referrerDecryptionKey: referrerDecryptionKey,
-            clientToken: clientToken,
-            gameId: localStorage.getItem(SDK_SETUP_GAME_ID),
-            currentSetupStateId: localStorage.getItem(CURRENT_SDK_SETUP_STATE_ID)
-        });
-        console.log(response);
+            let response = await sendRequest(HttpMethod.POST, UPDATE_FB_DATA_URL, {
+                appId: appId,
+                referrerDecryptionKey: referrerDecryptionKey,
+                clientToken: clientToken,
+                gameId: localStorage.getItem(SDK_SETUP_GAME_ID),
+                gameRequestId: currentGameSetupDetails.gameRequestId,
+                sdkSetupCurrentStateId: currentGameSetupDetails.androidOrIOSGameRequest.sdkSetupCurrentState.id,
+                currentSetupStateIndex: currentGameSetupDetails.currentSetupStateIndex,
+                facebookDetailsId: currentGameSetupDetails.androidOrIOSGameRequest.androidOrIOSGameRequestDetails.facebookDetails.id
 
-        if (response?.data?.data?.token) {
+            });
+            console.log(response);
+
             console.log("FB data sent successfully!", response.data);
             localStorage.setItem(STUDIO_TOKEN, response.data.data.token);
+            setCurrentGameSetupDetails(response.data.currentGameSetupDetails);
             setCurrentStep();
-        } else {
+        } catch (err) {
+            console.error(err);
             notify("Something went wrong!", { type: "error" });
         }
 

@@ -2,8 +2,12 @@ import { Box, Checkbox, FormControlLabel, List, ListItem, ListItemIcon, ListItem
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import { Styles } from "../../../common/styles";
 import { useCrazyGamesRequirementsCompleted, usePlatformRequirementsActions } from "../../../store/submit-web-game/platform-requirements-store";
+import { useCurrentStep } from "../../../store/submit-web-game/submit-web-game-store";
+import { WebGameSubmissionSetup } from "../../../common/constants";
+import { useEffect } from "react";
 
 export const CrazyGamesRequirementsTab = () => {
+    const currentStep = useCurrentStep();
     const isCrazyGamesRequirementsCompleted = useCrazyGamesRequirementsCompleted();
     const { setCrazyGamesRequirementsCompleted } = usePlatformRequirementsActions();
     const requirements = [
@@ -13,6 +17,14 @@ export const CrazyGamesRequirementsTab = () => {
         'Canvas resize on container changes',
         'Handle visibility change (tabbed browsing)',
     ]
+
+    const isStepCompleted = () => currentStep > WebGameSubmissionSetup.PLATFORM_REQUIREMENTS;
+
+    useEffect(() => {
+        if (isStepCompleted()) {
+            setCrazyGamesRequirementsCompleted(true);
+        }
+    }, [])
 
     return (
         <>
@@ -36,13 +48,13 @@ export const CrazyGamesRequirementsTab = () => {
                             checked={isCrazyGamesRequirementsCompleted}
                             onChange={(event) => setCrazyGamesRequirementsCompleted(event.target.checked)}
                             name="acceptTerms"
+                            disabled={isStepCompleted()}
                         />
                     }
                     label="I confirm my build adheres to CrazyGames tech requirements"
                 // sx={SDKStyle.checkboxTextStyle}
                 />
             </Stack>
-
         </>
     )
 }

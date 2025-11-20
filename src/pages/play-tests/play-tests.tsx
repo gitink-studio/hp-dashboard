@@ -1,25 +1,25 @@
-import { useState, SyntheticEvent, ReactNode } from 'react';
+import { useState, ReactNode } from 'react';
 import {
     Box,
     Tabs,
     Tab,
     Stack,
-    Button,
+    Divider,
 } from '@mui/material';
 
-import { GameRequests } from './game-requests';
 import { GamePostSubmission } from './game-post-submission';
-import { DeveloperGameSubmission } from './developer-game-submission';
-import { Add } from '@mui/icons-material';
-import { usePlayTestsActions } from '../../store/play-tests/play-tests-store';
-import { useSubmitWebGameActions } from '../../store/submit-web-game/submit-web-game-store';
-import { useCreativesActions } from '../../store/submit-web-game/creatives-store';
-import { useMetaCreativesActions } from '../../store/submit-web-game/meta-creatives-store';
-import { useMetadataAndRatingsActions } from '../../store/submit-web-game/metadata-and-ratings-store';
-import { usePlatformRequirementsActions } from '../../store/submit-web-game/platform-requirements-store';
-import { useSelectPlatformActions } from '../../store/submit-web-game/select-platform-store';
-import { useUploadWebBuildsActions } from '../../store/submit-web-game/upload-web-builds-store';
-import { useWebGameSubmissionActions } from '../../store/submit-web-game/web-game-submission-store';
+import { usePlayTestsActions, useSelectedGameSubmissionPage } from '../../store/play-tests/play-tests-store';
+import { useFacebookSetupActions } from '../../store/sdk/facebook-setup-store';
+import { useStoreStepActions } from '../../store/sdk/store-step-store';
+import { useGameSubmissionActions } from '../../store/sdk/game-submission-store';
+import { useTestingTermActions } from '../../store/sdk/testing-terms-store';
+import { useSDKDetailActions } from '../../store/sdk/sdk-details-store';
+import { useSDKIntegrationActions } from '../../store/sdk/sdk-integration-store';
+import { useTestSetupActions } from '../../store/sdk/test-setup-store';
+import { WebGameSubmissionPage } from './web-game-submission-page';
+import { GameSubmissionPage } from '../../common/constants';
+import { Android, HomeMaxOutlined } from '@mui/icons-material';
+import { MobileGameSubmissionPage } from './mobile-game-submission-page';
 
 interface TabPanelProps {
     value: number;
@@ -36,50 +36,30 @@ const TabPanel = ({ value, index, children }: TabPanelProps) => {
     );
 }
 
-
-
 export const PlayTests = (): JSX.Element => {
     const [tabIndex, setTabIndex] = useState<number>(0);
-    let isDeveloper = localStorage.getItem("userRole")?.toLowerCase().includes("developer");
-    let isPublisher = localStorage.getItem("userRole")?.toLowerCase().includes("publisher");
-    const { resetPlayTestsStore } = usePlayTestsActions();
-    const { resetSubmitWebGameStore } = useSubmitWebGameActions();
-    const { resetCreativesStore } = useCreativesActions();
-    const { resetMetaCreativesStore } = useMetaCreativesActions();
-    const { resetMetadataAndRatingsStore } = useMetadataAndRatingsActions();
-    const { resetPlatformRequirementsStore } = usePlatformRequirementsActions();
-    const { resetSelectPlatformStore } = useSelectPlatformActions();
-    const { resetUploadWebBuildsStore } = useUploadWebBuildsActions();
-    const { resetWebGameSubmissionStore } = useWebGameSubmissionActions();
-    const resetAllStates = () => {
-        resetPlayTestsStore();
-        resetSubmitWebGameStore();
-        resetCreativesStore();
-        resetMetaCreativesStore();
-        resetMetadataAndRatingsStore();
-        resetPlatformRequirementsStore();
-        resetSelectPlatformStore();
-        resetUploadWebBuildsStore();
-        resetWebGameSubmissionStore();
-    }
+    const selectedGameSubmissionPage = useSelectedGameSubmissionPage();
 
-    const publisherSteps = [
-        { name: 'Game Submissions', component: isDeveloper ? <DeveloperGameSubmission /> : <GameRequests /> },
-        { name: 'Post Submissions', component: <GamePostSubmission /> },
-    ];
+    const { setSelectedGameSubmissionPage } = usePlayTestsActions();
 
-    const developerSteps = [
-        { name: 'Game Submissions', component: <DeveloperGameSubmission /> },
-    ];
+    const gameSubmissionPages = [
+        { name: 'Web', component: <WebGameSubmissionPage /> },
+        { name: 'Android/iOS', component: <MobileGameSubmissionPage /> },
+    ]
 
-    const steps = isDeveloper ? developerSteps : publisherSteps;
+    const steps = gameSubmissionPages;
 
-    const handleTabChange = (event: SyntheticEvent, newIndex: number) => {
+    const handleTabChange = (event: any, newIndex: number) => {
         setTabIndex(newIndex);
+        setSelectedGameSubmissionPage(newIndex === 0 ? GameSubmissionPage.WEB_GAME_SUBMISSION_PAGE : GameSubmissionPage.MOBILE_GAME_SUBMISSION_PAGE)
     };
 
     const handleNewGame = () => {
-        resetAllStates();
+        // resetAllGameSubmissionStates();
+        window.location.href = '/#/sdk';
+    }
+
+    const handleNewWebGame = () => {
         window.location.href = '/#/submit-web-game';
     }
 
@@ -93,20 +73,24 @@ export const PlayTests = (): JSX.Element => {
                     indicatorColor="primary"
                     variant="scrollable"
                     scrollButtons="auto"
-                    sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
                 >
                     {steps.map((step, index) => (
-
                         <Tab key={index} label={step.name} />
                     ))}
                 </Tabs>
 
-                {isDeveloper && (<Box>
-                    <Button variant="outlined" color="primary" sx={{ textTransform: "none" }} startIcon={<Add />} onClick={handleNewGame}>
-                        New Game
-                    </Button>
-                </Box>)}
+                {/* {isDeveloper && (<Box>
+                    <Stack direction={'row'} gap={2}>
+                        <Button variant="outlined" color="primary" sx={{ textTransform: "none" }} startIcon={<Add />} onClick={handleNewGame}>
+                            New Android/iOS Game
+                        </Button>
+                        <Button variant="outlined" color="primary" sx={{ textTransform: "none" }} startIcon={<Add />} onClick={handleNewWebGame}>
+                            New Web Game
+                        </Button>
+                    </Stack>
+                </Box>)} */}
             </Stack>
+            <Divider />
 
             <Box >
                 {steps.map((step, i) => (

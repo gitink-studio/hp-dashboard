@@ -13,21 +13,26 @@ import {
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import CreativesLibrary from "./creative-library";
-import { useActiveStep, useDataSending, useSDKDetailActions } from "../../../store/sdk/sdk-details-store";
-import { useDisplayCreativeLibrary, useTestSetupActions, useVideoFileUrls } from "../../../store/sdk/test-setup-store";
-import { CREATE_TEST_SETUP_DATA_URL, CURRENT_SDK_SETUP_STATE_ID, HttpMethod, SDK_SETUP_GAME_ID } from "../../../common/constants";
-import { sendRequest } from "../../../common/utils";
+import { useActiveStep, useCurrentGameSetupDetails, useDataSending, useSDKDetailActions } from "../../../store/sdk/sdk-details-store";
+import { useDisplayCreativeLibrary, useTestSetupActions, useVideoFiles } from "../../../store/sdk/test-setup-store";
+import { CREATE_TEST_SETUP_DATA_URL, CREATIVES_ROOT_URL, CURRENT_SDK_SETUP_STATE_ID, FINAL_SUBMISSION, HttpMethod, MARKETINGS, SDK_SETUP_GAME_ID } from "../../../common/constants";
+import { getFilesInfo, sendFormDataRequest, sendRequest, slugify } from "../../../common/utils";
 import { useNotify } from "react-admin";
+import { localStorageData } from "../../../common/localStorage";
+import { useCurrentSetupGameDetails } from "../../../store/submit-web-game/submit-web-game-store";
 
 export const TestSetup: React.FC = () => {
     const notify = useNotify();
     const theme = useTheme();
     const activeStep = useActiveStep();
-    const videoFileUrls = useVideoFileUrls();
+    const videoFiles = useVideoFiles();
     const isDataSending = useDataSending();
+    const currentSetupGameDetails = useCurrentSetupGameDetails();
     const { isStepCompleted, setCurrentStep, setDataSending } = useSDKDetailActions();
     const canDisplayCreativeLibrary = useDisplayCreativeLibrary();
     const { setDisplayCreativeLibrary } = useTestSetupActions();
+    const currentGameSetupDetails = useCurrentGameSetupDetails();
+
 
     const handleUploadCreatives = () => {
         setDisplayCreativeLibrary(true);
@@ -38,27 +43,40 @@ export const TestSetup: React.FC = () => {
     }
 
     const submitData = async () => {
-        setDataSending(true);
+        try {
+            setDataSending(true);
 
-        let response = await sendRequest(HttpMethod.POST, CREATE_TEST_SETUP_DATA_URL, {
-            currentSetupStateId: localStorage.getItem(CURRENT_SDK_SETUP_STATE_ID),
-            gameId: localStorage.getItem(SDK_SETUP_GAME_ID),
-            videoUrls: videoFileUrls
-        });
-        console.log(response);
+            const commonFilePath = `${CREATIVES_ROOT_URL}/${localStorageData.studioId}/${'android'}/${'pickle-ball-clash'}/${MARKETINGS}`;
+            let fileInfoList = getFilesInfo(commonFilePath, videoFiles);
 
-        if (response?.data?.id) {
-            console.log("FB data sent successfully!", response.data);
-            setCurrentStep();
-        } else {
+            let response = await sendFormDataRequest('upload-creatives-data', CREATE_TEST_SETUP_DATA_URL, videoFiles, {
+                fileInfoList: fileInfoList,
+                gameRequestId: currentGameSetupDetails.gameRequestId,
+                sdkSetupCurrentStateId: currentGameSetupDetails.androidOrIOSGameRequest.sdkSetupCurrentState.id,
+                currentSetupStateIndex: currentGameSetupDetails.currentSetupStateIndex
+            });
+
+            console.log('Response ', response);
+            window.location.href = '/#/getAllGameRequests';
+            setDataSending(false);
+        } catch (err) {
+            console.error(err);
             notify("Something went wrong!", { type: "error" });
         }
 
-        setDataSending(false);
+        // let response = await sendRequest(HttpMethod.POST, CREATE_TEST_SETUP_DATA_URL, {
+        //     currentSetupStateId: localStorage.getItem(CURRENT_SDK_SETUP_STATE_ID),
+        //     gameId: localStorage.getItem(SDK_SETUP_GAME_ID),
+        //     videoUrls: videoFiles
+        // });
+        // console.log(response);
 
-
-        window.location.href = '/#/tests';
-        setCurrentStep();
+        // if (response?.data?.id) {
+        //     console.log("FB data sent successfully!", response.data);
+        //     setCurrentStep();
+        // } else {
+        //     notify("Something went wrong!", { type: "error" });
+        // }
     }
 
     return (
@@ -161,7 +179,7 @@ export const TestSetup: React.FC = () => {
 
                             <Button
                                 variant="outlined"
-                                disabled={videoFileUrls.length === 0 || isDataSending}
+                                disabled={videoFiles.length === 0 || isDataSending}
                                 sx={{
                                     textTransform: "none",
                                     borderRadius: 20,

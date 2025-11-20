@@ -1,7 +1,6 @@
 import { FileUploadOutlined } from "@mui/icons-material"
 import { Box, Button, Stack, Typography } from "@mui/material"
 import { Styles } from "../common/styles"
-import { useState } from "react";
 import { handleImageUpload } from "../common/utils";
 
 type CustomImageUploaderProps = {
@@ -9,12 +8,10 @@ type CustomImageUploaderProps = {
     width?: number;
     height?: number;
     maxFileSize?: number;
-    preview: string;
     label: string;
-    imageName: string;
     fileFormat?: string;
-    setPreview: (value: any) => void;
-    setImageName: (value: any) => void;
+    imageFile: File | null;
+    setImageFile: (value: File | null) => void;
 }
 
 type CustomImageUploaderPropsWrapper = {
@@ -25,21 +22,21 @@ export const CustomImageUploader = ({ customProps }: CustomImageUploaderPropsWra
     const {
         disabled = false,
         label,
-        imageName,
-        preview,
+        imageFile,
         width = 0,
         height = 0,
         maxFileSize = 0,
         fileFormat = "",
-        setPreview,
-        setImageName,
+        setImageFile,
     } = customProps;
+
+    const getImageURL = (file: File) => URL.createObjectURL(file);
 
     return (
         <>
             <Stack direction={"row"} sx={Styles.stackStyle} gap={3}>
                 <Button
-                    variant={imageName === "" ? "outlined" : "text"}
+                    variant={imageFile === null ? "outlined" : "text"}
                     component="label"
                     sx={{
                         width: 75,
@@ -51,7 +48,7 @@ export const CustomImageUploader = ({ customProps }: CustomImageUploaderPropsWra
                     }}
                     disabled={disabled}
                 >
-                    {!preview && (
+                    {imageFile === null && (
                         <Stack sx={Styles.stackStyle} gap={1}>
                             <FileUploadOutlined />
                             <Typography fontSize="12px" sx={{ textTransform: "none" }}>
@@ -60,23 +57,24 @@ export const CustomImageUploader = ({ customProps }: CustomImageUploaderPropsWra
                         </Stack>
                     )}
 
-                    <input type="file" hidden accept={fileFormat !== "" ? fileFormat : "image/png, image/jpg, image/jpeg"} onChange={(e) =>
-                        handleImageUpload(
-                            e,
-                            width,
-                            height,
-                            maxFileSize,
-                            fileFormat,
-                            setImageName,
-                            setPreview,
-                        )
-                    } />
+                    <input type="file" hidden accept={fileFormat !== "" ? fileFormat : "image/png, image/jpg, image/jpeg"}
+                        onClick={() => setImageFile(null)}
+                        onChange={(e) =>
+                            handleImageUpload(
+                                e,
+                                width,
+                                height,
+                                fileFormat,
+                                setImageFile,
+                                maxFileSize
+                            )
+                        } />
 
-                    {imageName !== '' && (
+                    {(imageFile !== null) && (
                         <Box
                             component="img"
-                            src={imageName}
-                            alt="Fetched icon preview"
+                            src={URL.createObjectURL(imageFile)}
+                            alt="Icon preview"
                             sx={{
                                 position: 'absolute',
                                 width: "100%",
@@ -88,10 +86,10 @@ export const CustomImageUploader = ({ customProps }: CustomImageUploaderPropsWra
                         />
                     )}
 
-                    {(preview) &&
+                    {(imageFile !== null) &&
                         <Box
                             component="img"
-                            src={preview}
+                            src={getImageURL(imageFile)}
                             alt="Uploaded icon preview"
                             sx={{
                                 position: "absolute",

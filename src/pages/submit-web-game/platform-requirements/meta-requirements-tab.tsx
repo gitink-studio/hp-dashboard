@@ -2,8 +2,12 @@ import { Box, Checkbox, FormControlLabel, List, ListItem, ListItemIcon, ListItem
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import { Styles } from "../../../common/styles";
 import { useMetaRequirementsCompleted, usePlatformRequirementsActions } from "../../../store/submit-web-game/platform-requirements-store";
+import { useCurrentStep } from "../../../store/submit-web-game/submit-web-game-store";
+import { WebGameSubmissionSetup } from "../../../common/constants";
+import { useEffect } from "react";
 
 export const MetaRequirementsTab = () => {
+    const currentStep = useCurrentStep();
     const isMetaRequirementsCompleted = useMetaRequirementsCompleted();
     const { setMetaRequirementsCompleted } = usePlatformRequirementsActions();
     const requirements = [
@@ -16,6 +20,13 @@ export const MetaRequirementsTab = () => {
         'Storage: localStorage allowed; size small.',
     ]
 
+    const isStepCompleted = () => currentStep > WebGameSubmissionSetup.PLATFORM_REQUIREMENTS;
+
+    useEffect(() => {
+        if (isStepCompleted()) {
+            setMetaRequirementsCompleted(true);
+        }
+    }, [])
 
     return (
         <>
@@ -39,6 +50,7 @@ export const MetaRequirementsTab = () => {
                             checked={isMetaRequirementsCompleted}
                             onChange={(event) => setMetaRequirementsCompleted(event.target.checked)}
                             name="acceptTerms"
+                            disabled={isStepCompleted()}
                         />
                     }
                     label="I confirm my build adheres to Meta tech requirements"

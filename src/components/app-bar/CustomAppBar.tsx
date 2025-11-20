@@ -16,8 +16,10 @@ import {
   ListItemText,
   Chip,
   Button,
+  Stack,
 } from "@mui/material";
 import { CircleNotifications, ExitToApp, AdminPanelSettings } from "@mui/icons-material";
+import { Styles } from "../../common/styles";
 
 const CustomAppBar = () => {
   const resources = useResourceDefinitions();
@@ -42,15 +44,14 @@ const CustomAppBar = () => {
           justifyContent: "space-between",
         }}
       >
-        {/* Left side: Title */}
-        <Box display="flex" alignItems="center">
-          <Typography variant="h6" fontWeight="bold">
-            Hyper Rabbit
-          </Typography>
-        </Box>
-
         {/* Right side: Horizontal Menu */}
         <Box display="flex" flexDirection="row" gap={2}>
+          {/* Left side: Title */}
+          <Stack sx={{ ...Styles.stackStyle, lineHeight: '0.5' }} >
+            <Typography variant="body1" fontWeight="bold" sx={{ lineHeight: '1', mt: 1 }}>Hyper Rabbit</Typography>
+            <Typography variant="caption">v0.0.1</Typography>
+          </Stack>
+
           {Object.keys(resources).map((name) => (
             <MenuItemLink
               key={name}
@@ -128,7 +129,7 @@ const CustomAppBar = () => {
             Logout
           </Button>
 
-          <ToggleThemeButton />
+          {/* <ToggleThemeButton /> */}
           {/* <RefreshButton sx={{ color: "white" }} /> */}
         </Box>
       </Toolbar>

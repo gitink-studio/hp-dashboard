@@ -1,7 +1,7 @@
 import { Box, Checkbox, FormControlLabel, Stack, TextField, Typography, useTheme } from "@mui/material";
 import { useAdvancedAppStepCompleted, useClientToken, useFacebookSetupActions } from "../../../store/sdk/facebook-setup-store";
 import { Images, MINIMUM_FB_CLIENT_TOKEN_LENGTH } from "../../../common/constants";
-import { useDataSending } from "../../../store/sdk/sdk-details-store";
+import { useCurrentGameSetupDetails, useDataSending } from "../../../store/sdk/sdk-details-store";
 import { Styles } from "../../../common/styles";
 
 
@@ -10,6 +10,7 @@ export const AdvancedSteps = () => {
     const isAdvancedAppSetupCompleted = useAdvancedAppStepCompleted();
     const clientToken = useClientToken();
     const isDataSending = useDataSending();
+    const currentGameSetupDetails = useCurrentGameSetupDetails();
     const { setAdvancedAppStepCompleted, setClientToken } = useFacebookSetupActions();
 
     const validateData = (): boolean => {
@@ -64,7 +65,7 @@ export const AdvancedSteps = () => {
         },
         {
             lines: [
-                <>Fill the <strong>968907902038316</strong> as an authorized ad account ID</>
+                <>Fill the <strong>{currentGameSetupDetails.androidOrIOSGameRequest.androidOrIOSGameRequestDetails.facebookDetails.adAccountId}</strong> as an authorized ad account ID</>
             ],
             imageUrl: Images.fbSetup.advanced.image4,
         },

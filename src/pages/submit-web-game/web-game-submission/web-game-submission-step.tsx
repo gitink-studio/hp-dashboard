@@ -1,27 +1,29 @@
 import { Box, Button, CircularProgress, Paper, Stack, TextField, Typography } from "@mui/material"
 import { FileUploadOutlined, PlayArrow } from "@mui/icons-material"
-import { useAdditionalNotes, useControlsDescription, useWebGameTitle, usePlayableLink, useShortGameplayVideoName, useValidateWebGameSubmissionInputs, useWebGameSubmissionActions } from "../../../store/submit-web-game/web-game-submission-store";
+import { useAdditionalNotes, useControlsDescription, useWebGameTitle, usePlayableLink, useShortGameplayVideoFile, useValidateWebGameSubmissionInputs, useWebGameSubmissionActions } from "../../../store/submit-web-game/web-game-submission-store";
 import { useActiveStep, useCurrentStep, useDataSending, useSubmitWebGameActions } from "../../../store/submit-web-game/submit-web-game-store";
 import { useNotify } from "react-admin";
 import { Styles } from "../../../common/styles";
-import { handleFileDrop, handleFileUpload, sendRequest } from "../../../common/utils";
-import { CREATE_WEB_GAME_SUBMISSION_DATA_URL, HttpMethod, STUDIO_ID } from "../../../common/constants";
+import { getFilesInfo, handleFileDrop, handleFileUpload, sendFormDataRequest, sendRequest, slugify } from "../../../common/utils";
+import { CREATE_WEB_GAME_SUBMISSION_DATA_URL, CREATIVES_ROOT_URL, HttpMethod, STUDIO_ID, TEST_SUBMISSION, WebGameSubmissionSetup } from "../../../common/constants";
+import { localStorageData } from "../../../common/localStorage";
 
 export const WebGameSubmissionStep = () => {
     const notify = useNotify();
-    const gameWebTitle = useWebGameTitle();
+    const webGameTitle = useWebGameTitle();
     const playableLink = usePlayableLink();
     const controlsDescription = useControlsDescription();
     const additionalNotes = useAdditionalNotes();
-    const shortGameplayVideoUrl = useShortGameplayVideoName();
+    const shortGameplayVideoFile = useShortGameplayVideoFile();
     const isDataSending = useDataSending();
-    const { setPlayableLink, setControlsDescription, setAdditionalNotes, setShortGameplayVideoName, setWebGameTitle, resetWebGameSubmissionStore } = useWebGameSubmissionActions();
+    const currentStep = useCurrentStep();
+    const { setPlayableLink, setControlsDescription, setAdditionalNotes, setShortGameplayVideoFile, setWebGameTitle, resetWebGameSubmissionStore } = useWebGameSubmissionActions();
     const { setCurrentStep, setDataSending } = useSubmitWebGameActions();
 
     const validateData = (): boolean => {
         console.log("validateData");
 
-        if (gameWebTitle == '') {
+        if (webGameTitle == '') {
             notify("Game Title is required!", { type: "error" });
             return false;
         }
@@ -34,7 +36,7 @@ export const WebGameSubmissionStep = () => {
             return false;
         }
 
-        if (shortGameplayVideoUrl == '') {
+        if (shortGameplayVideoFile == null) {
             notify("Short Gameplay Video is required!", { type: "error" });
             return false;
         }
@@ -43,26 +45,30 @@ export const WebGameSubmissionStep = () => {
     }
 
     const submitData = async () => {
-        console.log("submitData");
-        setDataSending(true);
+        try {
+            console.log("submitData");
+            setDataSending(true);
+            const commonFilePath = `${CREATIVES_ROOT_URL}/${localStorageData.studioId}/web/${slugify(webGameTitle)}/${TEST_SUBMISSION}`
+            let fileList = [];
+            fileList.push(shortGameplayVideoFile);
 
-        let response = await sendRequest(HttpMethod.POST, CREATE_WEB_GAME_SUBMISSION_DATA_URL, {
-            name: gameWebTitle,
-            studioId: localStorage.getItem(STUDIO_ID),
-            playableLinkUrl: playableLink,
-            controlDescription: controlsDescription,
-            additionalNotes: additionalNotes,
-            shortGameplayVideoUrl: shortGameplayVideoUrl,
-            status: "Pending",
-        });
-        console.log(response);
+            let fileInfoList = getFilesInfo(commonFilePath, fileList as File[]);
 
-        if (response?.data?.id) {
-            console.log("Game submission data sent successfully!", response.data);
+            let response = await sendFormDataRequest("web-game-submission-data", CREATE_WEB_GAME_SUBMISSION_DATA_URL, fileList, {
+                name: webGameTitle,
+                studioId: localStorage.getItem(STUDIO_ID),
+                playableLinkUrl: playableLink,
+                controlDescription: controlsDescription,
+                additionalNotes: additionalNotes,
+                status: "Pending",
+                fileInfoList: fileInfoList
+            });
+
+            console.log(`Response from web game submission data: `, response);
+
             resetWebGameSubmissionStore();
             window.location.href = '/#/getAllGameRequests'
-            // setCurrentStep();
-        } else {
+        } catch (err) {
             notify("Something went wrong!", { type: "error" });
         }
 
@@ -94,7 +100,7 @@ export const WebGameSubmissionStep = () => {
                                 name="gameTitle"
                                 variant="outlined"
                                 placeholder="Enter game title here"
-                                value={gameWebTitle}
+                                value={webGameTitle}
                                 onChange={(e) => setWebGameTitle(e.target.value)}
                                 required
                             // sx={SDKStyle.textFieldStyle}
@@ -174,7 +180,7 @@ export const WebGameSubmissionStep = () => {
                                 borderStyle: "dashed",
                                 cursor: "pointer",
                             }}
-                            onDrop={(e) => handleFileDrop(e, setShortGameplayVideoName, "video", 100)}
+                            onDrop={(e) => handleFileDrop(e, setShortGameplayVideoFile, "video", 100)}
                             onDragOver={(e) => e.preventDefault()}
                         >
 
@@ -186,12 +192,12 @@ export const WebGameSubmissionStep = () => {
                                         <Button component="label" variant="text" sx={{ textTransform: 'none', textDecoration: "underline" }}>
                                             browse
                                             <input type="file" hidden accept="video/*"
-                                                onChange={(e) => handleFileUpload(e, setShortGameplayVideoName, "video", 100)}
+                                                onChange={(e) => handleFileUpload(e, setShortGameplayVideoFile, "video", 100)}
                                             />
                                         </Button>
                                         your computer
                                     </Typography>
-                                    {shortGameplayVideoUrl && <Typography variant="caption"> {shortGameplayVideoUrl}</Typography>}
+                                    {shortGameplayVideoFile !== null && <Typography variant="caption"> {shortGameplayVideoFile.name}</Typography>}
                                 </Stack>
                             </Stack>
                         </Paper>
@@ -224,7 +230,7 @@ export const WebGameSubmissionStep = () => {
                         variant="contained"
                         onClick={() => handleSubmit()}
                         sx={{ px: 4, py: 1, textTransform: "none" }}
-                    // disabled={isStepCompleted(activeStep) || isDataSending}
+                        disabled={isDataSending}
                     >
                         {
                             isDataSending ? (

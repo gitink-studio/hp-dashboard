@@ -7,6 +7,7 @@ type StoreStepAction = {
     setIsPrivacyGuideAnswered: (isPrivacyGuideAnswered: boolean) => void;
     setIsAdvertisingIDAnswered: (isAdvertisingIDAnswered: boolean) => void;
     setIsAllFieldsFilled: (isAllFieldsFilled: boolean) => void;
+    resetStoreStepData: () => void;
 }
 
 type StoreStepState = {
@@ -19,13 +20,17 @@ type StoreStepState = {
     actions: StoreStepAction;
 }
 
-const useStoreStepStore = create<StoreStepState>((set) => ({
+const initialState = {
     isAppAvailableInAllStores: false,
     isPrivacyGuideAnswered: false,
     isAdvertisingIDAnswered: false,
     isAllFieldsFilled: false,
     canDisplayPrivacyGuide: false,
     canDisplayAdvertisingID: false,
+}
+
+const useStoreStepStore = create<StoreStepState>((set) => ({
+    ...initialState,
     actions: {
         setDisplayPrivacyGuide: (canDisplayPrivacyGuide: boolean) => set({ canDisplayPrivacyGuide }),
         setDisplayAdvertisingID: (canDisplayAdvertisingID: boolean) => set({ canDisplayAdvertisingID }),
@@ -33,6 +38,7 @@ const useStoreStepStore = create<StoreStepState>((set) => ({
         setIsPrivacyGuideAnswered: (isPrivacyGuideAnswered: boolean) => set({ isPrivacyGuideAnswered }),
         setIsAdvertisingIDAnswered: (isAdvertisingIDAnswered: boolean) => set({ isAdvertisingIDAnswered }),
         setIsAllFieldsFilled: (isAllFieldsFilled: boolean) => set({ isAllFieldsFilled }),
+        resetStoreStepData: () => set(initialState),
     }
 }))
 

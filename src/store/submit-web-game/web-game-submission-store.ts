@@ -5,7 +5,7 @@ type WebGameSubmissionActions = {
     setPlayableLink: (playableLink: string) => void;
     setControlsDescription: (controlsDescription: string) => void;
     setAdditionalNotes: (additionalNotes: string) => void;
-    setShortGameplayVideoName: (shortGameplayVideoName: string) => void;
+    setShortGameplayVideoFile: (shortGameplayVideoFile: File | null) => void;
     setValidateInputs: (validateWebGameSubmissionInputs: boolean) => void;
     resetWebGameSubmissionStore: () => void;
 }
@@ -15,7 +15,7 @@ type WebGameSubmissionState = {
     playableLink: string;
     controlsDescription: string;
     additionalNotes: string;
-    shortGameplayVideoName: string;
+    shortGameplayVideoFile: File | null;
     validateWebGameSubmissionInputs: boolean;
     actions: WebGameSubmissionActions;
 }
@@ -25,7 +25,7 @@ const initialState = {
     playableLink: '',
     controlsDescription: '',
     additionalNotes: '',
-    shortGameplayVideoName: '',
+    shortGameplayVideoFile: null,
     validateWebGameSubmissionInputs: false,
 }
 
@@ -36,7 +36,7 @@ const useWebGameSubmissionStore = create<WebGameSubmissionState>((set) => ({
         setPlayableLink: (playableLink: string) => set({ playableLink }),
         setControlsDescription: (controlsDescription: string) => set({ controlsDescription }),
         setAdditionalNotes: (additionalNotes: string) => set({ additionalNotes }),
-        setShortGameplayVideoName: (shortGameplayVideoName: string) => set({ shortGameplayVideoName }),
+        setShortGameplayVideoFile: (shortGameplayVideoFile: File | null) => set({ shortGameplayVideoFile }),
         setValidateInputs: (validateWebGameSubmissionInputs: boolean) => set({ validateWebGameSubmissionInputs }),
         resetWebGameSubmissionStore: () => set(initialState),
     }
@@ -46,6 +46,6 @@ export const useWebGameTitle = () => useWebGameSubmissionStore((state) => state.
 export const usePlayableLink = () => useWebGameSubmissionStore((state) => state.playableLink);
 export const useControlsDescription = () => useWebGameSubmissionStore((state) => state.controlsDescription);
 export const useAdditionalNotes = () => useWebGameSubmissionStore((state) => state.additionalNotes);
-export const useShortGameplayVideoName = () => useWebGameSubmissionStore((state) => state.shortGameplayVideoName);
+export const useShortGameplayVideoFile = () => useWebGameSubmissionStore((state) => state.shortGameplayVideoFile);
 export const useValidateWebGameSubmissionInputs = () => useWebGameSubmissionStore((state) => state.validateWebGameSubmissionInputs);
 export const useWebGameSubmissionActions = () => useWebGameSubmissionStore((state) => state.actions);

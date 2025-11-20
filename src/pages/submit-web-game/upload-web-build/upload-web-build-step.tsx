@@ -1,89 +1,191 @@
 import { Alert, Box, Button, Checkbox, CircularProgress, FormControlLabel, Paper, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material"
-import { FileUploadOutlined, PlayArrow } from "@mui/icons-material"
+import { FileDownloadDoneOutlined, FileDownloadOutlined, FileUploadOutlined, PlayArrow } from "@mui/icons-material"
 import { useState } from "react";
 import { Styles } from "../../../common/styles";
-import { useCrazyGamesBuildName, useMetaBuildName, useMsnBuildName, usePokiBuildName, useUniversalBuildName, useUploadMode, useUploadWebBuildsActions } from "../../../store/submit-web-game/upload-web-builds-store";
+import { useCrazyGamesBuildFile, useMetaBuildFile, useMsnBuildFile, usePokiBuildFile, useUniversalBuildFile, useUploadMode, useUploadWebBuildsActions } from "../../../store/submit-web-game/upload-web-builds-store";
 import { useCrazyGamesSelected, useMetaSelected, useMsnSelected, usePokiSelected } from "../../../store/submit-web-game/select-platform-store";
 import { useNotify } from "react-admin";
-import { handleFileDrop, handleFileUpload, sendRequest } from "../../../common/utils";
-import { useCurrentSetupGameDetails, useDataSending, useSubmitWebGameActions } from "../../../store/submit-web-game/submit-web-game-store";
-import { CREATE_WEB_GAME_SUBMISSION_DATA_URL, HttpMethod, WEB_GAME_SUBMISSION_SETUP_CURRENT_STATE_UPDATE_URL, WEB_GAME_SUBMISSION_STATUS_UPDATE_URL } from "../../../common/constants";
+import { getBuildFilesInfo, getFilesInfo, handleFileDrop, handleFileUpload, sendFormDataRequest, sendRequest } from "../../../common/utils";
+import { useCurrentSetupGameDetails, useCurrentStep, useDataSending, useSubmitWebGameActions } from "../../../store/submit-web-game/submit-web-game-store";
+import { BUILDS_ROOT_URL, CRAZY_GAMES, CREATE_UPLOAD_WEB_BUILDS_URL, CREATE_WEB_GAME_SUBMISSION_DATA_URL, HttpMethod, META, MSN, PLATFORM_SPECIFIC_ZIP, POKI, SINGLE_UNIVERSAL_ZIP, WEB_GAME_SUBMISSION_SETUP_CURRENT_STATE_UPDATE_URL, WEB_GAME_SUBMISSION_STATUS_UPDATE_URL, WebGameSubmissionSetup } from "../../../common/constants";
+import { localStorageData } from "../../../common/localStorage";
+import { useGameRequests } from "../../../store/play-tests/play-tests-store";
 
 
 export const UploadWebBuildStep = () => {
     const notify = useNotify();
     const uploadMode = useUploadMode();
-    const isPokiSelected = usePokiSelected();
-    const isMsnSelected = useMsnSelected();
-    const isCrazyGamesSelected = useCrazyGamesSelected();
-    const isMetaSelected = useMetaSelected();
-    const universalBuildName = useUniversalBuildName();
-    const metaBuildName = useMetaBuildName();
-    const pokiBuildName = usePokiBuildName();
-    const msnBuildName = useMsnBuildName();
-    const crazyGamesBuildName = useCrazyGamesBuildName();
+    const universalBuildFile = useUniversalBuildFile();
+    const metaBuildFile = useMetaBuildFile();
+    const pokiBuildFile = usePokiBuildFile();
+    const msnBuildFile = useMsnBuildFile();
+    const crazyGamesBuildFile = useCrazyGamesBuildFile();
     const isDataSending = useDataSending();
     const currentSetupGameDetails = useCurrentSetupGameDetails();
-    const { setCurrentStep, setDataSending } = useSubmitWebGameActions();
-    const { setUploadMode, setUniversalBuildName: setUniversalBuildName, setMetaBuildName: setMetaBuildName, setPokiBuildName: setPokiBuildName, setMsnBuildName: setMsnBuildName, setCrazyGamesBuildName: setCrazyGamesBuildName } = useUploadWebBuildsActions();
+    const currentStep = useCurrentStep();
+    const { setCurrentStep, setDataSending, setCurrentSetupGameDetails } = useSubmitWebGameActions();
+    const { setUploadMode, setUniversalBuildFile: setUniversalBuildFile, setMetaBuildFile: setMetaBuildFile, setPokiBuildFile: setPokiBuildFile, setMsnBuildFile: setMsnBuildFile, setCrazyGamesBuildFile: setCrazyGamesBuildFile } = useUploadWebBuildsActions();
+    const gameRequest = useGameRequests();
 
-    const platforms = [
-        { label: "Meta", value: metaBuildName, checked: isMetaSelected },
-        { label: "Poki", value: pokiBuildName, checked: isPokiSelected },
-        { label: "MSN", value: msnBuildName, checked: isMsnSelected },
-        { label: "Crazy Games", value: crazyGamesBuildName, checked: isCrazyGamesSelected },
-    ]
+    const getSelectedPlatforms = () => {
+        let gamePlatforms: any = [];
+
+        currentSetupGameDetails.selectedPlatforms.forEach((gamePlatform: any) => {
+            gamePlatforms.push(gamePlatform.name);
+        })
+
+        return gamePlatforms;
+    };
+
+    const getPlatforms = () => {
+        let platforms: any = [];
+
+        selectedPlatforms.forEach((platform: any) => {
+            switch (platform) {
+                case "Meta":
+                    platforms.push({
+                        label: platform,
+                        value: metaBuildFile
+                    })
+                    break;
+                case "Poki":
+                    platforms.push({
+                        label: platform,
+                        value: pokiBuildFile
+                    })
+                    break;
+                case "MSN":
+                    platforms.push({
+                        label: platform,
+                        value: msnBuildFile
+                    })
+                    break;
+                case "Crazy Games":
+                    platforms.push({
+                        label: platform,
+                        value: crazyGamesBuildFile
+                    })
+                    break;
+                default:
+                    console.log('Platform not found');
+                    break;
+            }
+        })
+
+        return platforms;
+    }
+
+    const selectedPlatforms = getSelectedPlatforms();
+    const platforms = getPlatforms();
 
     const validateData = (): boolean => {
-        if (uploadMode === "Single universal ZIP" && universalBuildName === "") {
+        console.log(uploadMode);
+        if (uploadMode === SINGLE_UNIVERSAL_ZIP && universalBuildFile === null) {
             notify("Please upload a universal build", { type: "error" });
             return false;
         }
-        if (uploadMode === "Platform-specific ZIP") {
 
-            if (isMetaSelected && metaBuildName === "") {
-                notify("Please upload a Meta build", { type: "error" });
-                return false;
-            }
-
-            if (isPokiSelected && pokiBuildName === "") {
-                notify("Please upload a Poki build", { type: "error" });
-                return false;
-            }
-
-            if (isMsnSelected && msnBuildName === "") {
-                notify("Please upload a MSN build", { type: "error" });
-                return false;
-            }
-
-            if (isCrazyGamesSelected && crazyGamesBuildName === "") {
-                notify("Please upload a Crazy Games build", { type: "error" });
-                return false;
-            }
-
-            notify("Please upload a platform-specific build", { type: "error" });
-            return false;
+        if (uploadMode === PLATFORM_SPECIFIC_ZIP) {
+            selectedPlatforms.forEach((platform: any) => {
+                switch (platform) {
+                    case META:
+                        if (metaBuildFile === null) {
+                            notify("Please upload a Meta build", { type: "error" });
+                            return false
+                        }
+                        break;
+                    case POKI:
+                        if (pokiBuildFile === null) {
+                            notify("Please upload a Poki build", { type: "error" });
+                            return false;
+                        }
+                        break;
+                    case CRAZY_GAMES:
+                        if (crazyGamesBuildFile === null) {
+                            notify("Please upload a Crazy Games build", { type: "error" });
+                            return false;
+                        }
+                        break;
+                    case MSN:
+                        if (msnBuildFile === null) {
+                            notify("Please upload a MSN Games build", { type: "error" });
+                            return false;
+                        }
+                        break;
+                    default:
+                        console.log("Platform not found!");
+                        break;
+                }
+            })
         }
+
         return true;
     }
 
+    const getFileByPlatform = (platform: string) => {
+        if (uploadMode === SINGLE_UNIVERSAL_ZIP) {
+            return universalBuildFile;
+        }
+
+        switch (platform) {
+            case META:
+                return metaBuildFile;
+            case POKI:
+                return pokiBuildFile;
+            case CRAZY_GAMES:
+                return crazyGamesBuildFile;
+            case MSN:
+                return msnBuildFile;
+            default:
+                console.log("Platform not found!");
+                return null;
+                break;
+        }
+    }
+
+    const getFiles = () => {
+        let files = [];
+
+        for (let i = 0; i < selectedPlatforms.length; i++) {
+            files.push(getFileByPlatform(selectedPlatforms[i]));
+        }
+
+        return files;
+    }
+
+    const getFileInfoList = (files: File[]) => {
+        let fileInfoList = [];
+
+        for (let i = 0; i < currentSetupGameDetails.selectedPlatforms.length; i++) {
+            let platform = currentSetupGameDetails.selectedPlatforms[i];
+            let commonFilePath = `${BUILDS_ROOT_URL}/${localStorageData.studioId}/${platform.id}`;
+            fileInfoList.push(getBuildFilesInfo(commonFilePath, files[i]));
+        }
+
+        return fileInfoList;
+    }
+
     const submitData = async () => {
-        console.log("submitData", currentSetupGameDetails);
-        setDataSending(true);
+        try {
+            console.log("submitData", currentSetupGameDetails);
+            setDataSending(true);
 
-        let response = await sendRequest(HttpMethod.POST, WEB_GAME_SUBMISSION_SETUP_CURRENT_STATE_UPDATE_URL, {
-            id: currentSetupGameDetails.webGameRequest.webGameSubmissionSetupCurrentState.id,
-            currentSetupIndex: currentSetupGameDetails.currentSetupStateIndex,
-            webGameRequestId: currentSetupGameDetails.webGameRequest.id,
-            webGameRequestDetails: currentSetupGameDetails.webGameRequestDetailsId,
-        });
+            let fileList: any = getFiles();
+            let fileInfoList = getFileInfoList(fileList as File[]);
+            let response = await sendFormDataRequest('upload-builds', CREATE_UPLOAD_WEB_BUILDS_URL, fileList, {
+                gameRequestId: currentSetupGameDetails.id,
+                webGameSubmissionSetupCurrentStateId: currentSetupGameDetails.webGameRequest.webGameSubmissionSetupCurrentState.id,
+                currentSetupIndex: currentSetupGameDetails.currentSetupStateIndex,
+                webGameRequestId: currentSetupGameDetails.webGameRequest.id,
+                webGameRequestDetailsId: currentSetupGameDetails.webGameRequestDetailsId,
+                fileInfoList: fileInfoList,
+                studioId: currentSetupGameDetails.studioId
+            });
+            console.log(response);
 
-        console.log(response);
-
-        if (response?.data?.id) {
-            console.log("Select platforms data sent successfully!", response.data);
+            setCurrentSetupGameDetails(response.data);
             setCurrentStep();
-        } else {
+        } catch (err) {
             notify("Something went wrong!", { type: "error" });
         }
 
@@ -97,23 +199,30 @@ export const UploadWebBuildStep = () => {
         }
     }
 
-    const getName = (platformName: string): any => {
+    const getFileSetter = (platformName: string): any => {
         switch (platformName) {
-            case "Meta":
-                return setMetaBuildName;
-            case "Poki":
-                return setPokiBuildName;
-            case "MSN":
-                return setMsnBuildName;
-            case "Crazy Games":
-                return setCrazyGamesBuildName;
+            case META:
+                return setMetaBuildFile;
+            case POKI:
+                return setPokiBuildFile;
+            case MSN:
+                return setMsnBuildFile;
+            case CRAZY_GAMES:
+                return setCrazyGamesBuildFile;
             default:
-                return setUniversalBuildName;
+                return setUniversalBuildFile;
         }
     }
 
+    const isStepCompleted = () => currentStep > WebGameSubmissionSetup.UPLOAD_WEB_BUILDS;
+
+
     return (
         <Box>
+            {isStepCompleted() &&
+                <Alert severity="success" sx={{ mb: 2 }}>
+                    You already completed this step
+                </Alert>}
             <Typography fontWeight='bold' mb={3}> Upload Web Builds</Typography>
             {/* <Alert severity="success" >
                 Your pickle ball clash game has been approved.
@@ -131,14 +240,14 @@ export const UploadWebBuildStep = () => {
                                 fullWidth
                             >
                                 <ToggleButton
-                                    value="Single universal ZIP"
+                                    value={SINGLE_UNIVERSAL_ZIP}
                                 // sx={Styles.leftRounded}
                                 // disabled={canDisableAllComponents || isStepCompleted(activeStep)}
                                 >
                                     Single universal ZIP
                                 </ToggleButton>
                                 <ToggleButton
-                                    value="Platform-specific ZIP"
+                                    value={PLATFORM_SPECIFIC_ZIP}
                                 // sx={Styles.rightRounded}
                                 // disabled={canDisableAllComponents || isStepCompleted(activeStep)}
                                 >
@@ -146,7 +255,7 @@ export const UploadWebBuildStep = () => {
                                 </ToggleButton>
                             </ToggleButtonGroup>
                         </Stack>
-                        {uploadMode === "Single universal ZIP" && (
+                        {uploadMode === SINGLE_UNIVERSAL_ZIP && (
                             <Stack direction="row" sx={Styles.stackStyle}>
                                 <Typography width={250}>Single universal ZIP</Typography >
                                 <Stack gap={1} width="100%">
@@ -168,12 +277,12 @@ export const UploadWebBuildStep = () => {
                                                     <Button component="label" variant="text" sx={{ textTransform: 'none', textDecoration: "underline" }}>
                                                         browse
                                                         <input type="file" hidden accept=".zip"
-                                                            onChange={(e) => handleFileUpload(e, setUniversalBuildName, "zip", 50)}
+                                                            onChange={(e) => handleFileUpload(e, setUniversalBuildFile, "zip", 50)}
                                                         />
                                                     </Button>
                                                     your computer
                                                 </Typography>
-                                                {universalBuildName && <Typography variant="caption"> {universalBuildName}</Typography>}
+                                                {universalBuildFile && <Typography variant="caption"> {universalBuildFile.name}</Typography>}
                                             </Stack>
                                         </Stack>
                                     </Paper>
@@ -181,11 +290,11 @@ export const UploadWebBuildStep = () => {
                             </Stack>
                         )}
 
-                        {uploadMode === "Platform-specific ZIP" && (
+                        {uploadMode === PLATFORM_SPECIFIC_ZIP && (
                             platforms.map(
-                                (platform) => (
-                                    platform.checked && (
-                                        <Stack direction="row" sx={Styles.stackStyle}>
+                                (platform: any) => (
+                                    (
+                                        <Stack key={platform.label} direction="row" sx={Styles.stackStyle}>
                                             <Typography width={250}>{platform.label}</Typography >
                                             <Stack gap={1} width="100%">
                                                 <Paper
@@ -195,7 +304,7 @@ export const UploadWebBuildStep = () => {
                                                         borderStyle: "dashed",
                                                         cursor: "pointer",
                                                     }}
-                                                    onDrop={(e) => handleFileDrop(e, getName(platform.label), "zip", 50)}
+                                                    onDrop={(e) => handleFileDrop(e, getFileSetter(platform.label), "zip", 50)}
                                                     onDragOver={(e) => e.preventDefault()}
                                                 >
                                                     <Stack direction={"row"} sx={{ display: "flex", alignItems: "center", justifyContent: "center" }} gap={3}>
@@ -207,13 +316,13 @@ export const UploadWebBuildStep = () => {
                                                                     browse
                                                                     <input type="file" hidden accept=".zip"
                                                                         onChange={(e) =>
-                                                                            handleFileUpload(e, getName(platform.label), "zip", 50)
+                                                                            handleFileUpload(e, getFileSetter(platform.label), "zip", 50)
                                                                         }
                                                                     />
                                                                 </Button>
                                                                 your computer
                                                             </Typography>
-                                                            {platform.value && <Typography variant="caption"> {platform.value}</Typography>}
+                                                            {platform.value !== null && <Typography variant="caption"> {platform.value.name}</Typography>}
                                                         </Stack>
                                                     </Stack>
                                                 </Paper>
@@ -246,7 +355,7 @@ export const UploadWebBuildStep = () => {
                         variant="contained"
                         onClick={handleUploadBuilds}
                         sx={{ px: 4, py: 1, textTransform: "none" }}
-                    // disabled={isStepCompleted(activeStep) || isDataSending}
+                        disabled={isStepCompleted() || isDataSending}
                     >
                         {
                             isDataSending ? (

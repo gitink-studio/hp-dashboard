@@ -5,25 +5,22 @@ import {
     Paper,
     Stack,
     Typography,
-    Divider,
     Dialog,
     IconButton,
     useTheme,
 } from "@mui/material";
 import { Close, FileUploadOutlined } from "@mui/icons-material";
-import { useDisplayCreativeLibrary, useTestSetupActions, useVideoFileUrls } from "../../../store/sdk/test-setup-store";
+import { useDisplayCreativeLibrary, useTestSetupActions, useVideoFiles } from "../../../store/sdk/test-setup-store";
 import { useNotify } from "react-admin";
 
 const CreativesLibrary: React.FC = () => {
     const notify = useNotify();
     const canDisplayCreativeLibrary = useDisplayCreativeLibrary();
-    const videoFileUrls = useVideoFileUrls();
-    const { setDisplayCreativeLibrary, setVideoFileUrls } = useTestSetupActions();
+    const videoFiles = useVideoFiles();
+    const { setDisplayCreativeLibrary, setVideoFiles } = useTestSetupActions();
     const [isDragOver, setIsDragOver] = useState(false);
-    const [isOpen, setIsOpen] = useState(true);
-    const [videoFile, setVideoFile] = useState<File[] | null>(null);
     const theme = useTheme();
-    let uploadedFiles: string[] = [];
+    let uploadedFiles: any = [];
 
     const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
@@ -43,22 +40,30 @@ const CreativesLibrary: React.FC = () => {
     }
 
     const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files: FileList = e.target.files || [];
+        const files: FileList | null = e.target.files;
         uploadedFiles = [];
         let totalFileSize = 0;
+        console.log(files);
+        if (files !== null) {
+            if (files.length >= 4 && files.length <= 6) {
 
-        for (let i = 0; i < files.length; i++) {
-            let file = files[i];
-            totalFileSize += file?.size;
-            uploadedFiles.push(file.name);
+                for (let i = 0; i < files.length; i++) {
+                    let file = files[i];
+                    totalFileSize += file?.size;
+                    uploadedFiles.push(file);
+                }
+
+                if (totalFileSize > 100 * 1024 * 1024) {
+                    notify("Videos must be 100 MB or less", { type: "warning" });
+                    return;
+                }
+
+                setVideoFiles(uploadedFiles);
+            } else {
+                notify("Please attach 4 - 6 videos", { type: "warning" });
+                return;
+            }
         }
-
-        if (totalFileSize > 100 * 1024 * 1024) {
-            notify("Videos must be 100 MB or less", { type: "warning" });
-            return;
-        }
-
-        setVideoFileUrls(uploadedFiles);
     };
 
     return (
@@ -177,12 +182,12 @@ const CreativesLibrary: React.FC = () => {
                                     Drag & drop your files here or
                                     <Button component="label" variant="text" sx={{ textTransform: 'none', textDecoration: "underline" }}>
                                         browse
-                                        <input type="file" hidden accept="video/*" multiple onChange={handleVideoUpload} />
+                                        <input type="file" hidden accept="video/mp4" multiple onChange={handleVideoUpload} />
                                     </Button>
                                     your computer
                                 </Typography>
-                                {videoFileUrls && <Typography variant="caption" sx={{ whiteSpace: "pre-wrap" }}>
-                                    {videoFileUrls.map((file, index) => `${file.slice(0, 25)}${file.length > 25 ? "..." : ""}`).join("\n")}
+                                {videoFiles !== null && <Typography variant="caption" sx={{ whiteSpace: "pre-wrap" }}>
+                                    {videoFiles.map((file) => `${file.name.slice(0, 25)}${file.name.length > 25 ? "..." : ""}`).join("\n")}
                                 </Typography>}
                             </Stack>
                         </Stack>

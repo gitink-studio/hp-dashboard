@@ -2,25 +2,31 @@ import { create } from "zustand";
 
 type CreativeLibraryAction = {
     setDisplayCreativeLibrary: (canDisplayCreativeLibrary: boolean) => void;
-    setVideoFileUrls: (videoFileUrls: string[]) => void;
+    setVideoFiles: (videoFiles: File[]) => void;
+    resetTestSetupData: () => void;
 }
 
 type CreativeLibraryState = {
     canDisplayCreativeLibrary: boolean;
-    videoFileUrls: string[];
+    videoFiles: File[];
     actions: CreativeLibraryAction;
 }
 
-const useCreativeLibraryStore = create<CreativeLibraryState>((set) => ({
+const initialState = {
     canDisplayCreativeLibrary: false,
-    videoFileUrls: [],
+    videoFiles: [],
+}
+
+const useCreativeLibraryStore = create<CreativeLibraryState>((set) => ({
+    ...initialState,
     actions: {
-        setVideoFileUrls: (videoFileUrls: string[]) => set({ videoFileUrls }),
+        setVideoFiles: (videoFiles: File[]) => set({ videoFiles }),
         setDisplayCreativeLibrary: (canDisplayCreativeLibrary: boolean) => set({ canDisplayCreativeLibrary }),
+        resetTestSetupData: () => set(initialState),
     }
 }))
 
 export const useDisplayCreativeLibrary = () => useCreativeLibraryStore((state) => state.canDisplayCreativeLibrary);
-export const useVideoFileUrls = () => useCreativeLibraryStore((state) => state.videoFileUrls);
+export const useVideoFiles = () => useCreativeLibraryStore((state) => state.videoFiles);
 export const useTestSetupActions = () => useCreativeLibraryStore((state) => state.actions);
 

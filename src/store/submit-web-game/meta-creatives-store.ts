@@ -1,152 +1,141 @@
 import { create } from "zustand";
 
 type MetaCreativesAction = {
-    setLargeAppIconName: (largeAppIconName: string) => void;
-    setSmallAppIconName: (smallAppIconName: string) => void;
-    setBannerImageName: (bannerImageName: string) => void;
-    setLargeLandscapeBannerImageName: (largeLandscapeBannerImageName: string) => void;
-    setPortraitBannerImageName: (portraitBannerImageName: string) => void;
-    setSquareBannerImageName: (squareBannerImageName: string) => void;
-    setCoverImageName: (coverImageName: string) => void;
-    setLandscapeSplashImageName: (landscapeSplashImageName: string) => void;
-    setPortraitSplashImageName: (portraitSplashImageName: string) => void;
+    setLargeAppIconFile: (largeAppIconFile: File | null) => void;
+    setSmallAppIconFile: (smallAppIconFile: File | null) => void;
+    setSmallLandscapeBannerImageFile: (smallLandscapeBannerImageFile: File | null) => void;
+    setLargeLandscapeBannerImageFile: (largeLandscapeBannerImageFile: File | null) => void;
+    setPortraitBannerImageFile: (portraitBannerImageFile: File | null) => void;
+    setSquareBannerImageFile: (squareBannerImageFile: File | null) => void;
+    setCoverImageFile: (coverImageFile: File | null) => void;
+    setLandscapeSplashImageFile: (landscapeSplashImageFile: File | null) => void;
+    setPortraitSplashImageFile: (portraitSplashImageFile: File | null) => void;
 
-    setSmallPreviewAppIconName: (smallPreviewAppIconName: string) => void;
-    setLargePreviewAppIconName: (largePreviewAppIconName: string) => void;
-    setBannerPreviewImageName: (bannerPreviewImageName: string) => void;
-    setLargeLandscapeBannerPreviewImageName: (largeLandscapeBannerPreviewImageName: string) => void;
-    setPortraitBannerPreviewImageName: (portraitBannerPreviewImageName: string) => void;
-    setSquareBannerPreviewImageName: (squareBannerPreviewImageName: string) => void;
-    setCoverPreviewImageName: (coverPreviewImageName: string) => void;
-    setLandscapeSplashPreviewImageName: (landscapeSplashPreviewImageName: string) => void;
-    setPortraitSplashPreviewImageName: (portraitSplashPreviewImageName: string) => void;
+    setGameplayLandscapeVideoFile: (gameplayLandscapeVideoFile: File | null) => void;
+    setGameplayPortraitVideoFile: (gameplayPortraitVideoFile: File | null) => void;
+    setGameplaySquareVideoFile: (gameplaySquareVideoFile: File | null) => void;
 
-    setGamePreviewLandscapeVideoName: (gamePreviewLandscapeVideoName: string) => void;
-    setGamePreviewPortraitVideoName: (gamePreviewPortraitVideoName: string) => void;
-    setGamePreviewSquareVideoName: (gamePreviewSquareVideoName: string) => void;
-    setGamePlayLandscapeVideoName: (gamePlayLandscapeVideoName: string) => void;
-    setGamePlayPortraitVideoName: (gamePlayPortraitVideoName: string) => void;
-    setGamePlaySquareVideoName: (gamePlaySquareVideoName: string) => void;
+    getAllMetaCreatives: () => any;
     resetMetaCreativesStore: () => void;
 }
 
 type MetaCreativesState = {
-    smallAppIconName: string;
-    largeAppIconName: string;
-    bannerImageName: string;
-    largeLandscapeBannerImageName: string;
-    portraitBannerImageName: string;
-    squareBannerImageName: string;
-    coverImageName: string;
-    landscapeSplashImageName: string;
-    portraitSplashImageName: string;
+    smallAppIconFile: File | null;
+    largeAppIconFile: File | null;
+    smallLandscapeBannerImageFile: File | null;
+    largeLandscapeBannerImageFile: File | null;
+    portraitBannerImageFile: File | null;
+    squareBannerImageFile: File | null;
+    coverImageFile: File | null;
+    landscapeSplashImageFile: File | null;
+    portraitSplashImageFile: File | null;
 
-    smallPreviewAppIconName: string;
-    largePreviewAppIconName: string;
-    bannerPreviewImageName: string;
-    largeLandscapeBannerPreviewImageName: string;
-    portraitBannerPreviewImageName: string;
-    squareBannerPreviewImageName: string;
-    coverPreviewImageName: string;
-    landscapeSplashPreviewImageName: string;
-    portraitSplashPreviewImageName: string;
-
-    gamePreviewLandscapeVideoName: string;
-    gamePreviewPortraitVideoName: string;
-    gamePreviewSquareVideoName: string;
-    gamePlayLandscapeVideoName: string;
-    gamePlayPortraitVideoName: string;
-    gamePlaySquareVideoName: string;
+    gameplayLandscapeVideoFile: File | null;
+    gameplayPortraitVideoFile: File | null;
+    gameplaySquareVideoFile: File | null;
     actions: MetaCreativesAction;
 }
 
 const initialState = {
-    largeAppIconName: "",
-    smallAppIconName: "",
-    bannerImageName: "",
-    largeLandscapeBannerImageName: "",
-    portraitBannerImageName: "",
-    squareBannerImageName: "",
-    coverImageName: "",
-    landscapeSplashImageName: "",
-    portraitSplashImageName: "",
+    largeAppIconFile: null,
+    smallAppIconFile: null,
+    smallLandscapeBannerImageFile: null,
+    largeLandscapeBannerImageFile: null,
+    portraitBannerImageFile: null,
+    squareBannerImageFile: null,
+    coverImageFile: null,
+    landscapeSplashImageFile: null,
+    portraitSplashImageFile: null,
 
-    smallPreviewAppIconName: "",
-    largePreviewAppIconName: "",
-    bannerPreviewImageName: "",
-    largeLandscapeBannerPreviewImageName: "",
-    portraitBannerPreviewImageName: "",
-    squareBannerPreviewImageName: "",
-    coverPreviewImageName: "",
-    landscapeSplashPreviewImageName: "",
-    portraitSplashPreviewImageName: "",
-
-    gamePreviewLandscapeVideoName: "",
-    gamePreviewPortraitVideoName: "",
-    gamePreviewSquareVideoName: "",
-    gamePlayLandscapeVideoName: "",
-    gamePlayPortraitVideoName: "",
-    gamePlaySquareVideoName: "",
+    gameplayLandscapeVideoFile: null,
+    gameplayPortraitVideoFile: null,
+    gameplaySquareVideoFile: null,
 }
 
-const useMetaCreativesStore = create<MetaCreativesState>((set) => ({
+const useMetaCreativesStore = create<MetaCreativesState>((set, get) => ({
     ...initialState,
     actions: {
-        setLargeAppIconName: (largeAppIconName: string) => set({ largeAppIconName: largeAppIconName }),
-        setSmallAppIconName: (smallAppIconName: string) => set({ smallAppIconName }),
-        setBannerImageName: (bannerImageName: string) => set({ bannerImageName }),
-        setLargeLandscapeBannerImageName: (largeLandscapeBannerImageName: string) => set({ largeLandscapeBannerImageName }),
-        setPortraitBannerImageName: (portraitBannerImageName: string) => set({ portraitBannerImageName }),
-        setSquareBannerImageName: (squareBannerImageName: string) => set({ squareBannerImageName }),
-        setCoverImageName: (coverImageName: string) => set({ coverImageName }),
-        setLandscapeSplashImageName: (landscapeSplashImageName: string) => set({ landscapeSplashImageName }),
+        setLargeAppIconFile: (largeAppIconFile: File | null) => set({ largeAppIconFile: largeAppIconFile }),
+        setSmallAppIconFile: (smallAppIconFile: File | null) => set({ smallAppIconFile }),
+        setSmallLandscapeBannerImageFile: (smallLandscapeBannerImageFile: File | null) => set({ smallLandscapeBannerImageFile }),
+        setLargeLandscapeBannerImageFile: (largeLandscapeBannerImageFile: File | null) => set({ largeLandscapeBannerImageFile }),
+        setPortraitBannerImageFile: (portraitBannerImageFile: File | null) => set({ portraitBannerImageFile }),
+        setSquareBannerImageFile: (squareBannerImageFile: File | null) => set({ squareBannerImageFile }),
+        setCoverImageFile: (coverImageFile: File | null) => set({ coverImageFile }),
+        setLandscapeSplashImageFile: (landscapeSplashImageFile: File | null) => set({ landscapeSplashImageFile }),
+        setPortraitSplashImageFile: (portraitSplashImageFile: File | null) => set({ portraitSplashImageFile }),
 
-
-        setSmallPreviewAppIconName: (smallPreviewAppIconName: string) => set({ smallPreviewAppIconName }),
-        setLargePreviewAppIconName: (largePreviewAppIconName: string) => set({ largePreviewAppIconName }),
-        setBannerPreviewImageName: (bannerPreviewImageName: string) => set({ bannerPreviewImageName }),
-        setLargeLandscapeBannerPreviewImageName: (largeLandscapeBannerPreviewImageName: string) => set({ largeLandscapeBannerPreviewImageName }),
-        setPortraitBannerPreviewImageName: (portraitBannerPreviewImageName: string) => set({ portraitBannerPreviewImageName }),
-        setSquareBannerPreviewImageName: (squareBannerPreviewImageName: string) => set({ squareBannerPreviewImageName }),
-        setCoverPreviewImageName: (coverPreviewImageName: string) => set({ coverPreviewImageName }),
-        setLandscapeSplashPreviewImageName: (landscapeSplashPreviewImageName: string) => set({ landscapeSplashPreviewImageName }),
-        setPortraitSplashPreviewImageName: (portraitSplashPreviewImageName: string) => set({ portraitSplashPreviewImageName }),
-
-        setPortraitSplashImageName: (portraitSplashImageName: string) => set({ portraitSplashImageName }),
-        setGamePreviewLandscapeVideoName: (gamePreviewLandscapeVideoName: string) => set({ gamePreviewLandscapeVideoName }),
-        setGamePreviewPortraitVideoName: (gamePreviewPortraitVideoName: string) => set({ gamePreviewPortraitVideoName }),
-        setGamePreviewSquareVideoName: (gamePreviewSquareVideoName: string) => set({ gamePreviewSquareVideoName }),
-        setGamePlayLandscapeVideoName: (gamePlayLandscapeVideoName: string) => set({ gamePlayLandscapeVideoName }),
-        setGamePlayPortraitVideoName: (gamePlayPortraitVideoName: string) => set({ gamePlayPortraitVideoName }),
-        setGamePlaySquareVideoName: (gamePlaySquareVideoName: string) => set({ gamePlaySquareVideoName }),
+        setGameplayLandscapeVideoFile: (gameplayLandscapeVideoFile: File | null) => set({ gameplayLandscapeVideoFile }),
+        setGameplayPortraitVideoFile: (gameplayPortraitVideoFile: File | null) => set({ gameplayPortraitVideoFile }),
+        setGameplaySquareVideoFile: (gameplaySquareVideoFile: File | null) => set({ gameplaySquareVideoFile }),
         resetMetaCreativesStore: () => set(initialState),
+        getAllMetaCreatives: () => {
+            let files = [];
+            let state = get();
+
+            files.push(state.smallAppIconFile);
+            files.push(state.largeAppIconFile);
+            files.push(state.smallLandscapeBannerImageFile);
+            files.push(state.largeLandscapeBannerImageFile);
+            files.push(state.portraitBannerImageFile);
+            files.push(state.squareBannerImageFile);
+            files.push(state.coverImageFile);
+            files.push(state.landscapeSplashImageFile);
+            files.push(state.portraitSplashImageFile);
+            files.push(state.gameplayLandscapeVideoFile);
+            files.push(state.gameplayPortraitVideoFile);
+            files.push(state.gameplaySquareVideoFile);
+
+            return files;
+        },
     }
 }));
 
-export const useLargeAppIconName = () => useMetaCreativesStore((state) => state.largeAppIconName);
-export const useSmallAppIconName = () => useMetaCreativesStore((state) => state.smallAppIconName);
-export const useBannerImageName = () => useMetaCreativesStore((state) => state.bannerImageName);
-export const useLargeLandscapeBannerImageName = () => useMetaCreativesStore((state) => state.largeLandscapeBannerImageName);
-export const usePortraitBannerImageName = () => useMetaCreativesStore((state) => state.portraitBannerImageName);
-export const useSquareBannerImageName = () => useMetaCreativesStore((state) => state.squareBannerImageName);
-export const useCoverImageName = () => useMetaCreativesStore((state) => state.coverImageName);
-export const useLandscapeSplashImageName = () => useMetaCreativesStore((state) => state.landscapeSplashImageName);
-export const usePortraitSplashImageName = () => useMetaCreativesStore((state) => state.portraitSplashImageName);
+export const useLargeAppIconFile = () => useMetaCreativesStore((state) => state.largeAppIconFile);
+export const useSmallAppIconFile = () => useMetaCreativesStore((state) => state.smallAppIconFile);
+export const useSmallLandscapeBannerImageFile = () => useMetaCreativesStore((state) => state.smallLandscapeBannerImageFile);
+export const useLargeLandscapeBannerImageFile = () => useMetaCreativesStore((state) => state.largeLandscapeBannerImageFile);
+export const usePortraitBannerImageFile = () => useMetaCreativesStore((state) => state.portraitBannerImageFile);
+export const useSquareBannerImageFile = () => useMetaCreativesStore((state) => state.squareBannerImageFile);
+export const useCoverImageFile = () => useMetaCreativesStore((state) => state.coverImageFile);
+export const useLandscapeSplashImageFile = () => useMetaCreativesStore((state) => state.landscapeSplashImageFile);
+export const usePortraitSplashImageFile = () => useMetaCreativesStore((state) => state.portraitSplashImageFile);
 
-export const useSmallPreviewAppIconName = () => useMetaCreativesStore((state) => state.smallPreviewAppIconName);
-export const useLargePreviewAppIconName = () => useMetaCreativesStore((state) => state.largePreviewAppIconName);
-export const useBannerPreviewImageName = () => useMetaCreativesStore((state) => state.bannerPreviewImageName);
-export const useLargeLandscapeBannerPreviewImageName = () => useMetaCreativesStore((state) => state.largeLandscapeBannerPreviewImageName);
-export const usePortraitBannerPreviewImageName = () => useMetaCreativesStore((state) => state.portraitBannerPreviewImageName);
-export const useSquareBannerPreviewImageName = () => useMetaCreativesStore((state) => state.squareBannerPreviewImageName);
-export const useCoverPreviewImageName = () => useMetaCreativesStore((state) => state.coverPreviewImageName);
-export const useLandscapeSplashPreviewImageName = () => useMetaCreativesStore((state) => state.landscapeSplashPreviewImageName);
-export const usePortraitSplashPreviewImageName = () => useMetaCreativesStore((state) => state.portraitSplashPreviewImageName);
+export const useGameplayLandscapeVideoFile = () => useMetaCreativesStore((state) => state.gameplayLandscapeVideoFile);
+export const useGameplayPortraitVideoFile = () => useMetaCreativesStore((state) => state.gameplayPortraitVideoFile);
+export const useGameplaySquareVideoFile = () => useMetaCreativesStore((state) => state.gameplaySquareVideoFile);
 
-export const useGamePreviewLandscapeVideoName = () => useMetaCreativesStore((state) => state.gamePreviewLandscapeVideoName);
-export const useGamePreviewPortraitVideoName = () => useMetaCreativesStore((state) => state.gamePreviewPortraitVideoName);
-export const useGamePreviewSquareVideoName = () => useMetaCreativesStore((state) => state.gamePreviewSquareVideoName);
-export const useGamePlayLandscapeVideoName = () => useMetaCreativesStore((state) => state.gamePlayLandscapeVideoName);
-export const useGamePlayPortraitVideoName = () => useMetaCreativesStore((state) => state.gamePlayPortraitVideoName);
-export const useGamePlaySquareVideoName = () => useMetaCreativesStore((state) => state.gamePlaySquareVideoName);
 export const useMetaCreativesActions = () => useMetaCreativesStore((state) => state.actions);
+
+export const isAllMetaCreativeFilesUploaded = () => useMetaCreativesStore((state) => {
+    const {
+        smallAppIconFile,
+        largeAppIconFile,
+        smallLandscapeBannerImageFile,
+        largeLandscapeBannerImageFile,
+        portraitBannerImageFile,
+        squareBannerImageFile,
+        coverImageFile,
+        landscapeSplashImageFile,
+        portraitSplashImageFile,
+        gameplayLandscapeVideoFile,
+        gameplayPortraitVideoFile,
+        gameplaySquareVideoFile
+    } = state;
+
+    return (
+        smallAppIconFile !== null &&
+        largeAppIconFile !== null &&
+        smallLandscapeBannerImageFile !== null &&
+        largeLandscapeBannerImageFile !== null &&
+        portraitBannerImageFile !== null &&
+        squareBannerImageFile !== null &&
+        coverImageFile !== null &&
+        landscapeSplashImageFile !== null &&
+        portraitSplashImageFile !== null &&
+        gameplayLandscapeVideoFile !== null &&
+        gameplayPortraitVideoFile !== null &&
+        gameplaySquareVideoFile
+    );
+})
+

@@ -4,7 +4,8 @@ import { useNotify } from "react-admin"
 import { useCurrentSetupGameDetails, useDataSending, useSubmitWebGameActions } from "../../../store/submit-web-game/submit-web-game-store"
 import { Styles } from "../../../common/styles"
 import { sendRequest } from "../../../common/utils"
-import { CREATE_WEB_GAME_SUBMISSION_DATA_URL, HttpMethod, CREATE_WEB_SUBMISSION_SELECT_PLATFORMS_URL, WEB_GAME_SUBMISSION_SETUP_CURRENT_STATE_UPDATE_URL } from "../../../common/constants"
+import { CREATE_WEB_GAME_SUBMISSION_DATA_URL, HttpMethod, CREATE_WEB_SUBMISSION_SELECT_PLATFORMS_URL, WEB_GAME_SUBMISSION_SETUP_CURRENT_STATE_UPDATE_URL, WebGameSubmissionSetup, META, POKI, CRAZY_GAMES } from "../../../common/constants"
+import { useEffect } from "react"
 
 export const SelectPlatformsStep = () => {
     const notify = useNotify();
@@ -14,7 +15,7 @@ export const SelectPlatformsStep = () => {
     const isCrazyGamesSelected = useCrazyGamesSelected();
     const { setMetaSelected, setPokiSelected, setMsnSelected, setCrazyGamesSelected } = useSelectPlatformActions();
     const isDataSending = useDataSending();
-    const { setCurrentStep, setDataSending } = useSubmitWebGameActions();
+    const { setCurrentStep, setDataSending, setCurrentSetupGameDetails } = useSubmitWebGameActions();
     const currentSetupGameDetails = useCurrentSetupGameDetails();
 
     const platforms = [
@@ -47,21 +48,45 @@ export const SelectPlatformsStep = () => {
         return selectedPlatforms;
     }
 
+    const isStepCompleted = () => currentSetupGameDetails.currentSetupStateIndex > WebGameSubmissionSetup.SELECT_PLATFORMS;
+
+    const setSelectedPlatforms = () => {
+        currentSetupGameDetails.selectedPlatforms.forEach((platform: any) => {
+            switch (platform.name) {
+                case META:
+                    setMetaSelected(true);
+                    break;
+                case POKI:
+                    setPokiSelected(true);
+                    break;
+                case CRAZY_GAMES:
+                    setCrazyGamesSelected(true);
+                    break;
+                default:
+                    console.log('Platform not found');
+                    break;
+            }
+        })
+    }
+
     const submitData = async () => {
         setDataSending(true);
-        console.log("currentSetupGameDetails", currentSetupGameDetails);
+        console.log("currentSetupGameDetails in select platform", currentSetupGameDetails);
 
-        let response = await sendRequest(HttpMethod.POST, CREATE_WEB_SUBMISSION_SELECT_PLATFORMS_URL, {
-            id: currentSetupGameDetails.webGameRequest.webGameSubmissionSetupCurrentState.id,
-            webGameRequestId: currentSetupGameDetails.webGameRequest.id,
-            selectedPlatforms: getSelectedPlatforms(),
-        });
-        console.log(response);
+        try {
+            let response = await sendRequest(HttpMethod.POST, CREATE_WEB_SUBMISSION_SELECT_PLATFORMS_URL, {
+                gameRequestId: currentSetupGameDetails.id,
+                webGameSubmissionSetupCurrentStateId: currentSetupGameDetails.webGameRequest.webGameSubmissionSetupCurrentState.id,
+                webGameRequestId: currentSetupGameDetails.webGameRequest.id,
+                selectedPlatforms: getSelectedPlatforms(),
+                studioId: currentSetupGameDetails.studioId
+            });
 
-        if (response?.data?.id) {
-            console.log("Select platforms data sent successfully!", response.data);
+            console.log("Select platform response: ", response);
+            setCurrentSetupGameDetails(response.data);
             setCurrentStep();
-        } else {
+        } catch (err) {
+            console.error(err);
             notify("Something went wrong!", { type: "error" });
         }
 
@@ -75,9 +100,26 @@ export const SelectPlatformsStep = () => {
         }
     }
 
+    useEffect(() => {
+        if (currentSetupGameDetails.currentSetupStateIndex > WebGameSubmissionSetup.SELECT_PLATFORMS) {
+            setSelectedPlatforms();
+        }
+    }, [])
+
     return (
         <Stack gap={2}>
-            <Alert severity="success" sx={{ mb: 2 }} >
+            {
+                isStepCompleted() &&
+                <Alert severity="success">
+                    You already completed this step
+                </Alert>
+
+                // <Alert severity="warning" sx={{ mb: 2 }}>
+                //     You need to complete previous steps
+                // </Alert>
+            }
+
+            <Alert severity="success" variant='outlined' sx={{ mb: 2 }} >
                 Your {currentSetupGameDetails.name.toLowerCase()} game has been approved.
             </Alert>
             <Typography fontWeight='bold' p={0}> Select Platforms</Typography>
@@ -91,7 +133,7 @@ export const SelectPlatformsStep = () => {
                                 control={
                                     <Checkbox
                                         checked={data.checked}
-                                        // disabled={isDataSending}
+                                        disabled={isDataSending || isStepCompleted()}
                                         onChange={(event) => {
                                             switch (index) {
                                                 case 0:
@@ -122,7 +164,6 @@ export const SelectPlatformsStep = () => {
                             />
                         ))}
                     </Stack>
-
                 </Paper>
 
                 <Stack direction="row" gap={2}
@@ -135,7 +176,7 @@ export const SelectPlatformsStep = () => {
                         variant="contained"
                         onClick={handleSubmit}
                         sx={{ px: 4, py: 1, textTransform: "none" }}
-                        disabled={isDataSending}
+                        disabled={isDataSending || isStepCompleted()}
                     >
                         {
                             isDataSending ? (

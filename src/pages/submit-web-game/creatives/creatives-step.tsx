@@ -1,4 +1,4 @@
-import { useState, SyntheticEvent, ReactNode } from 'react';
+import { useState, SyntheticEvent, ReactNode, useEffect } from 'react';
 import {
     Box,
     Tabs,
@@ -7,20 +7,20 @@ import {
     Button,
     Stack,
     CircularProgress,
+    Alert,
 } from '@mui/material';
 
 import { useNotify } from 'react-admin';
-import { useCrazyGamesSelected, useMetaSelected, useMsnSelected, usePokiSelected } from '../../../store/submit-web-game/select-platform-store';
 import { useActiveStep, useCurrentSetupGameDetails, useCurrentStep, useDataSending, useSubmitWebGameActions } from '../../../store/submit-web-game/submit-web-game-store';
-import { useCrazyGamesRequirementsCompleted, useMetaRequirementsCompleted, useMsnRequirementsCompleted, usePokiRequirementsCompleted } from '../../../store/submit-web-game/platform-requirements-store';
 import { MetaCreativesTab } from './meta-creatives-tab';
-import { CustomImageUploader } from '../../../components/CustomImageUploader';
 import { CrazyGamesCreativesTab } from './crazy-games-creatives-tab';
 import { PokiCreativesTab } from './poki-creatives-tab';
-import { sendRequest } from '../../../common/utils';
-import { CREATE_WEB_GAME_SUBMISSION_DATA_URL, HttpMethod, WEB_GAME_SUBMISSION_SETUP_CURRENT_STATE_UPDATE_URL } from '../../../common/constants';
-
-
+import { getFilesInfo, sendFormDataRequest, slugify } from '../../../common/utils';
+import { CRAZY_GAMES, CREATE_CREATIVES_DATA_URL, CREATIVES_ROOT_URL, MARKETINGS, META, POKI, WebGameSubmissionSetup } from '../../../common/constants';
+import { isAllMetaCreativeFilesUploaded, useMetaCreativesActions } from '../../../store/submit-web-game/meta-creatives-store';
+import { isAllPokiCreativeFilesUploaded, usePokiCreativesActions } from '../../../store/submit-web-game/poki-creatives-store';
+import { isAllCrazyGamesCreativeFilesUploaded, useCrazyGamesCreativesActions } from '../../../store/submit-web-game/crazy-games-creatives-store';
+import { localStorageData } from '../../../common/localStorage';
 
 // TabPanel props interface
 interface TabPanelProps {
@@ -44,86 +44,174 @@ export const CreativesStep = (): JSX.Element => {
     const activeStep = useActiveStep();
     const currentStep = useCurrentStep();
     const isDataSending = useDataSending();
-    const isMetaSelected = useMetaSelected();
-    const isPokiSelected = usePokiSelected();
-    const isMsnSelected = useMsnSelected();
-    const isMetaRequirementsCompleted = useMetaRequirementsCompleted();
-    const isPokiRequirementsCompleted = usePokiRequirementsCompleted();
-    const isMsnRequirementsCompleted = useMsnRequirementsCompleted();
-    const isCrazyGamesRequirementsCompleted = useCrazyGamesRequirementsCompleted();
-    const isCrazyGamesSelected = useCrazyGamesSelected();
+    const isAllMetaCreativesCompleted = isAllMetaCreativeFilesUploaded();
+    const isAllPokiCreativesCompleted = isAllPokiCreativeFilesUploaded();
+    const isAllCrazyGamesCreativesCompleted = isAllCrazyGamesCreativeFilesUploaded();
     const currentSetupGameDetails = useCurrentSetupGameDetails();
-    const { isStepCompleted, setCurrentStep, setDataSending } = useSubmitWebGameActions();
+    const { setCurrentStep, setDataSending, setCurrentSetupGameDetails } = useSubmitWebGameActions();
+    const { getAllCrazyGamesCreatives, resetCrazyGamesCreativesStore } = useCrazyGamesCreativesActions();
+    const { getAllPokiCreatives, resetPokiCreativesStore } = usePokiCreativesActions();
+    const { getAllMetaCreatives, resetMetaCreativesStore } = useMetaCreativesActions();
+    const getSelectedPlatforms = () => {
+        let gamePlatforms: any = [];
 
-    const steps = [
-        { name: 'Meta', component: <MetaCreativesTab />, isPlatformSelected: isMetaSelected },
-        { name: 'Poki', component: <PokiCreativesTab />, isPlatformSelected: isPokiSelected },
-        { name: 'Crazy Games', component: <CrazyGamesCreativesTab />, isPlatformSelected: isCrazyGamesSelected },
-        { name: 'MSN', component: <MetaCreativesTab />, isPlatformSelected: isMsnSelected },
-    ];
+        currentSetupGameDetails.selectedPlatforms.forEach((gamePlatform: any) => {
+            gamePlatforms.push(gamePlatform.name);
+        })
+
+        return gamePlatforms;
+    };
+
+    const getSteps = () => {
+        let steps: any = [];
+
+        selectedPlatforms.forEach((platform: any) => {
+            switch (platform) {
+                case META:
+                    steps.push({
+                        name: platform, component: <MetaCreativesTab />
+                    })
+                    break;
+                case POKI:
+                    steps.push({
+                        name: platform, component: <PokiCreativesTab />
+                    })
+                    break;
+                case CRAZY_GAMES:
+                    steps.push({
+                        name: platform, component: <CrazyGamesCreativesTab />
+                    })
+                    break;
+                default:
+                    console.log(`Platform not found`);
+                    break;
+            }
+        })
+
+        return steps;
+    }
+
+    const selectedPlatforms = getSelectedPlatforms();
+    const steps = getSteps();
 
     const handleDisable = () => {
         if (currentStep === activeStep) return false;
-        return !isStepCompleted(activeStep);
+        return !isStepCompleted();
+    }
+
+    const getFilesByPlatform = (platform: string) => {
+        switch (platform) {
+            case CRAZY_GAMES:
+                return getAllCrazyGamesCreatives();
+            case POKI:
+                return getAllPokiCreatives();
+            case META:
+                return getAllMetaCreatives();
+            default:
+                console.log("Platform not found");
+                return [];
+        }
+    }
+
+    const getAllFiles = () => {
+        let files: any = [];
+        selectedPlatforms.forEach((platform: any) => {
+            files.push(getFilesByPlatform(platform));
+        })
+
+        return files;
+    }
+
+    const getFileInfoList = () => {
+        let fileInfoList = [];
+
+        for (let i = 0; i < currentSetupGameDetails.selectedPlatforms.length; i++) {
+            let platform = currentSetupGameDetails.selectedPlatforms[i].name;
+            let commonFilePath = `${CREATIVES_ROOT_URL}/${localStorageData.studioId}/${currentSetupGameDetails.platform.toLowerCase()}/${slugify(currentSetupGameDetails.name)}/${MARKETINGS}/${currentSetupGameDetails.selectedPlatforms[i].id}`
+            let files: any = getFilesByPlatform(platform);
+            fileInfoList.push(getFilesInfo(commonFilePath, files));
+        }
+
+        return fileInfoList;
     }
 
     const submitData = async () => {
-        setDataSending(true);
-        console.log("currentSetupGameDetails", currentSetupGameDetails);
+        try {
+            setDataSending(true);
+            console.log("currentSetupGameDetails", currentSetupGameDetails);
+            let fileList = getAllFiles().flat();
+            let fileInfoList = getFileInfoList().flat();
 
-        let response = await sendRequest(HttpMethod.POST, WEB_GAME_SUBMISSION_SETUP_CURRENT_STATE_UPDATE_URL, {
-            id: currentSetupGameDetails.webGameRequest.webGameSubmissionSetupCurrentState.id,
-            currentSetupIndex: currentSetupGameDetails.currentSetupStateIndex,
-            webGameRequestId: currentSetupGameDetails.webGameRequest.id,
-            webGameRequestDetails: currentSetupGameDetails.webGameRequestDetailsId,
-        });
-        console.log(response);
+            console.log('File list: ', fileList);
+            console.log('File info list: ', fileInfoList);
+            // setDataSending(false);
+            // return;
+            let response = await sendFormDataRequest('upload-creatives-data', CREATE_CREATIVES_DATA_URL, fileList, {
+                gameRequestId: currentSetupGameDetails.id,
+                webGameSubmissionSetupCurrentStateId: currentSetupGameDetails.webGameRequest.webGameSubmissionSetupCurrentState.id,
+                currentSetupIndex: currentSetupGameDetails.currentSetupStateIndex,
+                webGameRequestId: currentSetupGameDetails.webGameRequest.id,
+                webGameRequestDetails: currentSetupGameDetails.webGameRequestDetailsId,
+                fileInfoList: fileInfoList,
+                studioId: currentSetupGameDetails.studioId
+            });
 
-        if (response?.data?.id) {
-            console.log("Select platforms data sent successfully!", response.data);
+            setCurrentSetupGameDetails(response.data);
             setCurrentStep();
-        } else {
+            console.log('Response: ', response);
+        } catch (err) {
             notify("Something went wrong!", { type: "error" });
+            console.error(err);
         }
 
         setDataSending(false);
     }
 
     const handleStepComplete = () => {
-        if (isMetaSelected) {
-            if (!isMetaRequirementsCompleted) {
-                notify("Please complete the 'Meta' tab before proceeding.", { type: "warning" });
-                return;
+        let canSubmitData = true;
+        console.log(selectedPlatforms);
+        selectedPlatforms.forEach((platform: any) => {
+            switch (platform) {
+                case META:
+                    if (!isAllMetaCreativesCompleted) {
+                        notify("Please complete the 'Meta' tab before proceeding.", { type: "warning" });
+                        canSubmitData = false;
+                    }
+                    break;
+                case POKI:
+                    if (!isAllPokiCreativesCompleted) {
+                        notify("Please complete the 'Poki' tab before proceeding.", { type: "warning" });
+                        canSubmitData = false;
+                    }
+                    break;
+                case CRAZY_GAMES:
+                    if (!isAllCrazyGamesCreativesCompleted) {
+                        notify("Please complete the 'Crazy Games' tab before proceeding.", { type: "warning" });
+                        canSubmitData = false;
+                    }
+                    break;
+                default:
+                    console.log(`Platform not found`);
+                    break;
             }
-        }
-        if (isPokiSelected) {
-            if (!isPokiRequirementsCompleted) {
-                notify("Please complete the 'Poki' tab before proceeding.", { type: "warning" });
-                return;
-            }
-        }
-        if (isMsnSelected) {
-            if (!isMsnRequirementsCompleted) {
-                notify("Please complete the 'MSN' tab before proceeding.", { type: "warning" });
-                return;
-            }
-        }
-        if (isCrazyGamesSelected) {
-            if (!isCrazyGamesRequirementsCompleted) {
-                notify("Please complete the 'Crazy Games' tab before proceeding.", { type: "warning" });
-                return;
-            }
-        }
+        })
 
-        submitData();
+        if (canSubmitData)
+            submitData();
     }
 
     const handleTabChange = (event: SyntheticEvent, newIndex: number) => {
         setTabIndex(newIndex);
     };
 
+    const isStepCompleted = () => currentStep > WebGameSubmissionSetup.CREATIVES;
+
     return (
         <Box p={3}>
+            {isStepCompleted() &&
+                <Alert severity="success" sx={{ mb: 2 }}>
+                    You already completed this step
+                </Alert>}
             <Typography fontWeight="bold" mb={2}>
                 Creatives (Marketing)
             </Typography>
@@ -142,18 +230,16 @@ export const CreativesStep = (): JSX.Element => {
                 scrollButtons="auto"
                 sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
             >
-                {steps.map((step, index) => (
-                    step.isPlatformSelected ? <Tab key={index} label={step.name} /> : null
+                {steps.map((step: any, index: any) => (
+                    <Tab key={index} label={step.name} />
                 ))}
             </Tabs>
 
             <Box >
-                {steps.map((step, i) => (
-                    step.isPlatformSelected ? (
-                        <TabPanel key={i} value={tabIndex} index={i}>
-                            {step.component}
-                        </TabPanel>
-                    ) : null
+                {steps.map((step: any, i: any) => (
+                    <TabPanel key={i} value={tabIndex} index={i}>
+                        {step.component}
+                    </TabPanel>
                 ))}
             </Box>
 

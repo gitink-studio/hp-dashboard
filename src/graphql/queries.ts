@@ -258,6 +258,10 @@ const GetUserDetails = gql`
       }
       studio
       studioId
+      studioRelation{
+        id
+        name
+      }
     }
   }
 `;

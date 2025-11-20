@@ -5,12 +5,11 @@ import { useState } from "react";
 import { useGameSubmissionActions, useGameTitle, useMinOSCompatibility, usePlayStoreDataFetch, useStoreStatus, useStoreUrlDisabled, usePlatform, useStoreUrl, useGenre, useControl, useMechanics, useOptionalTags, useGameType, useGamePlayVideoFile, useGameIconFile, useValidateGameSubmissionInputs } from "../../../store/sdk/game-submission-store";
 import { Button, useNotify } from "react-admin";
 import { FetchData } from "../../../data-providers/data-provider";
-import { sendRequest, waitForSeconds } from "../../../common/utils";
-import { CREATE_GAME_SUBMISSION_DATA_URL, CREATIVES_ROOT_URL, CURRENT_SDK_SETUP_STATE_ID, FileTypes, HttpMethod, PlayStoreDataFetchState, ROOT_URL, SDK_SETUP_GAME_ID, STUDIO_ID } from "../../../common/constants";
+import { getFilesInfo, sendFormDataRequest, sendRequest, slugify, waitForSeconds } from "../../../common/utils";
+import { CREATE_GAME_SUBMISSION_DATA_URL, CREATIVES_ROOT_URL, CURRENT_SDK_SETUP_STATE_ID, FileTypes as FileType, HttpMethod, PlayStoreDataFetchState, ROOT_URL, SDK_SETUP_GAME_ID, STUDIO_ID, UPLOAD_FILES_URL } from "../../../common/constants";
 import { CheckCircleRounded } from "@mui/icons-material";
 import { useActiveStep, useCurrentSetupStateId, useCurrentStep, useDataSending, useDisableComponents, useGameId, useSDKDetailActions } from "../../../store/sdk/sdk-details-store";
 import { Styles } from "../../../common/styles";
-import { uploadFileToS3 } from "../../../common/s3";
 import { localStorageData } from "../../../common/localStorage";
 
 const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
@@ -47,14 +46,13 @@ export const GameSubmissionStep = () => {
     const activeStep = useActiveStep();
     const isDataSending = useDataSending();
     const { setCurrentStep } = useSDKDetailActions();
-    const { setDisableComponents, isStepCompleted, setDataSending, setGameId, setCurrentSetupStateId } = useSDKDetailActions();
+    const { setDisableComponents, isStepCompleted, setDataSending, setCurrentGameSetupDetails } = useSDKDetailActions();
     const {
         setStoreStatus,
         setStoreUrl,
         setGameTitle,
         setMinOSCompatibility,
         setGameIconFile,
-        setGamePlayVideoFile,
         setStoreUrlDisabled,
         setPlayStoreDataFetch,
         setPlatform,
@@ -63,6 +61,7 @@ export const GameSubmissionStep = () => {
         setMechanics,
         setOptionalTags,
         setGameType,
+        resetGameSubmissionData
     } = useGameSubmissionActions();
 
     const notify = useNotify();
@@ -94,70 +93,69 @@ export const GameSubmissionStep = () => {
     }
 
     const handleStoreURLChange = async (event: any) => {
-        const value = event.target.value;
-        setPlayStoreDataFetch(PlayStoreDataFetchState.INPROGRESS);
-        setDisableComponents(true);
+        try {
+            const value = event.target.value;
+            setPlayStoreDataFetch(PlayStoreDataFetchState.INPROGRESS);
+            setDisableComponents(true);
 
-        console.log(value);
-        await waitForSeconds(1);
-        if (value !== null) {
-            if (isValidPlayStoreURL(value)) {
-                setStoreUrl(value);
-                let response = await FetchData.getPlayStoreGameDetails(value);
-                console.log("Store response:", response);
-                if (response != null && response.data != null) {
-                    setGameTitle(response.data.gameTitle);
-                    setMinOSCompatibility(response.data.minOSCompatibility);
-                    setGameIconFile(response.data.icon);
-                    setStoreUrlDisabled(true);
+            console.log(value);
+            await waitForSeconds(1);
+            if (value !== null) {
+                if (isValidPlayStoreURL(value)) {
+                    setStoreUrl(value);
+                    let response = await FetchData.getPlayStoreGameDetails(value);
+                    console.log("Store response:", response);
+                    if (response != null && response.data != null) {
+                        setGameTitle(response.data.gameTitle);
+                        setMinOSCompatibility(response.data.minOSCompatibility);
+                        setGameIconFile(response.data.icon);
+                        setStoreUrlDisabled(true);
 
-                    setPlayStoreDataFetch(PlayStoreDataFetchState.COMPLETED);
-                    setDisableComponents(false);
+                        setPlayStoreDataFetch(PlayStoreDataFetchState.COMPLETED);
+                        setDisableComponents(false);
+                    } else {
+                        notify("Something went wrong!", { type: "error" });
+                        setPlayStoreDataFetch('');
+                        setDisableComponents(false);
+                    }
                 } else {
-                    notify("Something went wrong!", { type: "error" });
                     setPlayStoreDataFetch('');
                     setDisableComponents(false);
                 }
-            } else {
-                setPlayStoreDataFetch('');
-                setDisableComponents(false);
             }
+        } catch (err) {
+            console.error(err);
+            notify('Something went wrong!', { type: 'error' });
         }
     }
 
     const submitData = async (data: any) => {
-        setDisableComponents(true);
-        setDataSending(true);
+        try {
+            setDisableComponents(true);
+            setDataSending(true);
 
-        const uploadFileResponse = await uploadFileToS3(
-            gameIconFile as File,
-            `${CREATIVES_ROOT_URL}
-            /${localStorageData.studioId}
-            /${platform}
-            /${gameTitle}
-            /${submissionName}
-            /${FileTypes.images}
-            /${gameIconFile?.name}
-            `);
+            const commonFilePath = `${CREATIVES_ROOT_URL}/${localStorageData.studioId}/${platform.toLowerCase()}/${slugify(gameTitle)}/${submissionName}`;
+            let fileList = [];
 
-        console.log("uploadFileResponse: ", uploadFileResponse);
+            fileList.push(gamePlayVideoFile);
+            if (gameIconFile instanceof File) {
+                fileList.push(gameIconFile);
+            }
 
-        // let response = await sendRequest(HttpMethod.POST, CREATE_GAME_SUBMISSION_DATA_URL, data);
-        // console.log(response);
-
-        // if (response?.data?.id) {
-        //     console.log("Game submission data sent successfully!", response.data);
-        //     setCurrentSetupStateId(response.data.id);
-        //     setGameId(response.data.gameId);
-        //     localStorage.setItem(SDK_SETUP_GAME_ID, response.data.gameId);
-        //     localStorage.setItem(CURRENT_SDK_SETUP_STATE_ID, response.data.id);
-        //     setCurrentStep();
-        // } else {
-        //     notify("Something went wrong!", { type: "error" });
-        // }
-
-        setDisableComponents(false);
-        setDataSending(false);
+            let fileInfoList = getFilesInfo(commonFilePath, fileList as File[]);
+            let response = await sendFormDataRequest('game-submission-data', CREATE_GAME_SUBMISSION_DATA_URL, fileList, { ...data, fileInfoList: fileInfoList });
+            console.log(`Response: ${response}`);
+            setCurrentGameSetupDetails(response.data);
+            resetGameSubmissionData();
+            setDisableComponents(false);
+            setDataSending(false);
+            window.location.href = '/#/getAllGameRequests'
+        } catch (err) {
+            notify('Something went wrong', { type: 'error' });
+            console.error(err);
+            setDisableComponents(false);
+            setDataSending(false);
+        }
     }
 
     const handleNext = async () => {
@@ -175,7 +173,6 @@ export const GameSubmissionStep = () => {
                 optionalTags: optionalTags,
                 gameType: gameType,
                 gameIconUrl: gameIconFile,
-                gamePlayVideoUrl: gamePlayVideoFile
             })
 
         }
@@ -187,16 +184,16 @@ export const GameSubmissionStep = () => {
                 notify("Store URL is required when Store Status is Live!", { type: "error" });
                 return false;
             }
+
+            if (minOSCompatibility === '') {
+                notify("Minimum OS Compatibility is required!", { type: "error" });
+                return false;
+            }
         } else if (storeStatus === "Not Live") {
             if (gameTitle === '') {
                 notify("Game Title is required when Store Status is Not Live!", { type: "error" });
                 return false;
             }
-
-            // if (minOSCompatibility === '') {
-            //     notify("Minimum OS Compatibility is required!", { type: "error" });
-            //     return false;
-            // }
         }
 
         if (genre === '') {
@@ -243,7 +240,10 @@ export const GameSubmissionStep = () => {
                             <StyledToggleButtonGroup
                                 value={storeStatus}
                                 exclusive
-                                onChange={(e, value) => value !== null && setStoreStatus(value)}
+                                onChange={(e, value) => {
+                                    resetGameSubmissionData();
+                                    return value !== null && setStoreStatus(value)
+                                }}
                                 fullWidth
                             >
                                 <ToggleButton value="Live" sx={Styles.leftRounded} disabled={canDisableAllComponents || isStepCompleted(activeStep)}>Live</ToggleButton>

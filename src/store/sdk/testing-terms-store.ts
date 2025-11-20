@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 type TestingTermsAction = {
     setAgreed: (agreed: boolean) => void;
+    resetTestingTermsData: () => void;
 }
 
 type TestingTermsState = {
@@ -9,10 +10,15 @@ type TestingTermsState = {
     actions: TestingTermsAction;
 }
 
-const useTestingTermsStore = create<TestingTermsState>((set) => ({
+const initialState = {
     agreed: false,
+}
+
+const useTestingTermsStore = create<TestingTermsState>((set) => ({
+    ...initialState,
     actions: {
-        setAgreed: (agreed: boolean) => set({ agreed })
+        setAgreed: (agreed: boolean) => set({ agreed }),
+        resetTestingTermsData: () => set(initialState),
     }
 }))
 

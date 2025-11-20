@@ -60,10 +60,12 @@ const ALERT_RULES = "alertRules";
 
 const POST = "POST";
 const GET = "GET";
+const PUT = "PUT";
 
 // URLs
 const LOCAL_HOST_URL = "http://localhost:3000";
 const HR_WELOADIN_URL = "https://hr.weloadin.lol";
+const HR_RENDER = 'https://hr-backend-render.onrender.com';
 
 // Exports
 export const ROOT_URL = LOCAL_HOST_URL;
@@ -75,10 +77,12 @@ export const GRAPHQL_CLIENT_OPTION = { uri: ROOT_URL + "/graphql" };
 export const CREATE_USER_URL = ROOT_URL + "/users/new";
 export const CREATE_GAME_SUBMISSION_DATA_URL = ROOT_URL + "/sdk/game-submission/new"
 export const CREATE_TESTING_TERMS_URL = ROOT_URL + "/sdk/testing-terms/new"
-export const CREATE_FB_DATA_URL = ROOT_URL + "/sdk/facebook-setup/new"
+export const UPDATE_FB_DATA_URL = ROOT_URL + "/sdk/facebook-setup/update"
 export const CREATE_SDK_INTEGRATION_DATA_URL = ROOT_URL + "/sdk/sdk-integration/new"
 export const CREATE_STORE_DATA_URL = ROOT_URL + "/sdk/store-setup/new"
 export const CREATE_TEST_SETUP_DATA_URL = ROOT_URL + "/sdk/test-setup/new"
+export const SDK_STATUS_UPDATE_URL = ROOT_URL + "/sdk/update/status";
+export const SDK_LAUNCH_URL = ROOT_URL + "/sdk/launch";
 export const CREATE_WEB_GAME_SUBMISSION_DATA_URL = ROOT_URL + "/web-game-submission/new"
 export const REVIEW_AND_SUBMISSION_URL = ROOT_URL + "/web-game-submission/review-and-launch"
 export const WEB_GAME_SUBMISSION_STATUS_UPDATE_URL = ROOT_URL + "/web-game-submission/update/status"
@@ -89,6 +93,8 @@ export const CREATE_CREATIVES_DATA_URL = ROOT_URL + "/web-game-submission/creati
 export const CREATE_METADATA_AND_RATINGS_DATA_URL = ROOT_URL + "/web-game-submission/metadata-and-ratings/new"
 export const REVIEW_AND_LAUNCH_URL = ROOT_URL + "/web-game-submission/review-and-launch"
 export const LAUNCH_GAME_URL = ROOT_URL + "/web-game-submission/launch-game"
+export const UPLOAD_FILES_URL = ROOT_URL + "/files/upload"
+export const UPDATE_FB_AD_ACCOUNT_ID_URL = ROOT_URL + "/sdk/facebook-details/update/fbAdAccountId"
 
 export const QueryNames = {
   GET_ALL_DEVICE_DATA,
@@ -151,7 +157,7 @@ export const QueryNames = {
 export const DATE_RANGE_NAMES = [0, 1, 7, 14, 30, "Custom"];
 export const SUB_PLATFORMS = ["All", "Poki", "CrazyGames"];
 export const GAME_NAMES = ["All", "PickleBall", "FoodJam"];
-export const HttpMethod = { GET, POST };
+export const HttpMethod = { GET, POST, PUT };
 
 // Publisher-specific constants
 export const CONTRACT_TYPES = ["revenue_share", "minimum_guarantee", "hybrid"];
@@ -177,6 +183,8 @@ export const CURRENT_SDK_SETUP_STATE_ID = "currentSdkSetupStateId";
 export const SDK_SETUP_GAME_ID = "sdkSetupGameId";
 export const STUDIO_TOKEN = "studioToken";
 export const STUDIO_ID = "studioId";
+export const USER_NAME = "userName";
+export const TOTAL_MOBILE_GAME_SUBMISSION_STEPS = 6;
 export const TOTAL_WEB_GAME_SUBMISSION_STEPS = 7;
 
 
@@ -294,7 +302,8 @@ export const Languages = [
 
 const S3_PUBLIC_URL = "https://hr-bucket-a3189cd.s3.amazonaws.com";
 const IMAGE_ROOT_URL = S3_PUBLIC_URL + "/uploads/public/images";
-export const CREATIVES_ROOT_URL = S3_PUBLIC_URL + "/uploads/private/creatives";
+export const CREATIVES_ROOT_URL = "uploads/private/creatives";
+export const BUILDS_ROOT_URL = "uploads/private/builds";
 
 const FB_NEW_APP_IMAGE_PATH = "/facebook-setup/new-app";
 const FB_BASICS_IMAGE_PATH = "/facebook-setup/basics";
@@ -374,4 +383,59 @@ export const FileTypes = {
   images: "images",
   videos: "videos",
   zips: "zips",
+}
+
+export const SINGLE_UNIVERSAL_ZIP = "Single universal zip";
+export const PLATFORM_SPECIFIC_ZIP = "Platform-specific zip";
+
+export const TEST_SUBMISSION = "test-submission"
+export const FINAL_SUBMISSION = "final-submission"
+export const MARKETINGS = 'marketings'
+
+export const META = 'Meta';
+export const POKI = 'Poki';
+export const MSN = 'MSN';
+export const CRAZY_GAMES = 'Crazy Games';
+
+const PENDING = 'Pending';
+const ACCEPTED = 'Accepted';
+const REJECTED = 'Rejected';
+const WAITING_FOR_APPROVAL = 'Wait for Approval';
+const LAUNCHED = 'Launched';
+
+export const GameRequestStatus = {
+  PENDING,
+  ACCEPTED,
+  REJECTED,
+  WAITING_FOR_APPROVAL,
+  LAUNCHED
+}
+
+const ANDROID = 'Android'
+const IOS = 'iOS'
+const WEB = 'Web'
+
+export const Platform = {
+  ANDROID,
+  IOS,
+  WEB
+}
+
+const WEB_GAME_SUBMISSION_PAGE = 'WebSubmissionPage'
+const MOBILE_GAME_SUBMISSION_PAGE = 'MobileSubmissonPage'
+
+export const GameSubmissionPage = {
+  WEB_GAME_SUBMISSION_PAGE,
+  MOBILE_GAME_SUBMISSION_PAGE
+}
+
+
+export const WebGameSubmissionSetup = {
+  WEB_GAME_SUBMISSION: 0,
+  SELECT_PLATFORMS: 1,
+  UPLOAD_WEB_BUILDS: 2,
+  PLATFORM_REQUIREMENTS: 3,
+  CREATIVES: 4,
+  METADATA_AND_RATINGS: 5,
+  REVIEW_AND_LAUNCH_URL: 6
 }

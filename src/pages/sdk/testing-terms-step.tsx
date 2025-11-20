@@ -10,7 +10,7 @@ import {
     CircularProgress
 } from '@mui/material';
 import { useAgreed, useTestingTermActions } from '../../store/sdk/testing-terms-store';
-import { useActiveStep, useCurrentSetupStateId, useCurrentStep, useDataSending, useGameId, useSDKDetailActions } from '../../store/sdk/sdk-details-store';
+import { useActiveStep, useCurrentGameSetupDetails, useCurrentSetupStateId, useCurrentStep, useDataSending, useGameId, useSDKDetailActions } from '../../store/sdk/sdk-details-store';
 import { sendRequest } from '../../common/utils';
 import { CREATE_TESTING_TERMS_URL, CURRENT_SDK_SETUP_STATE_ID, HttpMethod } from '../../common/constants';
 import { useNotify } from 'react-admin';
@@ -25,24 +25,29 @@ export const TestingTermsStep = () => {
     const gameId = useGameId();
     const currentSetupStateId = useCurrentSetupStateId();
     const isDataSending = useDataSending();
-    const { setCurrentStep, isStepCompleted, setDisableComponents, setDataSending } = useSDKDetailActions();
+    const currentGameSetupDetails = useCurrentGameSetupDetails();
+    const { setCurrentStep, isStepCompleted, setDisableComponents, setDataSending, setCurrentGameSetupDetails } = useSDKDetailActions();
 
     const handleCheckboxChange = (event: any) => {
         setAgreed(event.target.checked);
     };
 
     const handleCompleteStep = async () => {
-        setDisableComponents(true);
-        setDataSending(true);
+        try {
+            setDisableComponents(true);
+            setDataSending(true);
 
-        const response = await sendRequest(HttpMethod.POST, CREATE_TESTING_TERMS_URL, {
-            currentSetupStateId: localStorage.getItem(CURRENT_SDK_SETUP_STATE_ID)
-        });
+            const response = await sendRequest(HttpMethod.POST, CREATE_TESTING_TERMS_URL, {
+                gameRequestId: currentGameSetupDetails.gameRequestId,
+                sdkSetupCurrentStateId: currentGameSetupDetails.androidOrIOSGameRequest.sdkSetupCurrentState.id,
+                currentSetupStateIndex: currentGameSetupDetails.currentSetupStateIndex
+            });
 
-        if (response?.data?.id) {
             console.log("Testing terms data sent successfully!", response.data);
+            setCurrentGameSetupDetails(response.data);
             setCurrentStep();
-        } else {
+        } catch (err) {
+            console.error(err);
             notify("Something went wrong!", { type: "error" });
         }
 

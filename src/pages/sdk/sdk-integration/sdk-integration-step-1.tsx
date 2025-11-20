@@ -3,18 +3,20 @@ import { Check, ContentCopy, Visibility, VisibilityOff } from "@mui/icons-materi
 import { useCopied, useSDKIntegrationActions, useShowPassword, useStep1Completed } from "../../../store/sdk/sdk-integration-store";
 import { Images, ImageSize, STUDIO_TOKEN } from "../../../common/constants";
 import { Styles } from "../../../common/styles";
+import { useCurrentGameDetails } from "../../../store/play-tests/play-tests-store";
+import { useCurrentGameSetupDetails } from "../../../store/sdk/sdk-details-store";
 
 export const SDKIntegrationStep1 = () => {
     const theme = useTheme();
     const copied = useCopied();
     const showPassword = useShowPassword();
     const isStep1Completed = useStep1Completed();
-    const token = localStorage.getItem(STUDIO_TOKEN) || '';
+    const currentGameSetupDetails = useCurrentGameSetupDetails();
     const { setCopied, setShowPassword, setStep1Completed } = useSDKIntegrationActions();
 
     const handleCopy = async () => {
         try {
-            await navigator.clipboard.writeText(token);
+            await navigator.clipboard.writeText(currentGameSetupDetails.token);
             setCopied(true);
             setTimeout(() => setCopied(false), 1500); // Reset icon after 1.5s
         } catch (err) {
@@ -34,7 +36,7 @@ export const SDKIntegrationStep1 = () => {
                         name="token"
                         variant="outlined"
                         placeholder="Token"
-                        value={localStorage.getItem(STUDIO_TOKEN) || ''}
+                        value={currentGameSetupDetails.token}
                         type={showPassword ? "text" : "password"}
                         sx={{ ...Styles.textFieldSmallStyle, width: "640px", mt: 1 }}
                         slotProps={{

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Box, Button, Typography, Alert, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { STUDIO_ID } from '../common/constants';
 
 export const AdminRoleSetter: React.FC = () => {
-  const [selectedRole, setSelectedRole] = useState(localStorage.getItem("userRole") || '');
+  const [selectedRole, setSelectedRole] = useState(localStorage.getItem("userRole") || 'publisher');
   const [message, setMessage] = useState('');
 
   const handleSetRole = () => {
@@ -23,6 +24,7 @@ export const AdminRoleSetter: React.FC = () => {
     localStorage.removeItem("userRoleId");
     localStorage.removeItem("userId");
     localStorage.removeItem("userStudio");
+    localStorage.removeItem(STUDIO_ID);
     setMessage('Logged out successfully. Redirecting to login...');
     // Redirect to login page after a short delay
     setTimeout(() => {
@@ -35,7 +37,7 @@ export const AdminRoleSetter: React.FC = () => {
       <Typography variant="h6" gutterBottom>
         Admin Role Setter (Testing Only)
       </Typography>
-      
+
       <FormControl fullWidth sx={{ mb: 2 }}>
         <InputLabel>Select Role</InputLabel>
         <Select
@@ -51,21 +53,21 @@ export const AdminRoleSetter: React.FC = () => {
       </FormControl>
 
       <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-        <Button 
-          variant="contained" 
+        <Button
+          variant="contained"
           onClick={handleSetRole}
           disabled={!selectedRole}
         >
           Set Role
         </Button>
-        <Button 
-          variant="outlined" 
+        <Button
+          variant="outlined"
           onClick={handleClearRole}
         >
           Clear Role
         </Button>
-        <Button 
-          variant="outlined" 
+        <Button
+          variant="outlined"
           color="error"
           onClick={handleLogout}
         >

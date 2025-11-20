@@ -17,6 +17,7 @@ type FacebookSetupAction = {
     setAppId: (appId: string) => void;
     setClientToken: (clientToken: string) => void;
     setReferrerDecryptionKey: (referrerDecryptionKey: string) => void;
+    resetFacebookSetupData: () => void;
 }
 
 type FacebookSetupState = {
@@ -30,7 +31,7 @@ type FacebookSetupState = {
     actions: FacebookSetupAction;
 }
 
-const useFacebookSetupStore = create<FacebookSetupState>((set) => ({
+const initialState = {
     isNewAppStepCompleted: false,
     isBasicAppStepCompleted: false,
     isAdvancedAppStepCompleted: false,
@@ -38,6 +39,10 @@ const useFacebookSetupStore = create<FacebookSetupState>((set) => ({
     appId: "",
     clientToken: "",
     referrerDecryptionKey: "",
+}
+
+const useFacebookSetupStore = create<FacebookSetupState>((set) => ({
+    ...initialState,
     actions: {
         setNewAppStepCompleted: (isNewAppStepCompleted: boolean) => set((state) => ({
             isNewAppStepCompleted: isNewAppStepCompleted,
@@ -54,6 +59,7 @@ const useFacebookSetupStore = create<FacebookSetupState>((set) => ({
         setAppId: (appId: string) => set({ appId }),
         setClientToken: (clientToken: string) => set({ clientToken }),
         setReferrerDecryptionKey: (referrerDecryptionKey: string) => set({ referrerDecryptionKey }),
+        resetFacebookSetupData: () => set(initialState),
     }
 }))
 

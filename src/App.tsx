@@ -108,7 +108,7 @@ export const App = () => {
             < Resource
               name="sdk"
               list={SDKDetails}
-              options={{ label: "SDK" }}
+              options={{ label: "SDK", hasShow: false }}
             />
 
             {/* Web Game Submission */}

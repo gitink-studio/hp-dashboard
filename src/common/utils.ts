@@ -1,9 +1,12 @@
 import { fetchUtils } from "react-admin";
-import { DECIMAL_LENGTH } from "./constants";
+import { DECIMAL_LENGTH, FileTypes, HttpMethod } from "./constants";
 import { FetchData } from "../data-providers/data-provider";
 import { notify } from "../components/notify";
-import { useState } from "react";
 import { print } from "graphql";
+
+const imageFormats = ['.png', '.jpg', '.jpeg'];
+const videoFormats = ['.mp4'];
+const buildFormats = ['.zip'];
 
 export const validateValue = async (
   modelName: string,
@@ -54,16 +57,45 @@ export const formatNumber = (_value: number | string): string => {
 };
 
 export const sendRequest = async (method: string, url: string, data: any) => {
-  const options = {
+  const options: any = {
     method: method,
-    body: JSON.stringify(data),
     headers: new Headers({ "Content-Type": "application/json" }),
   };
+
+  if (method !== HttpMethod.GET) {
+    options.body = JSON.stringify(data);
+  }
 
   const { json } = await fetchUtils.fetchJson(url, options);
 
   return json;
 };
+
+export const sendFormDataRequest = async (name: string, url: string, fileList: any[], data: any) => {
+  try {
+    const formData = new FormData();
+
+    for (let i = 0; i < fileList.length; i++) {
+      formData.append(name, fileList[i]);
+    }
+
+    if (data) {
+      formData.append('metadata', JSON.stringify(data));
+    }
+
+    const response = await fetch(url, {
+      method: HttpMethod.POST,
+      body: formData
+    })
+
+    const responseData = await response.json();
+    console.log("Response data: ", responseData);
+    return responseData;
+  }
+  catch (error) {
+    console.log(error);
+  }
+}
 
 export const sendGraphqlRequest = async (resource: string, queryName: string, params: any) => {
   const response = await fetch(resource, {
@@ -76,15 +108,64 @@ export const sendGraphqlRequest = async (resource: string, queryName: string, pa
   });
 
   const result = await response.json();
-  console.log(`${queryName} response:`, result);
+  // console.log(`${queryName} response:`, result);
 
   if (result.errors) {
     console.error("GraphQL errors:", result.errors);
     return null;
   }
 
-  console.log(`${queryName} data:`, result.data[queryName]);
+  // console.log(`${queryName} data:`, result.data[queryName]);
   return result.data[queryName];
+}
+
+const getFileLocation = (fileExtension: string) => {
+
+  if (imageFormats.includes(fileExtension)) {
+    return FileTypes.images;
+  }
+
+  if (videoFormats.includes(fileExtension)) {
+    return FileTypes.videos;
+  }
+
+  if (buildFormats.includes(fileExtension)) {
+    return "builds";
+  }
+
+  return "unknown-type";
+}
+
+export const slugify = (text: string): string => {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+}
+
+export const getFilesInfo = (commonFilePath: string, files: File[]) => {
+  let fileInfoList: any = [];
+  files.forEach(file => {
+    let fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    fileInfoList.push({
+      filePath: `${commonFilePath}/${getFileLocation(fileExtension)}`,
+      fileType: encodeURI(file.type)
+    })
+  })
+
+  return fileInfoList;
+}
+
+export const getBuildFilesInfo = (commonFilePath: string, file: File) => {
+  let fileInfo: any;
+  let fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+
+  fileInfo = {
+    filePath: `${commonFilePath}/${getFileLocation(fileExtension)}`,
+    fileType: encodeURI(file.type)
+  }
+
+  return fileInfo;
 }
 
 export const waitForSeconds = (seconds: number) => {
@@ -125,12 +206,11 @@ const isValidFileSize = (file: File, maxFileSize: number) => {
   return true;
 }
 
-export const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, width: number, height: number, maxfileSize: number, fileformat: string, setImageNameAction: (value: any) => void, setPreviewAction: (value: any) => void, maxFileSize: number = 0) => {
+export const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, width: number, height: number, fileformat: string, setImageFileAction: (value: any) => void, maxFileSize: number = 0) => {
   const resetIconName = () => {
-    setImageNameAction('');
-    setPreviewAction('');
+    setImageFileAction(null);
   }
-
+  console.log(e.target.files);
   if (e.target.files && e.target.files[0]) {
     console.log("handleIconUpload")
     const file = e.target.files[0];
@@ -147,7 +227,7 @@ export const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, width:
 
         if (!isValidResolution) {
           notify(`Image must be in ${width}x${height} pixels`, { type: 'warning' });
-          URL.revokeObjectURL(objectUrl); // Clean up
+          URL.revokeObjectURL(objectUrl);
           resetIconName();
           return;
         }
@@ -158,18 +238,15 @@ export const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, width:
         return;
       }
 
-      setImageNameAction(file.name);
-      console.log("File name: ", file.name);
-      setPreviewAction(URL.createObjectURL(file));
+      setImageFileAction(file);
     }
   }
 }
 
 export const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, action: (value: any) => void, format: string, maxFileSize: number) => {
-  console.log("file name: ");
+  console.log("file name: ", e.target.files);
   if (e.target.files && e.target.files[0]) {
     const file = e.target.files[0];
-
 
     if (!isValidFileFormat(file, format)) {
       notify("Invalid file format", { type: "error" });
@@ -182,7 +259,7 @@ export const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, action:
     }
 
     console.log(file.name);
-    action(file.name);
+    action(file);
   }
 };
 

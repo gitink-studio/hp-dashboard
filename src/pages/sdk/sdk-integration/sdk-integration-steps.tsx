@@ -11,7 +11,7 @@ import {
 import { PreRequirements } from './pre-requirements';
 import { SDKIntegrationStep1 } from './sdk-integration-step-1';
 import { SDKIntegrationStep2 } from './sdk-integration-step-2';
-import { useActiveStep, useCurrentStep, useDataSending, useSDKDetailActions } from '../../../store/sdk/sdk-details-store';
+import { useActiveStep, useCurrentGameSetupDetails, useCurrentStep, useDataSending, useSDKDetailActions } from '../../../store/sdk/sdk-details-store';
 import { usePreRequirementsCompleted, useStep1Completed, useStep2Completed } from '../../../store/sdk/sdk-integration-store';
 import { useNotify } from 'react-admin';
 import { sendRequest } from '../../../common/utils';
@@ -48,7 +48,8 @@ export const SDKIntegrationSteps = (): JSX.Element => {
     const activeStep = useActiveStep();
     const currentStep = useCurrentStep();
     const isDataSending = useDataSending();
-    const { isStepCompleted, setCurrentStep, setDataSending } = useSDKDetailActions();
+    const currentGameSetupDetails = useCurrentGameSetupDetails();
+    const { isStepCompleted, setCurrentStep, setDataSending, setCurrentGameSetupDetails } = useSDKDetailActions();
 
     const handleDisable = () => {
         if (currentStep === activeStep) return false;
@@ -58,14 +59,18 @@ export const SDKIntegrationSteps = (): JSX.Element => {
     const submitData = async () => {
         setDataSending(true);
 
-        const response = await sendRequest(HttpMethod.POST, CREATE_SDK_INTEGRATION_DATA_URL, {
-            currentSetupStateId: localStorage.getItem(CURRENT_SDK_SETUP_STATE_ID)
-        });
+        try {
+            const response = await sendRequest(HttpMethod.POST, CREATE_SDK_INTEGRATION_DATA_URL, {
+                gameRequestId: currentGameSetupDetails.gameRequestId,
+                sdkSetupCurrentStateId: currentGameSetupDetails.androidOrIOSGameRequest.sdkSetupCurrentState.id,
+                currentSetupStateIndex: currentGameSetupDetails.currentSetupStateIndex
+            });
 
-        if (response?.data?.id) {
             console.log("Sdk integration data sent successfully!", response.data);
+            setCurrentGameSetupDetails(response.data);
             setCurrentStep();
-        } else {
+        } catch (err) {
+            console.error(err);
             notify("Something went wrong!", { type: "error" });
         }
 

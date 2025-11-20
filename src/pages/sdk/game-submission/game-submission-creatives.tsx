@@ -8,16 +8,13 @@ import { Styles } from "../../../common/styles";
 const GameAssetsForm = () => {
     const notify = useNotify();
     const [videoFile, setVideoFile] = useState<File | null>(null);
-    const [previewFile, setPreviewFile] = useState<File | null>(null);
     const storeStatus = useStoreStatus();
     const gameIconFile = useGameIconFile();
-    const gamePlayVideoFile = useGamePlayVideoFile();
     const { setGameIconFile, setGamePlayVideoFile } = useGameSubmissionActions();
 
     useEffect(() => { console.log(`GameIconUrl Changed: ${gameIconFile}`) }, [gameIconFile]);
 
     const resetIconFile = () => {
-        setPreviewFile(null);
         setGameIconFile(null as unknown as File);
     }
 
@@ -55,7 +52,7 @@ const GameAssetsForm = () => {
 
             setGameIconFile(file);
             console.log("File name: ", gameIconFile);
-            setPreviewFile(file);
+            e.target.value = "";
         }
     };
 
@@ -83,6 +80,14 @@ const GameAssetsForm = () => {
         }
     };
 
+    const getImageSrc = () => {
+        if (gameIconFile instanceof File)
+            return URL.createObjectURL(gameIconFile);
+
+        if (typeof gameIconFile === 'string')
+            return gameIconFile;
+    }
+
     return (
         <Paper elevation={0} sx={Styles.paperStyle}>
             <Stack gap={3}>
@@ -102,7 +107,7 @@ const GameAssetsForm = () => {
                         }}
                         disabled={storeStatus === 'Live'}
                     >
-                        {!previewFile && (
+                        {!gameIconFile && (
                             <Stack sx={Styles.stackStyle} gap={1}>
                                 <FileUploadOutlined />
                                 <Typography fontSize="12px" sx={{ textTransform: "none" }}>
@@ -113,10 +118,10 @@ const GameAssetsForm = () => {
 
                         <input type="file" hidden accept="image/png" onChange={handleIconUpload} />
 
-                        {gameIconFile !== null && (
+                        {(typeof gameIconFile === 'string' && gameIconFile !== "" && gameIconFile !== null) && (
                             <Box
                                 component="img"
-                                src={URL.createObjectURL(gameIconFile)}
+                                src={gameIconFile}
                                 alt="Fetched icon preview"
                                 sx={{
                                     position: 'absolute',
@@ -129,20 +134,21 @@ const GameAssetsForm = () => {
                             />
                         )}
 
-                        {(previewFile) && (
-                            <Box
-                                component="img"
-                                src={URL.createObjectURL(previewFile)}
-                                alt="Uploaded icon preview"
-                                sx={{
-                                    position: "absolute",
-                                    inset: 0,
-                                    width: "100%",
-                                    height: "100%",
-                                    objectFit: "contain", // fit nicely
-                                    backgroundColor: "#fafafa",
-                                }}
-                            />
+                        {gameIconFile instanceof File && gameIconFile !== null && (
+                            <><Typography variant="body2">Culprit</Typography>
+                                <Box
+                                    component="img"
+                                    src={URL.createObjectURL(gameIconFile)}
+                                    alt="Uploaded icon preview"
+                                    sx={{
+                                        position: "absolute",
+                                        inset: 0,
+                                        width: "100%",
+                                        height: "100%",
+                                        objectFit: "contain", // fit nicely
+                                        backgroundColor: "#fafafa",
+                                    }}
+                                /></>
                         )}
                     </Button>
 

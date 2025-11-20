@@ -1,14 +1,12 @@
 import React from "react";
-import { Box, Paper, Stack, Typography, Button, Alert, FormControlLabel, Checkbox, useTheme } from "@mui/material";
-import { InfoOutlined } from "@mui/icons-material";
-import { useActiveStep, useCurrentStep, useDataSending, useSDKDetailActions } from "../../../store/sdk/sdk-details-store";
-import { useActionData } from "react-router";
+import { Box, Paper, Stack, Typography, Button, FormControlLabel, Checkbox, useTheme } from "@mui/material";
+import { useActiveStep, useCurrentGameSetupDetails, useCurrentStep, useDataSending, useSDKDetailActions } from "../../../store/sdk/sdk-details-store";
 import { useDisplayAdvertisingID, useDisplayPrivacyGuide, useIsAdvertisingIDAnswered, useIsAllFieldsFilled, useIsAppAvailableInAllStores, useIsPrivacyGuideAnswered, useStoreStepActions } from "../../../store/sdk/store-step-store";
 import { PrivacyGuide } from "./privacy-guide";
 import { AdvertisingID } from "./advertising-id";
 import { useNotify } from "react-admin";
 import { sendRequest } from "../../../common/utils";
-import { CREATE_STORE_DATA_URL, CURRENT_SDK_SETUP_STATE_ID, HttpMethod } from "../../../common/constants";
+import { CREATE_STORE_DATA_URL, HttpMethod } from "../../../common/constants";
 
 export const StoreStep: React.FC = () => {
     const notify = useNotify();
@@ -22,7 +20,8 @@ export const StoreStep: React.FC = () => {
     const isAllFieldsFilled = useIsAllFieldsFilled();
     const isDataSending = useDataSending();
     const currentStep = useCurrentStep();
-    const { isStepCompleted, setCurrentStep, setDataSending } = useSDKDetailActions();
+    const currentGameSetupDetails = useCurrentGameSetupDetails();
+    const { isStepCompleted, setCurrentStep, setDataSending, setCurrentGameSetupDetails } = useSDKDetailActions();
     const { setDisplayPrivacyGuide, setDisplayAdvertisingID, setIsAppAvailableInAllStores, setIsPrivacyGuideAnswered, setIsAdvertisingIDAnswered, setIsAllFieldsFilled } = useStoreStepActions();
 
     const handleDisable = () => {
@@ -63,15 +62,18 @@ export const StoreStep: React.FC = () => {
     const submitData = async () => {
         setDataSending(true);
 
-        const response = await sendRequest(HttpMethod.POST, CREATE_STORE_DATA_URL, {
-            currentSetupStateId: localStorage.getItem(CURRENT_SDK_SETUP_STATE_ID),
-        });
+        try {
+            const response = await sendRequest(HttpMethod.POST, CREATE_STORE_DATA_URL, {
+                gameRequestId: currentGameSetupDetails.gameRequestId,
+                sdkSetupCurrentStateId: currentGameSetupDetails.androidOrIOSGameRequest.sdkSetupCurrentState.id,
+                currentSetupStateIndex: currentGameSetupDetails.currentSetupStateIndex
+            });
 
-        if (response?.data?.id) {
             console.log("Store step data sent successfully!", response.data);
+            setCurrentGameSetupDetails(response.data);
             setCurrentStep();
-        } else {
-            notify("Something went wrong!", { type: "error" });
+        } catch (err) {
+            console.error(err);
         }
 
         setDataSending(false);

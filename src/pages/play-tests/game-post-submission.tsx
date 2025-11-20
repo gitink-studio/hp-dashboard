@@ -3,18 +3,18 @@ import { DataGrid, GridColDef, useGridApiRef } from '@mui/x-data-grid';
 import { Box, Button, CircularProgress, FormControl, IconButton, InputAdornment, InputLabel, MenuItem, Select, Stack, TextField, Typography } from '@mui/material';
 import { Close, Done, PlayArrow, PlayArrowRounded, Search, Visibility } from '@mui/icons-material';
 import { Styles } from '../../common/styles';
-import { useDataSending, useDisplayGamePostSubmissionDetails, useDisplayGameRequestDetails, useGameRequestDetails, useGameRequests, usePlayTestsActions } from '../../store/play-tests/play-tests-store';
+import { useDataSending, useDisplayGamePostSubmissionDetails, useDetailedView, useGameRequestDetails, useGameRequests, usePlayTestsActions } from '../../store/play-tests/play-tests-store';
 import { sendGraphqlRequest, sendRequest } from '../../common/utils';
 import { GRAPHQL_URL, HttpMethod, LAUNCH_GAME_URL, QueryNames, ROOT_URL, TOTAL_WEB_GAME_SUBMISSION_STEPS, WEB_GAME_SUBMISSION_STATUS_UPDATE_URL } from '../../common/constants';
 import { Queries } from '../../graphql/queries';
-import { GameRequestDetailedView } from './game-request-detailed-view';
+import { GameSubmissionDetailedView } from './game-submission-detailed-view';
 import { localStorageData } from '../../common/localStorage';
 import { GamePostSubmissionDetailedView } from './game-post-submission-detailed-view';
 
 export const GamePostSubmission = () => {
     const apiRef = useGridApiRef();
     let gameRequests = useGameRequests();
-    let displayGameRequestDetails = useDisplayGameRequestDetails();
+    let detailedView = useDetailedView();
     let displayGamePostSubmissionDetails = useDisplayGamePostSubmissionDetails();
     let isDataSending = useDataSending();
     const [filteredRows, setFilteredRows] = useState<any[]>([]);
@@ -222,7 +222,7 @@ export const GamePostSubmission = () => {
                             }}
                             rowSelection={false}
                         // onRowClick={(params) => {
-                        //     handleDisplayGameRequestDetails(params.row);
+                        //     handleDetaiuseDetailedView(params.row);
                         //     console.log("params: ", params);
                         // }}
                         />
