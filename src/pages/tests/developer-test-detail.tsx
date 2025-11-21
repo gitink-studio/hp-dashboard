@@ -21,6 +21,16 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { useParams, useNavigate } from "react-router-dom";
+import {
+    LineChart,
+    Line,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    ResponsiveContainer,
+    Tooltip as RechartsTooltip,
+    Legend
+} from "recharts";
 import DemographicsChart, { DemographicDatum, GenderSummary } from "../../components/dashboard/demographics-chart";
 import PlacementsChart, { PlacementDatum } from "../../components/dashboard/placements-chart";
 import { TestOverallValues } from "../../components/tests/test-overall-values";
@@ -38,12 +48,6 @@ type VariantRow = {
     signif: string;
 };
 
-const VARIANTS: VariantRow[] = [
-    { name: "Control", installs: 20000, spend: 8800, cpi: 0.44, d1: "36%", roas7: "120%", lift: "—", p: "—", signif: "—" },
-    { name: "A", installs: 30000, spend: 12000, cpi: 0.40, d1: "39%", roas7: "130%", lift: "–9% CPI", p: "0.02", signif: "98%" },
-    { name: "B", installs: 30000, spend: 13200, cpi: 0.44, d1: "37%", roas7: "124%", lift: "0% CPI", p: "0.45", signif: "n.s." },
-];
-
 const tooltip = {
     cpi: "CPI = Spend ÷ Installs",
     ctr: "CTR = Clicks ÷ Impressions × 100",
@@ -59,33 +63,131 @@ export const DeveloperTestDetail: React.FC = () => {
     const { id } = useParams();
     const navigate = useNavigate();
 
-    // Test details mapping
-    const TEST_DETAILS = {
-        "cpi-hook-test": {
-            title: "CPI Hook Test – Pickle Ball Clash",
-            cpi: "$0.79",
-            gender: { male: 82, female: 18 },
-            age: { range: "13-44", percentage: 29 },
-            placements: { q: 7, f: 83, o: 9 }
-        },
-        "onboarding-flow-ux": {
-            title: "Onboarding Flow UX – Game Onboarding",
-            cpi: "$0.65",
-            gender: { male: 75, female: 25 },
-            age: { range: "18-34", percentage: 45 },
-            placements: { q: 12, f: 75, o: 13 }
-        },
-        "monetization-pack-a": {
-            title: "Monetization Pack A – Revenue Optimization",
-            cpi: "$0.92",
-            gender: { male: 70, female: 30 },
-            age: { range: "25-44", percentage: 35 },
-            placements: { q: 5, f: 88, o: 7 }
+    const [testData, setTestData] = React.useState<any>(null);
+    const [loading, setLoading] = React.useState<boolean>(true);
+    const [testMetrics, setTestMetrics] = React.useState<any>(null);
+    const [chartData, setChartData] = React.useState<any>(null);
+
+    // Fetch test data from backend
+    React.useEffect(() => {
+        const fetchTestData = async () => {
+            if (!id) return;
+
+            setLoading(true);
+            try {
+                // Fetch test details
+                const testResponse = await fetch(`http://localhost:3000/tests/${id}`);
+                if (!testResponse.ok) {
+                    throw new Error('Failed to fetch test');
+                }
+                const test = await testResponse.json();
+                setTestData(test);
+
+                // Fetch test metrics
+                const metricsResponse = await fetch(`http://localhost:3000/tests/${id}/metrics`);
+                if (metricsResponse.ok) {
+                    const metrics = await metricsResponse.json();
+                    setTestMetrics(metrics);
+                }
+
+                // Fetch chart data
+                const chartsResponse = await fetch(`http://localhost:3000/tests/${id}/charts`);
+                if (chartsResponse.ok) {
+                    const charts = await chartsResponse.json();
+                    setChartData(charts);
+                } else {
+                    // Fallback: try to get chart data from metrics if charts endpoint fails
+                    const metricsResponse2 = await fetch(`http://localhost:3000/tests/${id}/metrics`);
+                    if (metricsResponse2.ok) {
+                        const metrics = await metricsResponse2.json();
+                        if (metrics.metrics?.charts) {
+                            setChartData(metrics.metrics.charts);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching test data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchTestData();
+    }, [id]);
+
+    // Calculate overall values from chart data
+    const overallValues = React.useMemo(() => {
+        // Calculate CPI from placements or performance data
+        let cpi = "$0.00";
+        if (chartData?.placements && chartData.placements.length > 0) {
+            const totalInstalls = chartData.placements.reduce((sum: number, p: any) => sum + (p.installs || 0), 0);
+            const totalSpend = chartData.placements.reduce((sum: number, p: any) => sum + (p.amountSpent || 0), 0);
+            if (totalInstalls > 0) {
+                cpi = `$${(totalSpend / totalInstalls).toFixed(2)}`;
+            }
+        } else if (chartData?.performance && chartData.performance.length > 0) {
+            const totalInstalls = chartData.performance.reduce((sum: number, p: any) => sum + (p.installs || 0), 0);
+            const totalSpend = chartData.performance.reduce((sum: number, p: any) => sum + (p.cpi * (p.installs || 0)), 0);
+            if (totalInstalls > 0) {
+                cpi = `$${(totalSpend / totalInstalls).toFixed(2)}`;
+            }
         }
-    };
+
+        // Get gender distribution
+        const gender = chartData?.demographics?.genderSummary
+            ? {
+                male: chartData.demographics.genderSummary.find((g: any) => g.label === "M")?.percent || 0,
+                female: chartData.demographics.genderSummary.find((g: any) => g.label === "F")?.percent || 0
+            }
+            : { male: 0, female: 0 };
+
+        // Calculate age range from demographics
+        const age = chartData?.demographics?.data
+            ? (() => {
+                const ageGroups = chartData.demographics.data.filter((d: any) => (d.male + d.female) > 0);
+                if (ageGroups.length > 0) {
+                    const firstAge = ageGroups[0].age.split('-')[0] || ageGroups[0].age.split('+')[0];
+                    const lastAge = ageGroups[ageGroups.length - 1].age.split('-')[1] || ageGroups[ageGroups.length - 1].age.split('+')[0];
+                    const totalUsers = ageGroups.reduce((sum: number, d: any) => sum + d.male + d.female, 0);
+                    const largestGroup = ageGroups.reduce((max: any, d: any) => 
+                        (d.male + d.female) > (max.male + max.female) ? d : max
+                    , ageGroups[0]);
+                    const percentage = totalUsers > 0 ? Math.round(((largestGroup.male + largestGroup.female) / totalUsers) * 100) : 0;
+                    return { range: `${firstAge}-${lastAge}`, percentage };
+                }
+                return { range: "N/A", percentage: 0 };
+            })()
+            : { range: "N/A", percentage: 0 };
+
+        // Calculate placements distribution
+        const placements = chartData?.placements
+            ? (() => {
+                const totalImpressions = chartData.placements.reduce((sum: number, p: any) => sum + (p.impressions || 0), 0);
+                if (totalImpressions === 0) return { q: 0, f: 0, o: 0 };
+                
+                const q = chartData.placements.find((p: any) => p.network?.toLowerCase().includes('audience'))?.impressions || 0;
+                const f = chartData.placements.find((p: any) => p.network?.toLowerCase().includes('facebook'))?.impressions || 0;
+                const o = chartData.placements.find((p: any) => 
+                    !p.network?.toLowerCase().includes('facebook') && 
+                    !p.network?.toLowerCase().includes('audience')
+                )?.impressions || 0;
+                
+                return {
+                    q: Math.round((q / totalImpressions) * 100),
+                    f: Math.round((f / totalImpressions) * 100),
+                    o: Math.round((o / totalImpressions) * 100)
+                };
+            })()
+            : { q: 0, f: 0, o: 0 };
+
+        return { cpi, gender, age, placements };
+    }, [chartData]);
 
     // Get test details or use default
-    const testDetails = TEST_DETAILS[id as keyof typeof TEST_DETAILS] || {
+    const testDetails = testData ? {
+        title: testData.title || "Unknown Test",
+        ...overallValues
+    } : {
         title: "Unknown Test",
         cpi: "$0.00",
         gender: { male: 0, female: 0 },
@@ -93,41 +195,62 @@ export const DeveloperTestDetail: React.FC = () => {
         placements: { q: 0, f: 0, o: 0 }
     };
 
-    // Static demo data for Placements chart
-    const placementsData: PlacementDatum[] = [
-        {
-            network: "Audience Network",
-            impressions: 10275,
-            installs: 929,
-            amountSpent: 136.61
-        },
-        {
-            network: "Facebook",
-            impressions: 70275,
-            installs: 6929,
-            amountSpent: 736.61
-        },
-        {
-            network: "Instagram",
-            impressions: 5275,
-            installs: 429,
-            amountSpent: 236.61
-        },
-    ];
+    // Use real chart data from backend, fallback to empty/default if not available
+    const placementsData: PlacementDatum[] = React.useMemo(() => {
+        if (chartData?.placements && chartData.placements.length > 0) {
+            return chartData.placements;
+        }
+        return [];
+    }, [chartData]);
 
-    // Static demo data for Demographics chart
-    const demoData: DemographicDatum[] = [
-        { age: "18-24", male: 20, female: 10 },
-        { age: "25-34", male: 60, female: 25 },
-        { age: "35-44", male: 150, female: 35 },
-        { age: "45-54", male: 280, female: 50 },
-        { age: "55+", male: 360, female: 120 },
-    ];
+    const demoData: DemographicDatum[] = React.useMemo(() => {
+        if (chartData?.demographics?.data && chartData.demographics.data.length > 0) {
+            return chartData.demographics.data;
+        }
+        return [
+            { age: "18-24", male: 0, female: 0 },
+            { age: "25-34", male: 0, female: 0 },
+            { age: "35-44", male: 0, female: 0 },
+            { age: "45-54", male: 0, female: 0 },
+            { age: "55+", male: 0, female: 0 },
+        ];
+    }, [chartData]);
 
-    const genderSummary: GenderSummary[] = [
-        { label: "M", percent: 80, installs: 898, spend: 709.2, color: "#b388ff" },
-        { label: "F", percent: 20, installs: 227, spend: 184.17, color: "#ffd54f" },
-    ];
+    const genderSummary: GenderSummary[] = React.useMemo(() => {
+        if (chartData?.demographics?.genderSummary && chartData.demographics.genderSummary.length > 0) {
+            return chartData.demographics.genderSummary;
+        }
+        return [
+            { label: "M", percent: 0, installs: 0, spend: 0, color: "#b388ff" },
+            { label: "F", percent: 0, installs: 0, spend: 0, color: "#ffd54f" },
+        ];
+    }, [chartData]);
+
+    // Variants data from backend
+    const variantsData: VariantRow[] = React.useMemo(() => {
+        if (chartData?.variants && chartData.variants.length > 0) {
+            return chartData.variants.map((v: any) => ({
+                name: v.name || "Unknown",
+                installs: v.installs || 0,
+                spend: v.spend || 0,
+                cpi: v.cpi || 0,
+                d1: v.d1 || "0%",
+                roas7: v.roas7 || "0%",
+                lift: v.lift || "—",
+                p: v.p || "—",
+                signif: v.signif || "—"
+            }));
+        }
+        return [];
+    }, [chartData]);
+
+    // Performance data for dual-axis chart
+    const performanceData = React.useMemo(() => {
+        if (chartData?.performance && chartData.performance.length > 0) {
+            return chartData.performance;
+        }
+        return [];
+    }, [chartData]);
 
     const [expandedPanels, setExpandedPanels] = React.useState<{ [key: string]: boolean }>({
         charts: false,
@@ -148,9 +271,47 @@ export const DeveloperTestDetail: React.FC = () => {
         setChartTab(newValue);
     };
 
-    // Date range from the reference image
-    const startDate = "23/08/2025";
-    const endDate = "29/09/2025";
+    // Calculate date range from test data
+    const startDate = testData?.startDate 
+        ? new Date(testData.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        : "N/A";
+    const endDate = testData?.endDate 
+        ? new Date(testData.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        : testData?.startDate
+        ? new Date(testData.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        : "N/A";
+
+    // Heatmap data from backend
+    const heatmapData = React.useMemo(() => {
+        if (chartData?.heatmaps) {
+            return {
+                appu: chartData.heatmaps.appu || { mean: new Array(9).fill(0), dates: [] },
+                retention: chartData.heatmaps.retention || { mean: new Array(9).fill(0), dates: [] },
+                playtime: chartData.heatmaps.playtime || { mean: new Array(9).fill(0), dates: [] },
+            };
+        }
+        return {
+            appu: { mean: new Array(9).fill(0), dates: [] },
+            retention: { mean: new Array(9).fill(0), dates: [] },
+            playtime: { mean: new Array(9).fill(0), dates: [] },
+        };
+    }, [chartData]);
+
+    if (loading) {
+        return (
+            <Box p={3} mt={6}>
+                <Typography>Loading test data...</Typography>
+            </Box>
+        );
+    }
+
+    if (!testData) {
+        return (
+            <Box p={3} mt={6}>
+                <Typography>Test not found</Typography>
+            </Box>
+        );
+    }
 
     return (
         <Box p={3} mt={6}>
@@ -193,8 +354,111 @@ export const DeveloperTestDetail: React.FC = () => {
                         <Box>
                             <Typography variant="subtitle1" fontWeight="bold">Performance</Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                Dual-axis line chart: Installs (left) and CPI (right) vs Date
+                                Installs and CPI trends over time
                             </Typography>
+
+                            {performanceData.length > 0 ? (
+                                <Stack spacing={4} sx={{ mb: 4 }}>
+                                    {/* Installs Chart */}
+                                    <Box>
+                                        <Typography variant="h6" sx={{ mb: 2 }}>Installs</Typography>
+                                        <Box sx={{ height: 350 }}>
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <LineChart
+                                                    data={performanceData}
+                                                    margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                                                >
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                                    <XAxis
+                                                        dataKey="date"
+                                                        tick={{ fontSize: 12 }}
+                                                        tickLine={{ stroke: '#666' }}
+                                                        label={{ value: 'Date', position: 'insideBottom', offset: -5 }}
+                                                    />
+                                                    <YAxis
+                                                        tick={{ fontSize: 12 }}
+                                                        tickLine={{ stroke: '#666' }}
+                                                        label={{ value: 'Installs', angle: -90, position: 'insideLeft' }}
+                                                    />
+                                                    <RechartsTooltip
+                                                        formatter={(value: any) => [value.toLocaleString(), 'Installs']}
+                                                        labelFormatter={(label) => `Date: ${label}`}
+                                                        contentStyle={{
+                                                            backgroundColor: '#fff',
+                                                            border: '1px solid #ccc',
+                                                            borderRadius: '8px',
+                                                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                                                        }}
+                                                    />
+                                                    <Legend />
+                                                    <Line
+                                                        type="monotone"
+                                                        dataKey="installs"
+                                                        stroke="#1976d2"
+                                                        strokeWidth={3}
+                                                        name="Installs"
+                                                        dot={{ fill: '#1976d2', strokeWidth: 2, r: 4 }}
+                                                        activeDot={{ r: 6, stroke: '#1976d2', strokeWidth: 2 }}
+                                                    />
+                                                </LineChart>
+                                            </ResponsiveContainer>
+                                        </Box>
+                                    </Box>
+
+                                    {/* CPI Chart */}
+                                    <Box>
+                                        <Typography variant="h6" sx={{ mb: 2 }}>CPI (Cost Per Install)</Typography>
+                                        <Box sx={{ height: 350 }}>
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <LineChart
+                                                    data={performanceData}
+                                                    margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                                                >
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                                    <XAxis
+                                                        dataKey="date"
+                                                        tick={{ fontSize: 12 }}
+                                                        tickLine={{ stroke: '#666' }}
+                                                        label={{ value: 'Date', position: 'insideBottom', offset: -5 }}
+                                                    />
+                                                    <YAxis
+                                                        tick={{ fontSize: 12 }}
+                                                        tickLine={{ stroke: '#666' }}
+                                                        tickFormatter={(value) => `$${value.toFixed(2)}`}
+                                                        label={{ value: 'CPI', angle: -90, position: 'insideLeft' }}
+                                                    />
+                                                    <RechartsTooltip
+                                                        formatter={(value: any) => [`$${value.toFixed(2)}`, 'CPI']}
+                                                        labelFormatter={(label) => `Date: ${label}`}
+                                                        contentStyle={{
+                                                            backgroundColor: '#fff',
+                                                            border: '1px solid #ccc',
+                                                            borderRadius: '8px',
+                                                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                                                        }}
+                                                    />
+                                                    <Legend />
+                                                    <Line
+                                                        type="monotone"
+                                                        dataKey="cpi"
+                                                        stroke="#4caf50"
+                                                        strokeWidth={3}
+                                                        name="CPI"
+                                                        dot={{ fill: '#4caf50', strokeWidth: 2, r: 4 }}
+                                                        activeDot={{ r: 6, stroke: '#4caf50', strokeWidth: 2 }}
+                                                    />
+                                                </LineChart>
+                                            </ResponsiveContainer>
+                                        </Box>
+                                    </Box>
+                                </Stack>
+                            ) : (
+                                <Box sx={{ mb: 4, height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                                    <Typography variant="body2" color="text.secondary">
+                                        No performance data available
+                                    </Typography>
+                                </Box>
+                            )}
 
                             <Table size="small">
                                 <TableHead>
@@ -220,19 +484,29 @@ export const DeveloperTestDetail: React.FC = () => {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {VARIANTS.map((v) => (
-                                        <TableRow key={v.name}>
-                                            <TableCell>{v.name}</TableCell>
-                                            <TableCell>{v.installs.toLocaleString()}</TableCell>
-                                            <TableCell>${v.spend.toLocaleString()}</TableCell>
-                                            <TableCell>{v.cpi.toFixed(2)}</TableCell>
-                                            <TableCell>{v.d1}</TableCell>
-                                            <TableCell>{v.roas7}</TableCell>
-                                            <TableCell>{v.lift}</TableCell>
-                                            <TableCell>{v.p}</TableCell>
-                                            <TableCell>{v.signif}</TableCell>
+                                    {variantsData.length > 0 ? (
+                                        variantsData.map((v) => (
+                                            <TableRow key={v.name}>
+                                                <TableCell>{v.name}</TableCell>
+                                                <TableCell>{v.installs.toLocaleString()}</TableCell>
+                                                <TableCell>${v.spend.toLocaleString()}</TableCell>
+                                                <TableCell>{v.cpi.toFixed(2)}</TableCell>
+                                                <TableCell>{v.d1}</TableCell>
+                                                <TableCell>{v.roas7}</TableCell>
+                                                <TableCell>{v.lift}</TableCell>
+                                                <TableCell>{v.p}</TableCell>
+                                                <TableCell>{v.signif}</TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={9} align="center">
+                                                <Typography variant="body2" color="text.secondary">
+                                                    No variant data available
+                                                </Typography>
+                                            </TableCell>
                                         </TableRow>
-                                    ))}
+                                    )}
                                 </TableBody>
                             </Table>
                         </Box>
@@ -262,42 +536,9 @@ export const DeveloperTestDetail: React.FC = () => {
                 </AccordionSummary>
                 <AccordionDetails>
                     <TestHeatmapDetails
-                        appu={{
-                            mean: [308, 359, 381, 357, 358, 355, 372, 0, 0],
-                            dates: [
-                                { date: "23 Aug", values: [262, 297, 326, 332, 335, 324, 316, 297, 284], users: 131 },
-                                { date: "24 Aug", values: [331, 371, 391, 389, 377, 406, 265, 373, 328], users: 207 },
-                                { date: "25 Aug", values: [351, 385, 323, 400, 398, 311, 403, 431, 425], users: 160 },
-                                { date: "26 Aug", values: [362, 433, 419, 342, 391, 367, 258, 368, 272], users: 195 },
-                                { date: "27 Aug", values: [362, 428, 430, 398, 442, 251, 279, 331, 300], users: 185 },
-                                { date: "28 Aug", values: [362, 343, 446, 253, 401, 291, 358, 374, 364], users: 169 },
-                                { date: "29 Aug", values: [362, 433, 443, 290, 387, 270, 309, 450, 407], users: 47 }
-                            ]
-                        }}
-                        retention={{
-                            mean: [7.04, 5.04, 3.82, 0, 0, 0, 0, 0, 0],
-                            dates: [
-                                { date: "23 Aug", values: [8.40, 5.34, 3.82, 3.05, 3.82, 2.29, 3.05, 1.53, 0.76], users: 131 },
-                                { date: "24 Aug", values: [5.83, 4.85, 2.91, 2.43, 0.97, 0.49, 0.00, 0.97, 0.00], users: 207 },
-                                { date: "25 Aug", values: [7.50, 2.50, 0.63, 1.25, 1.25, 0.63, 0.00, 0.00, 0.00], users: 160 },
-                                { date: "26 Aug", values: [11.79, 8.21, 5.64, 4.10, 5.13, 3.59, 0.00, 0.00, 0.00], users: 195 },
-                                { date: "27 Aug", values: [13.04, 7.61, 3.80, 4.89, 4.35, 0.00, 0.00, 0.00, 0.00], users: 185 },
-                                { date: "28 Aug", values: [8.33, 4.76, 4.76, 2.38, 0.00, 0.00, 0.00, 0.00, 0.00], users: 169 },
-                                { date: "29 Aug", values: [0.00, 2.13, 2.13, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00], users: 47 }
-                            ]
-                        }}
-                        playtime={{
-                            mean: [331, 540, 465, 153, 0, 0, 0, 0, 0],
-                            dates: [
-                                { date: "23 Aug", values: [262, 412, 540, 153, 495, 339, 358, 249, 190], users: 131 },
-                                { date: "24 Aug", values: [331, 683, 417, 110, 407, 560, 278, 0, 156], users: 207 },
-                                { date: "25 Aug", values: [351, 459, 331, 468, 478, 190, 35, 124, 0], users: 160 },
-                                { date: "26 Aug", values: [362, 762, 291, 441, 254, 331, 377, 0, 0], users: 195 },
-                                { date: "27 Aug", values: [362, 428, 430, 398, 442, 251, 279, 331, 300], users: 185 },
-                                { date: "28 Aug", values: [362, 343, 446, 253, 401, 291, 358, 374, 364], users: 169 },
-                                { date: "29 Aug", values: [362, 433, 443, 290, 387, 270, 309, 450, 407], users: 47 }
-                            ]
-                        }}
+                        appu={heatmapData.appu}
+                        retention={heatmapData.retention}
+                        playtime={heatmapData.playtime}
                     />
                 </AccordionDetails>
             </Accordion>
@@ -321,8 +562,12 @@ export const DeveloperTestDetail: React.FC = () => {
             </Accordion>
 
             <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
-                <Button variant="outlined" onClick={() => {/* export */ }}>Export CSV</Button>
-                <Button variant="outlined" onClick={() => {/* save */ }}>Save Report</Button>
+                <Button variant="outlined" onClick={() => {
+                    console.log('Exporting CSV for test:', id);
+                }}>Export CSV</Button>
+                <Button variant="outlined" onClick={() => {
+                    console.log('Saving report for test:', id);
+                }}>Save Report</Button>
                 <Button variant="contained" onClick={() => navigate(-1)}>Back to Tests</Button>
             </Stack>
         </Box>

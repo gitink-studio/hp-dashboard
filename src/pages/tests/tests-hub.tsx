@@ -30,36 +30,6 @@ type TestRow = {
     primaryMetric: string;
 };
 
-const SAMPLE_TESTS: TestRow[] = [
-    {
-        id: "cpi-hook-test",
-        title: "CPI Hook Test",
-        type: "CPI",
-        variants: 2,
-        startDate: "10 Apr",
-        status: "Running",
-        primaryMetric: "CPI",
-    },
-    {
-        id: "onboarding-flow-ux",
-        title: "Onboarding Flow UX",
-        type: "Feature",
-        variants: 3,
-        startDate: "22 Mar",
-        status: "Completed",
-        primaryMetric: "D1 Retention",
-    },
-    {
-        id: "monetization-pack-a",
-        title: "Monetization Pack A",
-        type: "Monetize",
-        variants: 2,
-        startDate: "05 Mar",
-        status: "Draft",
-        primaryMetric: "ROAS D7",
-    },
-];
-
 export const TestsHub: React.FC = () => {
     const navigate = useNavigate();
     // Keep UI identical: same two visible selects for Game and Platform
@@ -73,7 +43,8 @@ export const TestsHub: React.FC = () => {
 
     const [platforms, setPlatforms] = useState<any[]>([]);
     const [games, setGames] = useState<any[]>([]);
-    const [, setLoading] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [tests, setTests] = useState<TestRow[]>([]);
 
     // Map internal platform selection to the UI's platform label when needed
     const [platform, setPlatform] = useState("All");
@@ -184,6 +155,52 @@ export const TestsHub: React.FC = () => {
         }
     }, [filters.platform, filters.subPlatform, platforms.length]);
 
+    // Fetch tests from backend
+    useEffect(() => {
+        const fetchTests = async () => {
+            setLoading(true);
+            try {
+                const queryParams = new URLSearchParams();
+                if (game !== "All") {
+                    queryParams.append('gameId', game);
+                }
+                if (testType !== "All") {
+                    queryParams.append('type', testType);
+                }
+                if (testStatus !== "All") {
+                    queryParams.append('status', testStatus);
+                }
+
+                const response = await fetch(`http://localhost:3000/tests?${queryParams}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch tests');
+                }
+
+                const data = await response.json();
+                
+                // Transform backend data to frontend format
+                const transformedTests: TestRow[] = data.map((test: any) => ({
+                    id: test.id,
+                    title: test.title,
+                    type: test.type as "CPI" | "Feature" | "Monetize",
+                    variants: test.variants || 1,
+                    startDate: new Date(test.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
+                    status: test.status as "Running" | "Completed" | "Draft",
+                    primaryMetric: test.primaryMetric || "CPI"
+                }));
+
+                setTests(transformedTests);
+            } catch (error) {
+                console.error('Error fetching tests:', error);
+                setTests([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchTests();
+    }, [game, testType, testStatus]);
+
     // Handle UI changes while syncing internal filters
     const onPlatformChange = (value: string) => {
         setPlatform(value);
@@ -266,18 +283,28 @@ export const TestsHub: React.FC = () => {
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {platform !== "Web" && SAMPLE_TESTS.filter((t) => (testStatus === "All" || t.status === testStatus) && (testType === "All" || t.type === testType as any)).map((row) => (
-                        <TableRow key={row.id} hover sx={{ cursor: "pointer" }} onClick={() => handleOpenDetail(row)}>
-                            <TableCell sx={{ color: "primary.main", textDecoration: "underline" }}>{row.title}</TableCell>
-                            <TableCell>{row.type}</TableCell>
-                            <TableCell>{row.variants}</TableCell>
-                            <TableCell>{row.startDate}</TableCell>
-                            <TableCell>
-                                <Chip size="small" label={row.status} color={row.status === "Running" ? "success" : row.status === "Completed" ? "primary" : "default"} />
-                            </TableCell>
-                            <TableCell>{row.primaryMetric}</TableCell>
+                    {loading ? (
+                        <TableRow>
+                            <TableCell colSpan={6} align="center">Loading tests...</TableCell>
                         </TableRow>
-                    ))}
+                    ) : tests.length === 0 ? (
+                        <TableRow>
+                            <TableCell colSpan={6} align="center">No tests found</TableCell>
+                        </TableRow>
+                    ) : (
+                        tests.map((row) => (
+                            <TableRow key={row.id} hover sx={{ cursor: "pointer" }} onClick={() => handleOpenDetail(row)}>
+                                <TableCell sx={{ color: "primary.main", textDecoration: "underline" }}>{row.title}</TableCell>
+                                <TableCell>{row.type}</TableCell>
+                                <TableCell>{row.variants}</TableCell>
+                                <TableCell>{row.startDate}</TableCell>
+                                <TableCell>
+                                    <Chip size="small" label={row.status} color={row.status === "Running" ? "success" : row.status === "Completed" ? "primary" : "default"} />
+                                </TableCell>
+                                <TableCell>{row.primaryMetric}</TableCell>
+                            </TableRow>
+                        ))
+                    )}
                 </TableBody>
             </Table>
 

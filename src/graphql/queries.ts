@@ -401,6 +401,38 @@ const PublisherKPIs = gql`
   }
 `;
 
+const RevenueByGeo = gql`
+  query RevenueByGeo($filters: PublisherFiltersInput!) {
+    revenueByGeo(filters: $filters) {
+      country
+      installs
+      grossRevenue
+      revenueShare
+      netRevenue
+      payoutDue
+    }
+  }
+`;
+
+const StudioPayoutSummaryQuery = gql`
+  query StudioPayoutSummary($filters: PublisherFiltersInput!) {
+    payoutSummary(filters: $filters) {
+      totalNet
+      totalPaid
+      totalOutstanding
+      currency
+      studios {
+        studioId
+        studioName
+        grossRevenue
+        netRevenue
+        paid
+        outstanding
+      }
+    }
+  }
+`;
+
 const ApprovalsQueue = gql`
   query ApprovalsQueue($filters: PublisherFiltersInput!) {
     approvalsQueue(filters: $filters) {
@@ -830,6 +862,8 @@ export const Queries = {
   // Publisher-specific Queries
   PublisherDashboardFilters,
   PublisherGamesList,
+  RevenueByGeo,
+  StudioPayoutSummaryQuery,
   // Separate Dashboard Queries
   GetDeveloperDashboardData,
   GetPublisherDashboardData,

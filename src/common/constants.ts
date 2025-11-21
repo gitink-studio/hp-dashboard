@@ -95,7 +95,8 @@ export const REVIEW_AND_LAUNCH_URL = ROOT_URL + "/web-game-submission/review-and
 export const LAUNCH_GAME_URL = ROOT_URL + "/web-game-submission/launch-game"
 export const UPLOAD_FILES_URL = ROOT_URL + "/files/upload"
 export const UPDATE_FB_AD_ACCOUNT_ID_URL = ROOT_URL + "/sdk/facebook-details/update/fbAdAccountId"
-
+export const FORGOT_PASSWORD_URL = ROOT_URL + "/users/forgot-password";
+export const RESET_PASSWORD_URL = ROOT_URL + "/users/reset-password";
 export const QueryNames = {
   GET_ALL_DEVICE_DATA,
   GET_ALL_USER_DATA,

@@ -81,7 +81,7 @@ export const TestHeatmapDetails: React.FC<TestHeatmapDetailsProps> = ({
                     <TableHead>
                         <TableRow>
                             <TableCell>Days →</TableCell>
-                            {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(day => (
+                            {[1, 2, 3, 4, 5, 6, 7, 8].map(day => (
                                 <TableCell key={day} align="center">{day}</TableCell>
                             ))}
                         </TableRow>
@@ -94,9 +94,9 @@ export const TestHeatmapDetails: React.FC<TestHeatmapDetailsProps> = ({
                                     {meanUsers} Users
                                 </Typography>
                             </TableCell>
-                            {data.mean.map((value, index) => (
+                            {data.mean.slice(1).map((value, index) => (
                                 <TableCell
-                                    key={index}
+                                    key={index + 1}
                                     align="center"
                                     sx={{
                                         backgroundColor: `rgba(68, 171, 255, ${getColorIntensity(value, metric)})`,
@@ -116,9 +116,9 @@ export const TestHeatmapDetails: React.FC<TestHeatmapDetailsProps> = ({
                                         {dateEntry.users} Users
                                     </Typography>
                                 </TableCell>
-                                {dateEntry.values.map((value, index) => (
+                                {dateEntry.values.slice(1).map((value, index) => (
                                     <TableCell
-                                        key={index}
+                                        key={index + 1}
                                         align="center"
                                         sx={{
                                             backgroundColor: value

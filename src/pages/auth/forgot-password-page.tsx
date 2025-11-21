@@ -1,113 +1,199 @@
 import { Close } from "@mui/icons-material";
-import { Dialog, DialogContent, IconButton, Stack, Typography, useTheme } from "@mui/material";
+import { Dialog, DialogContent, IconButton, Stack, Typography, Box, Alert } from "@mui/material";
 import { email, required, SaveButton, SimpleForm, TextInput, Toolbar, useNotify, } from "react-admin";
-import { isUserAlreadyExist, sendRequest } from "../../common/utils";
-import { CREATE_USER_URL, HttpMethod } from "../../common/constants";
+import { useState } from "react";
+import { sendRequest } from "../../common/utils";
+import { FORGOT_PASSWORD_URL, HTTP_METHODS } from "../../common/constants";
 
 export const ForgotPasswordPage = ({ enable, setState, }: { enable: boolean; setState: any; }) => {
   const notify = useNotify();
-  const handleClose = () => { setState(false); };
-  const theme = useTheme();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [resetToken, setResetToken] = useState<string | null>(null);
+
+  const handleClose = () => {
+    setState(false);
+    setIsSubmitted(false);
+    setResetToken(null);
+  };
   const CustomToolbar = () => (
     <Toolbar sx={{ backgroundColor: "transparent" }}>
       <SaveButton
         type="submit"
         size="large"
-        label="Reset my password"
+        label={isSubmitted ? "Close" : "Send Reset Link"}
         icon={false}
         sx={{ width: "100%" }}
+        disabled={isLoading}
       />
     </Toolbar>
   );
 
-  const sendMail = async (data: any) => {
-    console.log(data);
+  const handleForgotPassword = async (data: any) => {
+    const emailAddress = data.email?.trim().toLowerCase();
+    
+    if (!emailAddress) {
+      notify("Please enter a valid email address", { type: "error" });
+      return;
+    }
 
+    setIsLoading(true);
     try {
-      let response = await sendRequest(
-        HttpMethod.POST,
-        CREATE_USER_URL,
-        data,
+      const response: any = await sendRequest(
+        HTTP_METHODS.POST,
+        FORGOT_PASSWORD_URL,
+        { email: emailAddress },
       );
 
-      if (response.status !== 200) {
-        console.log("Something went wrong!");
-        notify("Something went wrong!", { type: "error" });
-        return;
+      if (response.success) {
+        setIsSubmitted(true);
+        // In development, show the token for testing
+        if (response.data?.token) {
+          setResetToken(response.data.token);
+        }
+        notify(
+          "If an account with that email exists, a password reset link has been sent.",
+          { type: "success" }
+        );
+      } else {
+        notify(response.message || "Failed to send reset link", { type: "error" });
       }
-
-      console.log("Account created successfully!");
-      notify("Account created successfully!", { type: "success" });
-      handleClose();
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const handleForgotPassword = async (data: any) => {
-    try {
-      let email: any = data.email;
-      console.log(data);
-      if (await isUserAlreadyExist(email)) {
-        return notify("User already exist!", { type: "error" });
-      }
-
-      sendMail({ email: email });
-      console.log("Signup button clicked");
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      console.error("Password reset error:", error);
+      notify(
+        error.message || "Failed to send reset link. Please try again.",
+        { type: "error" }
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <>
-      <Dialog
-        open={enable}
-      >
-        <DialogContent sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-          <SimpleForm
-            toolbar={<CustomToolbar />}
-            onSubmit={handleForgotPassword}
-            sx={{ p: 0 }}
+      <Dialog open={enable} onClose={handleClose} maxWidth="sm" fullWidth>
+        <DialogContent sx={{ background: "#1e1e1e", position: "relative", p: 3 }}>
+          <IconButton
+            aria-label="close"
+            onClick={handleClose}
+            sx={{ position: "absolute", right: 8, top: 8, color: "white" }}
           >
-            <IconButton
-              aria-label="close"
-              onClick={handleClose}
-              sx={{ position: "absolute", right: 8, top: 8 }}
-            >
-              <Close />
-            </IconButton>
-            <Stack
-              display="flex"
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                width: "325px",
-              }}
-            >
+            <Close />
+          </IconButton>
+          
+          {isSubmitted ? (
+            <Stack spacing={2} sx={{ width: "100%", pt: 2 }}>
               <Typography
-                variant="h6"
+                variant="h5"
+                fontWeight="bold"
                 sx={{
-                  pt: 2,
-                  pb: 4,
+                  display: "flex",
+                  justifyContent: "center",
+                  pb: 2,
+                  color: "white",
                 }}
               >
                 Hyper Rabbit
               </Typography>
-              <Typography variant="h5" sx={{ pb: 2 }}>
-                Forgot your password ?
-              </Typography>
-              <Typography sx={{ pb: 3 }}>
-                Enter your email address and we'll send you a link to reset your
-                password
-              </Typography>
-              <TextInput
-                source="email"
-                label="Email"
-                validate={[required(), email()]}
-              />
+              <Alert severity="success" sx={{ mb: 2 }}>
+                If an account with that email exists, a password reset link has been sent.
+                Please check your email for instructions.
+              </Alert>
+              {resetToken && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    <strong>Development Mode:</strong> Use this token to reset your password:
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontFamily: "monospace",
+                      wordBreak: "break-all",
+                      backgroundColor: "rgba(0,0,0,0.2)",
+                      p: 1,
+                      borderRadius: 1,
+                    }}
+                  >
+                    {resetToken}
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    Reset link:{" "}
+                    <a
+                      href={`/#/reset-password?token=${resetToken}`}
+                      style={{ color: "inherit", textDecoration: "underline" }}
+                    >
+                      Click here to reset password
+                    </a>
+                  </Typography>
+                </Alert>
+              )}
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                <button
+                  onClick={handleClose}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#1976d2",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Close
+                </button>
+              </Box>
             </Stack>
-          </SimpleForm>
+          ) : (
+            <SimpleForm
+              toolbar={<CustomToolbar />}
+              onSubmit={handleForgotPassword}
+              sx={{ p: 0 }}
+            >
+              <Stack
+                display="flex"
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  width: "100%",
+                  maxWidth: "400px",
+                  mx: "auto",
+                }}
+              >
+                <Typography
+                  variant="h5"
+                  fontWeight="bold"
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    pt: 2,
+                    pb: 2,
+                    color: "white",
+                  }}
+                >
+                  Hyper Rabbit
+                </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{ pb: 1, color: "white", textAlign: "center" }}
+                >
+                  Forgot your password?
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ pb: 3, color: "rgba(255,255,255,0.7)", textAlign: "center" }}
+                >
+                  Enter your email address and we'll send you a link to reset your
+                  password
+                </Typography>
+                <TextInput
+                  source="email"
+                  label="Email"
+                  validate={[required(), email()]}
+                  disabled={isLoading}
+                />
+              </Stack>
+            </SimpleForm>
+          )}
         </DialogContent>
       </Dialog>
     </>

@@ -53,7 +53,7 @@ export const Dashboard = () => {
     platform: "All",
     subPlatform: "All", 
     game: "All",
-    dateRange: "Last 30d"
+    dateRange: "Last 90d"
   });
 
   // State for platform data from database
@@ -301,12 +301,12 @@ export const Dashboard = () => {
                 onChange={(e) => handleFilterChange('dateRange', e.target.value)}
                 sx={{ '& .MuiSelect-select': { py: 0.5 } }}
               >
-                <MenuItem value="Last 30d">Date [ 30d ▼ ]</MenuItem>
-                <MenuItem value="Today">Today</MenuItem>
-                <MenuItem value="Yesterday">Yesterday</MenuItem>
-                <MenuItem value="Last 7d">7d</MenuItem>
+                <MenuItem value="Last 90d">Date [ 90d ▼ ]</MenuItem>
+                <MenuItem value="Last 30d">30d</MenuItem>
                 <MenuItem value="Last 14d">14d</MenuItem>
-                <MenuItem value="Last 90d">90d</MenuItem>
+                <MenuItem value="Last 7d">7d</MenuItem>
+                <MenuItem value="Yesterday">Yesterday</MenuItem>
+                <MenuItem value="Today">Today</MenuItem>
                 <MenuItem value="Custom">Custom</MenuItem>
               </Select>
             </FormControl>

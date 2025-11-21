@@ -30,6 +30,7 @@ import { CustomRoutes } from "react-admin";
 import { SDKDetails } from "./pages/sdk/sdk-details";
 import { SubmitWebGameDetails } from "./pages/submit-web-game/submit-web-game-details";
 import { PlayTests } from "./pages/play-tests/play-tests";
+import { ResetPasswordPage } from "./pages/auth/reset-password-page";
 
 export const App = () => {
   const userRole = localStorage.getItem("userRole");
@@ -125,6 +126,7 @@ export const App = () => {
       <CustomRoutes>
         <Route path="tests/developer/:id" element={<DeveloperTestDetail />} />
         <Route path="tests/publisher/:id" element={<PublisherTestDetail />} />
+        <Route path="reset-password" element={<ResetPasswordPage />} />
       </CustomRoutes>
 
       {/* Role-based menu items

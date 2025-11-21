@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { formatNumber } from '../../common/utils';
 
 // Helper function to get game icon based on game name
@@ -46,7 +46,8 @@ import {
   Card,
   CardContent,
   Collapse,
-  Chip
+  Chip,
+  CircularProgress
 } from '@mui/material';
 import { 
   Assessment, 
@@ -70,6 +71,11 @@ interface PublisherGamesListProps {
 }
 
 export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReportsNavigation }) => {
+  // Provide default value if prop is undefined
+  const handleReportsNavigation = onReportsNavigation || ((gameName: string) => {
+    console.log('Reports navigation called for:', gameName);
+  });
+
   const [filters, setFilters] = useState({
     studio: "All",
     platform: "All",
@@ -82,174 +88,417 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
 
   // State for managing expanded games (accordion)
   const [expandedGames, setExpandedGames] = useState<Set<string>>(new Set());
+  
+  // State for managing expanded studios (accordion)
+  const [expandedStudios, setExpandedStudios] = useState<Set<string>>(new Set());
+  
+  // State for revenue by geo and payout summary data
+  const [revenueByGeoData, setRevenueByGeoData] = useState<any[]>([]);
+  const [payoutSummaryData, setPayoutSummaryData] = useState<any>(null);
+  const [loadingStudioData, setLoadingStudioData] = useState(false);
+  
+  // State for game-specific metrics (live data from Hyper Rabbit SDK)
+  const [gameMetrics, setGameMetrics] = useState<{ [gameId: string]: any }>({});
+  const [dailyMetrics, setDailyMetrics] = useState<{ [gameId: string]: any[] }>({});
+  const [loadingMetrics, setLoadingMetrics] = useState<{ [gameId: string]: boolean }>({});
+  
+  // Track ongoing fetches to prevent duplicate requests
+  const ongoingFetches = useRef<Set<string>>(new Set());
 
-  // Static reports data as per Group 2 specification
-  const getStaticReports = () => [
-    {
-      id: 'cpi-trends',
-      title: 'CPI Trends',
-      type: 'CPI',
-      lastRun: 'Apr 22',
-      status: 'Open',
-      icon: <TrendingUp />,
-      color: '#1976d2',
-      data: {
-        kpi: { installs: '122,000', spend: '$51,240', cpi: '$0.42' },
-        table: [
-          { date: 'Apr 1', installs: '5,200', spend: '$2,340', cpi: '$0.45' },
-          { date: 'Apr 2', installs: '6,100', spend: '$2,745', cpi: '$0.45' },
-          { date: 'Apr 3', installs: '4,900', spend: '$2,058', cpi: '$0.42' }
-        ]
-      }
-    },
-    {
-      id: 'roas-trends',
-      title: 'ROAS Trends',
-      type: 'ROAS',
-      lastRun: 'Apr 18',
-      status: 'Open',
-      icon: <TrendingUp />,
-      color: '#2e7d32',
-      data: {
-        kpi: { roasD1: '62%', roasD7: '128%', roasD30: '212%' },
-        table: [
-          { date: 'Apr 1', spend: '$2,340', revD1: '$1,450', roas1: '62%', revD7: '$3,000', roas7: '128%', revD30: '$4,950', roas30: '211%' },
-          { date: 'Apr 2', spend: '$2,745', revD1: '$1,700', roas1: '62%', revD7: '$3,500', roas7: '128%', revD30: '$5,800', roas30: '211%' }
-        ]
-      }
-    },
-    {
-      id: 'retention',
-      title: 'Retention',
-      type: 'Retention',
-      lastRun: 'Apr 12',
-      status: 'Open',
-      icon: <Assessment />,
-      color: '#ed6c02',
-      data: {
-        kpi: { d1: '38%', d7: '18%', d30: '7%' },
-        table: [
-          { cohort: 'Apr 1', installs: '5,000', d1Users: '1,900', d1: '38%', d7Users: '900', d7: '18%', d30Users: '350', d30: '7%' },
-          { cohort: 'Apr 2', installs: '4,200', d1Users: '1,596', d1: '38%', d7Users: '756', d7: '18%', d30Users: '294', d30: '7%' }
-        ]
-      }
-    },
-    {
-      id: 'revenue-summary',
-      title: 'Revenue Summary',
-      type: 'Revenue',
-      lastRun: 'Apr 10',
-      status: 'Open',
-      icon: <AttachMoney />,
-      color: '#9c27b0',
-      data: {
-        kpi: { gross: '$18,300', iap: '$13,200', ads: '$5,100' },
-        table: [
-          { date: 'Apr 1', gross: '1,200', iap: '900', ads: '300' },
-          { date: 'Apr 2', gross: '1,450', iap: '1,050', ads: '400' },
-          { date: 'Apr 3', gross: '980', iap: '700', ads: '280' }
-        ]
-      }
-    },
-    {
-      id: 'crash-rate',
-      title: 'Crash Rate',
-      type: 'Crashes',
-      lastRun: 'Apr 09',
-      status: 'Open',
-      icon: <HealthAndSafety />,
-      color: '#d32f2f',
-      data: {
-        kpi: { sessions: '950,000', crashes: '8,200', crashRate: '0.86%' },
-        table: [
-          { date: 'Apr 1', sessions: '32,000', crashes: '290', crashRate: '0.91%' },
-          { date: 'Apr 2', sessions: '28,000', crashes: '240', crashRate: '0.86%' },
-          { date: 'Apr 3', sessions: '35,000', crashes: '300', crashRate: '0.85%' }
-        ]
-      }
-    },
-    {
-      id: 'revenue-by-geo',
-      title: 'Revenue by Geo',
-      type: 'Financial',
-      lastRun: 'Apr 12',
-      status: 'Open',
-      icon: <AttachMoney />,
-      color: '#1976d2',
-      data: {
-        kpi: { gross: '$10,400', net: '$7,415', payoutDue: '$6,650' },
-        table: [
-          { country: 'US', installs: '210k', grossRev: '$6,400', revShare: '30%', netRev: '$4,480', payoutDue: '$4,000' },
-          { country: 'IN', installs: '150k', grossRev: '$2,700', revShare: '25%', netRev: '$2,025', payoutDue: '$1,850' },
-          { country: 'BR', installs: '95k', grossRev: '$1,300', revShare: '30%', netRev: '$910', payoutDue: '$800' }
-        ]
-      }
-    },
-    {
-      id: 'payout-summary',
-      title: 'Payout Summary',
-      type: 'Financial',
-      lastRun: 'Apr 10',
-      status: 'Open',
-      icon: <MonetizationOn />,
-      color: '#2e7d32',
-      data: {
-        kpi: { totalNet: '$20,165', paid: '$17,500', outstanding: '$2,665' },
-        table: [
-          { studio: 'Studio A', grossRev: '$12,450', netRev: '$8,715', paid: '$7,000', outstanding: '$1,715' },
-          { studio: 'Studio B', grossRev: '$9,200', netRev: '$6,500', paid: '$6,000', outstanding: '$500' },
-          { studio: 'Studio C', grossRev: '$7,050', netRev: '$4,950', paid: '$4,500', outstanding: '$450' }
-        ]
-      }
-    },
-    {
-      id: 'ecpm-fill-rate',
-      title: 'eCPM & Fill Rate',
-      type: 'Monetization',
-      lastRun: 'Apr 08',
-      status: 'Open',
-      icon: <MonetizationOn />,
-      color: '#ed6c02',
-      data: {
-        kpi: { ecpm: '$2.85', fill: '94%', impressions: '38.2M' },
-        table: [
-          { date: 'Apr 1', requests: '2.6M', filled: '2.4M', fillRate: '92.3%', impressions: '2.4M', revenue: '$6,100', ecpm: '$2.77' },
-          { date: 'Apr 2', requests: '2.2M', filled: '2.0M', fillRate: '90.9%', impressions: '2.1M', revenue: '$5,600', ecpm: '$2.94' }
-        ]
-      }
-    },
-    {
-      id: 'compliance-ivt',
-      title: 'Compliance & IVT',
-      type: 'Policy',
-      lastRun: 'Apr 07',
-      status: 'Open',
-      icon: <Security />,
-      color: '#9c27b0',
-      data: {
-        kpi: { compliance: '97%', ivt: '1.6%' },
-        table: [
-          { check: 'SDK Version >= v2.0', status: 'Pass', notes: '' },
-          { check: 'ATT Prompt (iOS) copy present', status: 'Fail', notes: 'Missing disclosure in v1.4 build' },
-          { check: 'COPPA flag in child mode', status: 'Pass', notes: '' }
-        ]
-      }
-    }
-  ];
-
-  // Handle accordion expansion
-  const handleToggleExpanded = (gameId: string) => {
+  const handleToggleExpanded = async (gameId: string) => {
     const newExpanded = new Set(expandedGames);
-    if (newExpanded.has(gameId)) {
-      newExpanded.delete(gameId);
-    } else {
+    const isExpanding = !newExpanded.has(gameId);
+    
+    if (isExpanding) {
       newExpanded.add(gameId);
+      setExpandedGames(newExpanded);
+      
+      // Fetch metrics when expanding
+      await fetchGameMetrics(gameId);
+    } else {
+      newExpanded.delete(gameId);
+      setExpandedGames(newExpanded);
     }
-    setExpandedGames(newExpanded);
+  };
+  
+  // Helper function to get date range from filter
+  const getDateRange = () => {
+    const now = new Date();
+    let startDate = new Date();
+    let endDate = new Date();
+
+    switch (filters.dateRange) {
+      case 'Today':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        break;
+      case 'Yesterday':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        break;
+      case 'Last 7d':
+      case '7d':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'Last 14d':
+      case '14d':
+        startDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+        break;
+      case 'Last 30d':
+      case '30d':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    }
+
+    return {
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0]
+    };
   };
 
-  const [, setGames] = useState<any[]>([]);
+  // Fetch game metrics from backend
+  const fetchGameMetrics = async (gameId: string) => {
+    console.log('🔵 fetchGameMetrics called for game:', gameId);
+    
+    // Check if already fetching
+    if (ongoingFetches.current.has(gameId)) {
+      console.log('⏳ Already fetching for game:', gameId);
+      return;
+    }
+    
+    // Only fetch if not already cached
+    if (gameMetrics[gameId] && dailyMetrics[gameId]) {
+      console.log('✅ Metrics already cached for game:', gameId);
+      return;
+    }
+
+    try {
+      ongoingFetches.current.add(gameId);
+      setLoadingMetrics(prev => ({ ...prev, [gameId]: true }));
+      
+      const { startDate, endDate } = getDateRange();
+      console.log(`📊 Fetching metrics for game ${gameId} (${startDate} to ${endDate})`);
+      
+      const metricsResponse = await fetch(`http://localhost:3000/hyper-rabbit/metrics/${gameId}?startDate=${startDate}&endDate=${endDate}`);
+      const dailyResponse = await fetch(`http://localhost:3000/hyper-rabbit/metrics/daily/${gameId}?startDate=${startDate}&endDate=${endDate}`);
+      
+      if (metricsResponse.ok) {
+        const result = await metricsResponse.json();
+        if (result.success && result.data) {
+          setGameMetrics(prev => ({
+            ...prev,
+            [gameId]: result.data
+          }));
+        }
+      }
+
+      if (dailyResponse.ok) {
+        const dailyResult = await dailyResponse.json();
+        if (dailyResult.success && dailyResult.data) {
+          setDailyMetrics(prev => ({
+            ...prev,
+            [gameId]: dailyResult.data
+          }));
+        }
+      }
+    } catch (error) {
+      console.error(`Error fetching metrics for game ${gameId}:`, error);
+    } finally {
+      ongoingFetches.current.delete(gameId);
+      setLoadingMetrics(prev => ({ ...prev, [gameId]: false }));
+    }
+  };
+  
+  // Publisher reports data dynamically generated from backend metrics
+  const getPublisherReports = (gameId: string) => {
+    const metrics = gameMetrics[gameId] || {};
+    const daily = dailyMetrics[gameId] || [];
+    
+    const formatNumber = (num: number) => {
+      if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+      if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+      return num.toString();
+    };
+    
+    const formatDate = (dateStr: string) => {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
+    
+    return [
+      {
+        id: 'cpi-trends',
+        title: 'CPI Trends',
+        type: 'CPI',
+        icon: <TrendingUp />,
+        color: '#1976d2',
+        data: {
+          kpi: {
+            // Use metrics.installs which comes from backend
+            installs: formatNumber(metrics.installs || 0),
+            spend: `$${formatNumber((metrics.installs || 0) * (metrics.avgCpi || 0))}`,
+            cpi: `$${(metrics.avgCpi || 0).toFixed(2)}`
+          },
+          table: daily.map(day => ({
+            date: formatDate(day.date),
+            // Daily installs not tracked - show sessions as approximation
+            installs: formatNumber(day.sessions || 0),
+            spend: `$${formatNumber((day.sessions || 0) * (day.avgCpi || 0))}`,
+            cpi: `$${(day.avgCpi || 0).toFixed(2)}`
+          }))
+        }
+      },
+      {
+        id: 'roas-trends',
+        title: 'ROAS Trends',
+        type: 'ROAS',
+        icon: <TrendingUp />,
+        color: '#2e7d32',
+        data: {
+          kpi: {
+            roasD1: `${(metrics.roasD1 || 0).toFixed(0)}%`,
+            roasD7: `${(metrics.roasD7 || 0).toFixed(0)}%`,
+            roasD30: `${(metrics.roasD30 || 0).toFixed(0)}%`
+          },
+          table: daily.map(day => ({
+            date: formatDate(day.date),
+            spend: `$${formatNumber(day.spend || 0)}`,
+            revD1: `$${formatNumber(day.revenueD1 || 0)}`,
+            roas1: `${((day.revenueD1 || 0) / (day.spend || 1) * 100).toFixed(0)}%`,
+            revD7: `$${formatNumber(day.revenueD7 || 0)}`,
+            roas7: `${((day.revenueD7 || 0) / (day.spend || 1) * 100).toFixed(0)}%`,
+            revD30: `$${formatNumber(day.revenueD30 || 0)}`,
+            roas30: `${((day.revenueD30 || 0) / (day.spend || 1) * 100).toFixed(0)}%`
+          }))
+        }
+      },
+      {
+        id: 'retention',
+        title: 'Retention',
+        type: 'Retention',
+        icon: <Assessment />,
+        color: '#ed6c02',
+        data: {
+          kpi: {
+            // Backend returns retention as percentage (0-100), so no multiplication needed
+            d1: `${(metrics.retentionD1 || 0).toFixed(1)}%`,
+            d7: `${(metrics.retentionD7 || 0).toFixed(1)}%`,
+            d30: metrics.retentionD30 ? `${metrics.retentionD30.toFixed(1)}%` : 'N/A'
+          },
+          table: (() => {
+            // Use newUsers from metrics as installs (for D0 cohort)
+            const totalInstalls = metrics.newUsers || 0;
+            
+            // Retention percentages (backend returns as percentage 0-100, convert to decimal)
+            const d1Percentage = (metrics.retentionD1 || 0) / 100;
+            const d7Percentage = (metrics.retentionD7 || 0) / 100;
+            const d30Percentage = metrics.retentionD30 ? metrics.retentionD30 / 100 : 0;
+            
+            // Return a summary row with cohort-based data
+            return [{
+              cohort: 'Overall Period',
+              installs: formatNumber(totalInstalls),
+              d1Users: formatNumber(Math.round(totalInstalls * d1Percentage)),
+              d1: `${(metrics.retentionD1 || 0).toFixed(1)}%`,
+              d7Users: formatNumber(Math.round(totalInstalls * d7Percentage)),
+              d7: `${(metrics.retentionD7 || 0).toFixed(1)}%`,
+              d30Users: formatNumber(Math.round(totalInstalls * d30Percentage)),
+              d30: metrics.retentionD30 ? `${metrics.retentionD30.toFixed(1)}%` : 'N/A'
+            }];
+          })()
+        }
+      },
+      {
+        id: 'revenue-summary',
+        title: 'Revenue Summary',
+        type: 'Revenue',
+        icon: <AttachMoney />,
+        color: '#9c27b0',
+        data: {
+          kpi: {
+            gross: `$${formatNumber(metrics.totalRevenue || 0)}`,
+            iap: `$${formatNumber(metrics.iapRevenue || 0)}`,
+            ads: `$${formatNumber(metrics.adRevenue || 0)}`
+          },
+          table: daily.map(day => ({
+            date: formatDate(day.date),
+            gross: formatNumber(day.totalRevenue || 0),
+            iap: formatNumber(day.iapRevenue || 0),
+            ads: formatNumber(day.adRevenue || 0)
+          }))
+        }
+      },
+      {
+        id: 'crash-rate',
+        title: 'Crash Rate',
+        type: 'Crashes',
+        icon: <HealthAndSafety />,
+        color: '#d32f2f',
+        data: {
+          kpi: {
+            sessions: formatNumber(metrics.totalSessions || 0),
+            crashes: formatNumber(metrics.totalCrashes || 0),
+            crashRate: `${(((metrics.totalCrashes || 0) / (metrics.totalSessions || 1)) * 100).toFixed(2)}%`
+          },
+          table: daily.map(day => ({
+            date: formatDate(day.date),
+            sessions: formatNumber(day.sessions || 0),
+            crashes: formatNumber(day.crashes || 0),
+            crashRate: `${(((day.crashes || 0) / (day.sessions || 1)) * 100).toFixed(2)}%`
+          }))
+        }
+      },
+      {
+        id: 'revenue-by-geo',
+        title: 'Revenue by Geo',
+        type: 'Financial',
+        icon: <AttachMoney />,
+        color: '#1976d2',
+        data: {
+          kpi: {
+            gross: `$${formatNumber(metrics.totalRevenue || 0)}`,
+            net: `$${formatNumber((metrics.totalRevenue || 0) * 0.7)}`,
+            payoutDue: `$${formatNumber((metrics.totalRevenue || 0) * 0.6)}`
+          },
+          table: (metrics.geoBreakdown || []).map((geo: any) => ({
+            country: geo.country,
+            installs: formatNumber(geo.installs || 0),
+            grossRev: `$${formatNumber(geo.revenue || 0)}`,
+            revShare: '30%',
+            netRev: `$${formatNumber((geo.revenue || 0) * 0.7)}`,
+            payoutDue: `$${formatNumber((geo.revenue || 0) * 0.6)}`
+          }))
+        }
+      },
+      {
+        id: 'ecpm-fill-rate',
+        title: 'eCPM & Fill Rate',
+        type: 'Monetization',
+        icon: <MonetizationOn />,
+        color: '#673ab7',
+        data: {
+          kpi: {
+            ecpm: `$${(metrics.avgEcpm || 0).toFixed(2)}`,
+            fillRate: `${(metrics.fillRate || 0).toFixed(1)}%`,
+            impressions: formatNumber(metrics.totalImpressions || 0)
+          },
+          table: daily.map(day => ({
+            date: formatDate(day.date),
+            ecpm: `$${(day.avgEcpm || 0).toFixed(2)}`,
+            fillRate: `${(day.fillRate || 0).toFixed(1)}%`,
+            impressions: formatNumber(day.impressions || 0)
+          }))
+        }
+      }
+    ];
+  };
+  
+  // Handle studio accordion expansion
+  const handleToggleStudioExpanded = async (studioId: string) => {
+    const newExpanded = new Set(expandedStudios);
+    const isExpanding = !newExpanded.has(studioId);
+    
+    if (isExpanding) {
+      newExpanded.add(studioId);
+      setExpandedStudios(newExpanded);
+      
+      // Fetch studio-level data
+      setLoadingStudioData(true);
+      try {
+        // Fetch revenue by geo
+        const geoResponse = await fetch('http://localhost:3000/graphql', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: `
+              query RevenueByGeo($filters: PublisherFiltersInput!) {
+                revenueByGeo(filters: $filters) {
+                  country
+                  installs
+                  grossRevenue
+                  revenueShare
+                  netRevenue
+                  payoutDue
+                }
+              }
+            `,
+            variables: {
+              filters: {
+                studio: studioId,
+                game: 'All',
+                dateRange: filters.dateRange,
+                currency: filters.currency
+              }
+            }
+          })
+        });
+        const geoResult = await geoResponse.json();
+        if (geoResult.data?.revenueByGeo) {
+          setRevenueByGeoData(geoResult.data.revenueByGeo);
+        }
+        
+        // Fetch payout summary
+        const payoutResponse = await fetch('http://localhost:3000/graphql', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: `
+              query PayoutSummary($filters: PublisherFiltersInput!) {
+                payoutSummary(filters: $filters) {
+                  totalNet
+                  totalPaid
+                  totalOutstanding
+                  currency
+                  studios {
+                    studioId
+                    studioName
+                    grossRevenue
+                    netRevenue
+                    paid
+                    outstanding
+                  }
+                }
+              }
+            `,
+            variables: {
+              filters: {
+                studio: studioId,
+                dateRange: filters.dateRange,
+                currency: filters.currency
+              }
+            }
+          })
+        });
+        const payoutResult = await payoutResponse.json();
+        if (payoutResult.data?.payoutSummary) {
+          setPayoutSummaryData(payoutResult.data.payoutSummary);
+        }
+      } catch (error) {
+        console.error('Error fetching studio data:', error);
+      } finally {
+        setLoadingStudioData(false);
+      }
+    } else {
+      newExpanded.delete(studioId);
+      setExpandedStudios(newExpanded);
+    }
+  };
+
+  const [games, setGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Safety timeout to prevent infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      console.log('⚠️ Loading timeout reached, setting loading to false');
+      setLoading(false);
+    }, 10000); // 10 seconds timeout
+
+    return () => clearTimeout(timeout);
+  }, []);
+  
   const [kpiData] = useState({
     grossRev: 125000,
     netRev: 87500,
@@ -432,15 +681,57 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
           fetchStudios()
         ]);
         
-        // Load all games initially (with default filters)
+        console.log('✅ Filter data (platforms, studios, sub-platforms) loaded');
+        
+        // Fetch all games initially with empty filters to show everything
+        const initialFilters = {
+          studio: undefined,
+          platform: undefined,
+          subPlatform: undefined,
+          region: undefined,
+          game: undefined,
+          dateRange: filters.dateRange,
+          currency: filters.currency
+        };
+        
         try {
-          await fetchAvailableGames(filters);
+          const response = await fetch('http://localhost:3000/graphql', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              query: `
+                query PublisherGamesList($filters: PublisherFiltersInput!) {
+                  publisherGamesList(filters: $filters) {
+                    id
+                    name
+                    icon
+                    dau
+                    installs
+                    cpi
+                    revenue
+                    studioId
+                    studio {
+                      id
+                      name
+                    }
+                  }
+                }
+              `,
+              variables: { filters: initialFilters }
+            })
+          });
+          const result = await response.json();
+          if (result.data?.publisherGamesList) {
+            const games = result.data.publisherGamesList;
+            console.log('✅ Initial games loaded:', games.length);
+            setGames(games);
+            setAllGames(games);
+            setLoading(false);
+          }
         } catch (error) {
-          console.log('⚠️ Filtered games fetch failed, using fallback method');
-          await fetchAllGames();
+          console.error('Error loading initial games:', error);
         }
         
-        console.log('✅ All filter data loaded successfully');
       } catch (error) {
         console.error('❌ Error loading filter data:', error);
       } finally {
@@ -455,6 +746,18 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
   const fetchGames = async (currentFilters: typeof filters) => {
     try {
       setLoading(true);
+      
+      // Convert "All" to undefined for backend
+      const cleanedFilters = {
+        studio: currentFilters.studio !== 'All' ? currentFilters.studio : undefined,
+        platform: currentFilters.platform !== 'All' ? currentFilters.platform : undefined,
+        subPlatform: currentFilters.subPlatform !== 'All' ? currentFilters.subPlatform : undefined,
+        region: currentFilters.region !== 'All' ? currentFilters.region : undefined,
+        game: currentFilters.game !== 'All' ? currentFilters.game : undefined,
+        dateRange: currentFilters.dateRange,
+        currency: currentFilters.currency
+      };
+      
       const response = await fetch('http://localhost:3000/graphql', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -478,7 +781,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
             }
           `,
           variables: {
-            filters: currentFilters
+            filters: cleanedFilters
           }
         })
       });
@@ -486,12 +789,17 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
       if (result.errors) {
         console.error('Error fetching games:', result.errors);
         setGames([]);
+        setAllGames([]);
       } else {
-        setGames(result.data.publisherGamesList || []);
+        const games = result.data.publisherGamesList || [];
+        console.log('✅ Fetched games:', games.length);
+        setGames(games);
+        setAllGames(games); // Also update allGames for display
       }
     } catch (error) {
       console.error('Error fetching games:', error);
       setGames([]);
+      setAllGames([]);
     } finally {
       setLoading(false);
     }
@@ -594,20 +902,21 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
       filters
     });
     
-    if (!loadingFilters && platforms.length > 0 && studios.length > 0) {
-      console.log('🔄 Filters changed, fetching games and available games:', filters);
-      fetchGames(filters);
-      
-      // Call fetchAvailableGames with error handling
-      fetchAvailableGames(filters).catch(error => {
-        console.error('❌ Error in fetchAvailableGames:', error);
-      });
-    } else {
-      console.log('⚠️ useEffect conditions not met:', {
-        loadingFilters,
-        platformsLength: platforms.length,
-        studiosLength: studios.length
-      });
+    if (!loadingFilters) {
+      if (platforms.length > 0 && studios.length > 0) {
+        console.log('🔄 Filters changed, fetching games and available games:', filters);
+        fetchGames(filters);
+        
+        // Call fetchAvailableGames with error handling
+        fetchAvailableGames(filters).catch(error => {
+          console.error('❌ Error in fetchAvailableGames:', error);
+        });
+      } else {
+        console.log('⚠️ Platforms or studios not loaded yet, setting loading to false and using fallback');
+        setLoading(false);
+        // Try to fetch all games as fallback
+        fetchAllGames();
+      }
     }
   }, [filters, loadingFilters, platforms.length, studios.length]);
 
@@ -693,6 +1002,16 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
   const filteredGames = getFilteredGames();
   const availableGames = getAvailableGames();
   const availableSubPlatforms = getAvailableSubPlatforms();
+  
+  // Group games by studio
+  const gamesByStudio = filteredGames.reduce((acc, game) => {
+    const studioName = game.studio?.name || 'Unknown Studio';
+    if (!acc[studioName]) {
+      acc[studioName] = [];
+    }
+    acc[studioName].push(game);
+    return acc;
+  }, {} as Record<string, any[]>);
 
   // Debug logging
   console.log('=== Publisher Games List Debug Info ===');
@@ -1071,7 +1390,6 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
               <TableCell>DAU</TableCell>
               <TableCell>Gross Revenue</TableCell>
               <TableCell>Net Revenue</TableCell>
-              <TableCell>Payout Due</TableCell>
               {filters.platform !== 'Web' && <TableCell>Installs</TableCell>}
               {filters.platform !== 'Web' && <TableCell>CPI</TableCell>}
               <TableCell>Reports</TableCell>
@@ -1080,34 +1398,131 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
           <TableBody>
             {filteredGames.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={filters.platform === 'Web' ? 6 : 8} align="center">
+                <TableCell colSpan={filters.platform === 'Web' ? 5 : 7} align="center">
                   <Typography variant="body2" color="textSecondary">
                     No games found matching the current filters
                   </Typography>
                 </TableCell>
               </TableRow>
             ) : (
-              (() => {
-                // Group games by studio
-                const gamesByStudio = filteredGames.reduce((acc, game) => {
-                  const studioName = game.studio?.name || 'Unknown Studio';
-                  if (!acc[studioName]) {
-                    acc[studioName] = [];
-                  }
-                  acc[studioName].push(game);
-                  return acc;
-                }, {} as Record<string, any[]>);
-
-                return (Object.entries(gamesByStudio) as [string, any[]][]).map(([studioName, games]) => (
-                  <React.Fragment key={studioName}>
-                    {/* Studio Header Row */}
-                    <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                      <TableCell colSpan={filters.platform === 'Web' ? 6 : 8}>
-                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                          {studioName}
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
+              (Object.entries(gamesByStudio) as [string, any[]][]).map(([studioName, games], index) => {
+                const studioDisplayName = studioName;
+                const studioId = games[0]?.studioId || studioName;
+                const isStudioExpanded = expandedStudios.has(studioId);
+                
+                return (
+                  <React.Fragment key={`studio-${studioId}-${index}`}>
+                      {/* Studio Header Row - Clickable to expand studio-level data */}
+                      <TableRow 
+                        sx={{ 
+                          backgroundColor: '#f5f5f5',
+                          cursor: 'pointer',
+                          '&:hover': { backgroundColor: '#e8e8e8' }
+                        }}
+                        onClick={() => handleToggleStudioExpanded(studioId)}
+                      >
+                        <TableCell colSpan={filters.platform === 'Web' ? 5 : 7}>
+                          <Box display="flex" alignItems="center">
+                            <IconButton size="small" sx={{ mr: 1 }}>
+                              {isStudioExpanded ? <ExpandLess /> : <ExpandMore />}
+                            </IconButton>
+                            <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+                              {studioDisplayName}
+                            </Typography>
+                            <Typography variant="caption" color="textSecondary" sx={{ ml: 2 }}>
+                              {isStudioExpanded ? 'Hide Studio Reports' : 'Show Studio Reports'}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                      
+                      {/* Studio-Level Reports Accordion */}
+                      <TableRow>
+                        <TableCell colSpan={filters.platform === 'Web' ? 5 : 7} sx={{ p: 0 }}>
+                          <Collapse in={isStudioExpanded} timeout="auto" unmountOnExit>
+                            <Box sx={{ p: 3, backgroundColor: '#fafafa', borderTop: '1px solid #e0e0e0' }}>
+                              {loadingStudioData ? (
+                                <Typography>Loading studio reports...</Typography>
+                              ) : (
+                                <>
+                                  {/* Revenue by Geo Section */}
+                                  {revenueByGeoData.length > 0 && (
+                                    <Card sx={{ mb: 2, border: '2px solid #1976d230' }}>
+                                      <CardContent>
+                                                        <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', color: '#1976d2' }}>
+                                          🌍 Revenue by Geo - {studioDisplayName}
+                                        </Typography>
+                                        <Table>
+                                          <TableHead>
+                                            <TableRow>
+                                              <TableCell><strong>Country</strong></TableCell>
+                                              <TableCell align="right"><strong>Installs</strong></TableCell>
+                                              <TableCell align="right"><strong>Gross Rev</strong></TableCell>
+                                              <TableCell align="right"><strong>Rev-Share %</strong></TableCell>
+                                              <TableCell align="right"><strong>Net Rev</strong></TableCell>
+                                              <TableCell align="right"><strong>Payout Due</strong></TableCell>
+                                            </TableRow>
+                                          </TableHead>
+                                          <TableBody>
+                                            {revenueByGeoData.map((row: any) => (
+                                              <TableRow key={row.country}>
+                                                <TableCell>{row.country}</TableCell>
+                                                <TableCell align="right">{formatNumber(row.installs)}k</TableCell>
+                                                <TableCell align="right">${formatNumber(row.grossRevenue)}</TableCell>
+                                                <TableCell align="right">{row.revenueShare}%</TableCell>
+                                                <TableCell align="right">${formatNumber(row.netRevenue)}</TableCell>
+                                                <TableCell align="right">${formatNumber(row.payoutDue)}</TableCell>
+                                              </TableRow>
+                                            ))}
+                                          </TableBody>
+                                        </Table>
+                                      </CardContent>
+                                    </Card>
+                                  )}
+                                  
+                                  {/* Payout Summary Section */}
+                                  {payoutSummaryData && payoutSummaryData.studios && (
+                                    <Card sx={{ mb: 2, border: '2px solid #2e7d3230' }}>
+                                      <CardContent>
+                                        <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', color: '#2e7d32' }}>
+                                          💰 Payout Summary - {studioDisplayName}
+                                        </Typography>
+                                        <Typography variant="h6" sx={{ mb: 2 }}>
+                                          Total Net: ${formatNumber(payoutSummaryData.totalNet)} | 
+                                          Paid: ${formatNumber(payoutSummaryData.totalPaid)} | 
+                                          Outstanding: ${formatNumber(payoutSummaryData.totalOutstanding)}
+                                        </Typography>
+                                        <Table>
+                                          <TableHead>
+                                            <TableRow>
+                                              <TableCell><strong>Studio</strong></TableCell>
+                                              <TableCell align="right"><strong>Gross Rev</strong></TableCell>
+                                              <TableCell align="right"><strong>Net Rev</strong></TableCell>
+                                              <TableCell align="right"><strong>Paid</strong></TableCell>
+                                              <TableCell align="right"><strong>Outstanding</strong></TableCell>
+                                            </TableRow>
+                                          </TableHead>
+                                          <TableBody>
+                                            {payoutSummaryData.studios.map((studio: any) => (
+                                              <TableRow key={studio.studioId}>
+                                                <TableCell>{studio.studioName}</TableCell>
+                                                <TableCell align="right">${formatNumber(studio.grossRevenue)}</TableCell>
+                                                <TableCell align="right">${formatNumber(studio.netRevenue)}</TableCell>
+                                                <TableCell align="right">${formatNumber(studio.paid)}</TableCell>
+                                                <TableCell align="right">${formatNumber(studio.outstanding)}</TableCell>
+                                              </TableRow>
+                                            ))}
+                                          </TableBody>
+                                        </Table>
+                                      </CardContent>
+                                    </Card>
+                                  )}
+                                </>
+                              )}
+                            </Box>
+                          </Collapse>
+                        </TableCell>
+                      </TableRow>
                     
                     {/* Games for this studio */}
                     {games.map((game: any) => (
@@ -1149,7 +1564,6 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                           <TableCell>{formatNumber(game.dau || 0)}</TableCell>
                           <TableCell>${formatNumber(game.revenue || 0)}</TableCell>
                           <TableCell>${formatNumber((game.revenue || 0) * 0.8)}</TableCell>
-                          <TableCell>${formatNumber((game.revenue || 0) * 0.6)}</TableCell>
                           {filters.platform !== 'Web' && (
                             <TableCell>{formatNumber(game.installs || 0)}</TableCell>
                           )}
@@ -1166,7 +1580,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                   size="small"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    onReportsNavigation(game.name);
+                                    handleReportsNavigation(game.name);
                                   }}
                                   color="primary"
                                 >
@@ -1179,15 +1593,22 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
 
                         {/* Reports Accordion Row */}
                         <TableRow>
-                          <TableCell colSpan={filters.platform === 'Web' ? 6 : 8} sx={{ p: 0 }}>
+                          <TableCell colSpan={filters.platform === 'Web' ? 5 : 7} sx={{ p: 0 }}>
                             <Collapse in={expandedGames.has(game.id)} timeout="auto" unmountOnExit>
                               <Box sx={{ p: 3, backgroundColor: '#fafafa', borderTop: '1px solid #e0e0e0' }}>
                                 <Typography variant="h5" sx={{ mb: 3, color: '#1976d2', fontWeight: 'bold', textAlign: 'center' }}>
                                   📊 Publisher Reports - {game.name}
                                 </Typography>
                                 
-                                {/* Reports with Data Tables */}
-                                {getStaticReports().map((report) => (
+                                {/* Loading State */}
+                                {loadingMetrics[game.id] ? (
+                                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 4 }}>
+                                    <CircularProgress />
+                                    <Typography sx={{ ml: 2 }}>Loading live data from Hyper Rabbit SDK...</Typography>
+                                  </Box>
+                                ) : (
+                                  /* Reports with Data Tables */
+                                  getPublisherReports(game.id).map((report) => (
                                   <Card key={report.id} sx={{ mb: 3, border: `2px solid ${report.color}30` }}>
                                     <CardContent sx={{ p: 3 }}>
                                       {/* Report Header */}
@@ -1201,12 +1622,12 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                               {report.title}
                                             </Typography>
                                             <Typography variant="body2" color="textSecondary">
-                                              Type: {report.type} • Last Run: {report.lastRun}
+                                              Type: {report.type}
                                             </Typography>
                                           </Box>
                                         </Box>
                                         <Chip 
-                                          label={report.status} 
+                                          label="Live Data" 
                                           size="medium" 
                                           color="success" 
                                           variant="outlined"
@@ -1233,30 +1654,37 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                       </Box>
 
                                       {/* Data Table */}
-                                      <Box sx={{ overflowX: 'auto' }}>
-                                        <Table size="small">
-                                          <TableHead>
-                                            <TableRow sx={{ backgroundColor: `${report.color}20` }}>
-                                              {Object.keys(report.data.table[0]).map((header) => (
-                                                <TableCell key={header} sx={{ fontWeight: 'bold' }}>
-                                                  {header.charAt(0).toUpperCase() + header.slice(1)}
-                                                </TableCell>
-                                              ))}
-                                            </TableRow>
-                                          </TableHead>
-                                          <TableBody>
-                                            {report.data.table.map((row, index) => (
-                                              <TableRow key={index} hover>
-                                                {Object.values(row).map((cell, cellIndex) => (
-                                                  <TableCell key={cellIndex}>
-                                                    {cell}
+                                      {report.data.table && report.data.table.length > 0 && (
+                                        <Box sx={{ overflowX: 'auto' }}>
+                                          <Table size="small">
+                                            <TableHead>
+                                              <TableRow sx={{ backgroundColor: `${report.color}20` }}>
+                                                {Object.keys(report.data.table[0] || {}).map((header) => (
+                                                  <TableCell key={header} sx={{ fontWeight: 'bold' }}>
+                                                    {header.charAt(0).toUpperCase() + header.slice(1)}
                                                   </TableCell>
                                                 ))}
                                               </TableRow>
-                                            ))}
-                                          </TableBody>
-                                        </Table>
-                                      </Box>
+                                            </TableHead>
+                                            <TableBody>
+                                              {report.data.table.map((row: any, index: number) => (
+                                                <TableRow key={index} hover>
+                                                  {Object.values(row).map((cell: any, cellIndex: number) => (
+                                                    <TableCell key={cellIndex}>
+                                                      {String(cell)}
+                                                    </TableCell>
+                                                  ))}
+                                                </TableRow>
+                                              ))}
+                                            </TableBody>
+                                          </Table>
+                                        </Box>
+                                      )}
+                                      {(!report.data.table || report.data.table.length === 0) && (
+                                        <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center', p: 3 }}>
+                                          No data available for this period
+                                        </Typography>
+                                      )}
 
                                       {/* Action Buttons */}
                                       <Box display="flex" gap={2} mt={3} justifyContent="flex-end">
@@ -1264,7 +1692,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                           variant="contained"
                                           startIcon={<Visibility />}
                                           sx={{ backgroundColor: report.color }}
-                                          onClick={() => onReportsNavigation(game.name)}
+                                          onClick={() => handleReportsNavigation(game.name)}
                                         >
                                           Open Full Report
                                         </Button>
@@ -1278,7 +1706,8 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                       </Box>
                                     </CardContent>
                                   </Card>
-                                ))}
+                                  ))
+                                )}
                               </Box>
                             </Collapse>
                           </TableCell>
@@ -1286,8 +1715,8 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                       </React.Fragment>
                     ))}
                   </React.Fragment>
-                ));
-              })()
+                )
+              })
             )}
           </TableBody>
         </Table>

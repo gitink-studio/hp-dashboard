@@ -5,6 +5,10 @@ import { Variables } from "../graphql/variables";
 
 let resource = "";
 
+// Cache for request deduplication
+const requestCache = new Map<string, { timestamp: number; promise: Promise<any> }>();
+const CACHE_DURATION = 1000; // 1 second cache to prevent duplicate requests
+
 // Map resource names to their actual GraphQL field names
 const getGraphQLFieldName = (resourceName: string): string => {
   const fieldMapping: { [key: string]: string } = {
@@ -25,41 +29,6 @@ const getGraphQLFieldName = (resourceName: string): string => {
   };
   return fieldMapping[resourceName] || resourceName;
 };
-
-let responseJsonDataQueryList = [
-  QueryNames.GET_ALL_DATA_BY_USERNAME_OR_VALUE,
-  QueryNames.GET_ALL_DATA_SUGGESTION,
-  QueryNames.GET_PLATFORM_FILTER,
-  QueryNames.GET_SUB_PLATFORM_FILTER,
-  QueryNames.GET_GAME_FILTER,
-  QueryNames.GET_ALL_DASHBOARD_DATA,
-  QueryNames.GET_ALL_ADMIN_DASHBOARD_DATA,
-  QueryNames.GET_DEVELOPER_DASHBOARD_DATA,
-  QueryNames.GET_PUBLISHER_DASHBOARD_DATA,
-  // New Dashboard Queries
-  QueryNames.DASHBOARD_FILTERS,
-  // QueryNames.PORTFOLIO_KPIS, // Removed - returns direct object, not wrapped data
-  // QueryNames.GAMES_LIST, // Removed - returns direct array, not wrapped data
-  QueryNames.APPROVALS_QUEUE,
-  QueryNames.STUDIOS_GAMES,
-  // Publisher-specific Queries
-  QueryNames.PUBLISHER_DASHBOARD_FILTERS, // Returns direct object, not wrapped data
-  QueryNames.PUBLISHER_GAMES_LIST,
-  QueryNames.PLATFORMS,
-  QueryNames.GAME_PLATFORMS,
-  QueryNames.GAMES,
-  QueryNames.PLAYERS,
-  QueryNames.DEVICES,
-  QueryNames.LINK_IDS,
-  QueryNames.EVENT_LOGS,
-  QueryNames.USERS,
-  QueryNames.ROLES,
-  // Publisher Feature Queries
-  QueryNames.STUDIOS,
-  QueryNames.CONTRACTS,
-  QueryNames.PAYOUTS,
-  QueryNames.APPROVALS,
-];
 
 const getQuery: any = (resource: string) => {
   switch (resource) {
@@ -198,11 +167,7 @@ const getVariable: any = (resource: string, params: any) => {
   }
 };
 
-const isResponseJsonData = (_data: any) => {
-  // console.log("Response: ", _data);
-  return responseJsonDataQueryList.includes(resource);
-};
-
+// Custom data provider with request deduplication
 export const graphqlDataProvider = buildGraphQLProvider({
   clientOptions: GRAPHQL_CLIENT_OPTION,
   buildQuery:

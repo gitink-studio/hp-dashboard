@@ -7,12 +7,15 @@ export const PortfolioKPIs = (props: any) => {
     // Get current user ID from localStorage
     const userId = localStorage.getItem("userId");
     
-    const { data: kpiData, isLoading, error } = useGetList(QueryNames.PORTFOLIO_KPIS, {
-        filter: {
-            ...props.filter,
-            userId: userId // Pass user ID to the query
+    const { data: kpiData, isLoading, error } = useGetList(
+        QueryNames.PORTFOLIO_KPIS, 
+        {
+            filter: {
+                ...props.filter,
+                userId: userId // Pass user ID to the query
+            }
         }
-    });
+    );
 
     const Text = ({ data, ...props }: { data: string; }) => {
         return (<Typography sx={{ p: 2, pt: 0, }} {...props}> {data} </Typography>);
