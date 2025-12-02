@@ -14,7 +14,7 @@ import { useActiveStep, useCurrentGameSetupDetails, useCurrentSetupStateId, useC
 import { sendRequest } from '../../common/utils';
 import { CREATE_TESTING_TERMS_URL, CURRENT_SDK_SETUP_STATE_ID, HttpMethod } from '../../common/constants';
 import { useNotify } from 'react-admin';
-import { Styles } from '../../common/styles';
+import { customStyle } from '../../common/styles';
 
 export const TestingTermsStep = () => {
     const notify = useNotify();
@@ -44,7 +44,7 @@ export const TestingTermsStep = () => {
             });
 
             console.log("Testing terms data sent successfully!", response.data);
-            setCurrentGameSetupDetails(response.data);
+            setCurrentGameSetupDetails(response.data.data);
             setCurrentStep();
         } catch (err) {
             console.error(err);
@@ -91,7 +91,7 @@ export const TestingTermsStep = () => {
                         />
                     }
                     label="I have read and agree to the Hyper Rabbit testing terms"
-                    sx={Styles.checkboxTextStyle}
+                    sx={customStyle.checkboxTextStyle}
                 />
 
                 <Box sx={{

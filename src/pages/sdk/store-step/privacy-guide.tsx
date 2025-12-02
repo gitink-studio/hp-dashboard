@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import { useDisplayPrivacyGuide, useStoreStepActions } from "../../../store/sdk/store-step-store";
 import { Images, ImageSize } from "../../../common/constants";
-import { Styles } from "../../../common/styles";
+import { customStyle } from "../../../common/styles";
 
 const gettingStarted = [
     {
@@ -30,7 +30,7 @@ const gettingStarted = [
     {
         content: [
             "To answer the questionnaire, developers should go to the “App content” tab and press “Start” in the “Data safety” section.",
-            <img src={Images.storeSetup.privacyGuide.image2} alt="Screenshot" style={Styles.screenshotStyle} />
+            <img src={Images.storeSetup.privacyGuide.image2} alt="Screenshot" style={customStyle.screenshotStyle} />
 
         ],
         imageUrl: Images.storeSetup.privacyGuide.image3,
@@ -60,7 +60,7 @@ const gettingStarted = [
             ].map((data, index) => (
                 <Stack gap={2} mt={2} key={index}>
                     <Typography variant="body2">{data.data}</Typography>
-                    <img src={data.imageUrl} alt="Screenshot" style={Styles.screenshotStyle} />
+                    <img src={data.imageUrl} alt="Screenshot" style={customStyle.screenshotStyle} />
                 </Stack>)),
             ,
         ],
@@ -99,9 +99,9 @@ const collectedData = [
         content: [
             'For the “Approximate Location” data type, please answer these questions as detailed in the pictures below:',
             <Stack gap={2} mt={2}>
-                <img src={Images.storeSetup.privacyGuide.image13} alt="Screenshot" style={Styles.screenshotStyle} />
-                <img src={Images.storeSetup.privacyGuide.image14} alt="Screenshot" style={Styles.screenshotStyle} />
-                <img src={Images.storeSetup.privacyGuide.image15} alt="Screenshot" style={Styles.screenshotStyle} />
+                <img src={Images.storeSetup.privacyGuide.image13} alt="Screenshot" style={customStyle.screenshotStyle} />
+                <img src={Images.storeSetup.privacyGuide.image14} alt="Screenshot" style={customStyle.screenshotStyle} />
+                <img src={Images.storeSetup.privacyGuide.image15} alt="Screenshot" style={customStyle.screenshotStyle} />
             </Stack>
         ],
     },
@@ -113,9 +113,9 @@ const dateSafetyQuestionnaire = [
         content: [
             `After you answered all the questions, the “Store listing preview” page should look as follows. Please make sure that you have answered all questions correctly. Then, click “Save”.`,
             <Stack gap={2} mt={2}>
-                <img src={Images.storeSetup.privacyGuide.image16} alt="Screenshot" style={Styles.screenshotStyle} />
-                <img src={Images.storeSetup.privacyGuide.image17} alt="Screenshot" style={Styles.screenshotStyle} />
-                <img src={Images.storeSetup.privacyGuide.image18} alt="Screenshot" style={Styles.screenshotStyle} />
+                <img src={Images.storeSetup.privacyGuide.image16} alt="Screenshot" style={customStyle.screenshotStyle} />
+                <img src={Images.storeSetup.privacyGuide.image17} alt="Screenshot" style={customStyle.screenshotStyle} />
+                <img src={Images.storeSetup.privacyGuide.image18} alt="Screenshot" style={customStyle.screenshotStyle} />
             </Stack>
         ],
     },
@@ -195,15 +195,7 @@ export const PrivacyGuide: React.FC = () => {
 
     return (
         <Dialog open={canDisplayPrivacyGuide} fullWidth maxWidth="lg">
-            <Paper
-                elevation={0}
-                sx={{
-                    borderRadius: 3,
-                    backgroundColor: "#fff",
-                    border: "1px solid #eee",
-                    height: "80vh",
-                }}
-            >
+            <Paper elevation={0}>
                 <Stack gap={2} display={"flex"}>
                     <Box sx={{
                         display: 'flex',
@@ -231,7 +223,7 @@ export const PrivacyGuide: React.FC = () => {
 
                         {gettingStarted.map((step, index) => (
                             <Stack direction="row" gap={1} key={index + "gettingStarted"} pl={4} pr={2}>
-                                <Box sx={Styles.numberStyle} bgcolor={theme.palette.primary.main}>
+                                <Box sx={customStyle.numberStyle} bgcolor={theme.palette.primary.main}>
                                     {index + 1}
                                 </Box>
                                 <Stack>
@@ -246,7 +238,7 @@ export const PrivacyGuide: React.FC = () => {
                                             src={step.imageUrl}
                                             key={index}
                                             alt={`Step ${index + 1} screenshot`}
-                                            style={Styles.screenshotStyle}
+                                            style={customStyle.screenshotStyle}
                                         />
                                     </>}
                                     <br />
@@ -257,7 +249,7 @@ export const PrivacyGuide: React.FC = () => {
                             <Box key={index + "collectedData"}>
                                 <Typography variant="body2" fontWeight="bold" p={2} pl={4} component="div" key={index + "collectedData"}>{step.title}</Typography>
                                 <Stack direction="row" gap={1} key={index} pl={4} pr={2}>
-                                    <Box sx={Styles.numberStyle} bgcolor={theme.palette.primary.main}>
+                                    <Box sx={customStyle.numberStyle} bgcolor={theme.palette.primary.main}>
                                         {index + 1}
                                     </Box>
                                     <Stack>
@@ -273,7 +265,7 @@ export const PrivacyGuide: React.FC = () => {
                                                 src={step.imageUrl}
                                                 key={index}
                                                 alt={`Step ${index + 1} screenshot`}
-                                                style={Styles.screenshotStyle}
+                                                style={customStyle.screenshotStyle}
                                             />
                                         </>}
                                         <br />
@@ -321,7 +313,7 @@ export const PrivacyGuide: React.FC = () => {
                             <>
                                 <Typography variant="body2" fontWeight="bold" p={2} pl={4} component="div" key={index + "dateSafetyQuestionnaire"}>{step.title}</Typography>
                                 <Stack direction="row" gap={1} key={index} pl={4} pr={2}>
-                                    <Box sx={Styles.numberStyle} bgcolor={theme.palette.primary.main}>
+                                    <Box sx={customStyle.numberStyle} bgcolor={theme.palette.primary.main}>
                                         {index + 1}
                                     </Box>
                                     <Stack>
@@ -337,7 +329,7 @@ export const PrivacyGuide: React.FC = () => {
                                                 src={step.imageUrl}
                                                 key={index}
                                                 alt={`Step ${index + 1} screenshot`}
-                                                style={Styles.screenshotStyle}
+                                                style={customStyle.screenshotStyle}
                                             />
                                         </>}
                                         <br />

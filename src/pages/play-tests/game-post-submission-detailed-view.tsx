@@ -1,7 +1,7 @@
 import { Box, Button, CircularProgress, Dialog, Paper, Stack, TextField, Typography } from "@mui/material"
 import { useDataSending, useDisplayGamePostSubmissionDetails, useDisplayGameRequestDetails, useGameRequestDetails, usePlayTestsActions, useReviewNotes } from "../../store/play-tests/play-tests-store";
 import { Close, Done, PlayArrow } from "@mui/icons-material";
-import { Styles } from "../../common/styles";
+import { customStyle } from "../../common/styles";
 import { HttpMethod, WEB_GAME_SUBMISSION_STATUS_UPDATE_URL } from "../../common/constants";
 import { sendRequest } from "../../common/utils";
 

@@ -1,11 +1,10 @@
-import { Box, Button, CircularProgress, Dialog, Divider, IconButton, InputAdornment, Paper, Stack, TextField, Typography } from "@mui/material"
-import { useDataSending, useDetailedView, useGameRequestDetails, useOpenVideo, usePlayTestsActions, useReviewNotes, useRolePublisher, useVideoUrl } from "../../store/play-tests/play-tests-store";
+import { Box, Button, CircularProgress, Dialog, IconButton, InputAdornment, Paper, Stack, TextField, Typography } from "@mui/material"
+import { useDataSending, useDetailedView, useGameRequestDetails, usePlayTestsActions, useReviewNotes, useRolePublisher } from "../../store/play-tests/play-tests-store";
 import { Close, Done, Download, Edit, PlayArrow } from "@mui/icons-material";
-import { GameRequestStatus, HttpMethod, LAUNCH_GAME_URL, Platform, SDK_LAUNCH_URL, SDK_STATUS_UPDATE_URL, TOTAL_MOBILE_GAME_SUBMISSION_STEPS, TOTAL_WEB_GAME_SUBMISSION_STEPS, UPDATE_FB_AD_ACCOUNT_ID_URL, WEB_GAME_SUBMISSION_STATUS_UPDATE_URL } from "../../common/constants";
+import { GameRequestStatus, HttpMethod, LAUNCH_GAME_URL, MobileGameSubmissionSetup, Platform, SDK_LAUNCH_URL, SDK_STATUS_UPDATE_URL, TOTAL_MOBILE_GAME_SUBMISSION_STEPS, TOTAL_WEB_GAME_SUBMISSION_STEPS, UPDATE_FB_AD_ACCOUNT_ID_URL, WEB_GAME_SUBMISSION_STATUS_UPDATE_URL } from "../../common/constants";
 import { sendRequest } from "../../common/utils";
 import { notify } from "../../components/notify";
-import { Styles } from "../../common/styles";
-import { localStorageData } from "../../common/localStorage";
+import { customStyle } from "../../common/styles";
 import { useFacebookAppAccountId, useSDKDetailActions } from "../../store/sdk/sdk-details-store";
 import { useEffect, useState } from "react";
 
@@ -19,7 +18,7 @@ export const GameSubmissionDetailedView = () => {
     const [isEditButtonClicked, setEditButtonClicked] = useState(false);
     const [prevFBAdAccountId, setPrevFBAdAccountId] = useState('');
     const { setDetailedView: setDetailedView, setDataSending, setReviewNotes, setOpenVideo, setVideoUrl } = usePlayTestsActions();
-    const { name, studio, playableLinkUrl, selectedPlatforms, status, platform, webGameRequest, androidOrIOSGameRequest } = gameRequestDetails;
+    const { name, studio, playableLinkUrl, selectedPlatforms, status, platform, webGameRequest, androidOrIOSGameRequest, currentSetupStateIndex } = gameRequestDetails;
     let isPublisher = useRolePublisher();
 
     const {
@@ -70,6 +69,7 @@ export const GameSubmissionDetailedView = () => {
                     });
                 } else {
                     response = await sendRequest(HttpMethod.POST, WEB_GAME_SUBMISSION_STATUS_UPDATE_URL, {
+                        name: gameRequestDetails.name,
                         gameRequestId: gameRequestDetails.id,
                         webGameRequestId: gameRequestDetails.webGameRequest.id,
                         status: GameRequestStatus.ACCEPTED,
@@ -176,6 +176,7 @@ export const GameSubmissionDetailedView = () => {
     }
 
     const isWebPlatform = platform === 'Web';
+    const canDisplayFacebookDetails = !isWebPlatform ? currentSetupStateIndex > MobileGameSubmissionSetup.FACEBOOK_SETUP : false;
 
     useEffect(() => {
         if (!isWebPlatform && facebookDetails?.adAccountId !== null) {
@@ -185,7 +186,7 @@ export const GameSubmissionDetailedView = () => {
 
     return (
         <>
-            <Dialog open={DetailedView} onClose={handleCloseGameRequestDetails} fullWidth maxWidth="lg" >
+            <Dialog open={DetailedView} fullWidth maxWidth="lg" >
                 <Paper sx={{ p: 4 }}>
                     <Stack gap={4}>
                         <Stack gap={2}>
@@ -206,7 +207,7 @@ export const GameSubmissionDetailedView = () => {
                                                     <Typography variant="body2" >Selected Platforms : {gameRequestDetails.selectedPlatforms.map((platform: any) => platform.name).join(', ')}</Typography>
                                                     <Typography variant="body2" fontWeight={'bold'}>Builds </Typography>
 
-                                                    <Stack direction={'row'} gap={2} sx={{ ...Styles.stackStyle, mb: 2 }}>
+                                                    <Stack direction={'row'} gap={2} sx={{ ...customStyle.stackStyle, mb: 2 }}>
                                                         {
                                                             webGameRequest.webGameRequestDetails.buildUrls.map((build: any) => {
                                                                 return (
@@ -250,10 +251,10 @@ export const GameSubmissionDetailedView = () => {
                                         <Typography variant="body2">Mechanic : {mechanics.map((data: any) => data.name).join(' ')}</Typography>
                                         <Typography variant="body2">Optional Tags : {optionalTags.length === 0 ? 'none' : optionalTags.map((data: any) => data.name).join(' ')}</Typography>
                                         <Typography variant="body2">Game Type : {gameType.name}</Typography>
-                                        {isPublisher && <Typography variant="body2" fontWeight={'bold'}>Facebook Details</Typography>}
+                                        {(isPublisher || canDisplayFacebookDetails) && <Typography variant="body2" fontWeight={'bold'}>Facebook Details</Typography>}
 
                                         {
-                                            isLaunchRequest() && (
+                                            canDisplayFacebookDetails && (
                                                 <>
                                                     <Typography variant="body2" >App Id : {facebookDetails.appId} </Typography>
                                                     <Typography variant="body2" >Client Token : {facebookDetails.clientToken} </Typography>
@@ -274,7 +275,7 @@ export const GameSubmissionDetailedView = () => {
                                                     setFacebookAdAccountId(event.target.value);
                                                 }}
                                                 sx={{
-                                                    ...Styles.textFieldSmallStyle,
+                                                    ...customStyle.textFieldSmallStyle,
                                                     position: "relative",
                                                     bottom: "5px",
                                                     width: "460px",
@@ -287,9 +288,7 @@ export const GameSubmissionDetailedView = () => {
                                                         endAdornment: (
                                                             <InputAdornment position="end">
                                                                 {
-                                                                    isDataSending ? (
-                                                                        <CircularProgress size={20} />
-                                                                    ) : (!isEditButtonClicked ? (
+                                                                    !isEditButtonClicked ? (
                                                                         <IconButton onClick={() => {
                                                                             setPrevFBAdAccountId(facebookAdAccountId);
                                                                             setEditButtonClicked(true)
@@ -308,7 +307,7 @@ export const GameSubmissionDetailedView = () => {
                                                                                 <Close fontSize="small" />
                                                                             </IconButton>
                                                                         </>
-                                                                    ))
+                                                                    )
                                                                 }
                                                             </InputAdornment>
                                                         ),

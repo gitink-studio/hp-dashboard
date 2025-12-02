@@ -11,14 +11,14 @@ import {
 } from "@mui/material";
 import { useDisplayAdvertisingID, useStoreStepActions } from "../../../store/sdk/store-step-store";
 import { Images, ImageSize } from "../../../common/constants";
-import { Styles } from "../../../common/styles";
+import { customStyle } from "../../../common/styles";
 
 const advertisingIDData = [
     {
         content: [
             "As of Android 13, developers will not be able to upload or update Android apps without answering the Advertising ID questionnaire.",
             <Stack gap={2} mt={2}>
-                <img key="advertisingIDImage1" src={Images.storeSetup.advertisingId.image1} alt="Advertising ID Screenshot" style={Styles.screenshotStyle} />
+                <img key="advertisingIDImage1" src={Images.storeSetup.advertisingId.image1} alt="Advertising ID Screenshot" style={customStyle.screenshotStyle} />
             </Stack>
         ],
     },
@@ -26,8 +26,8 @@ const advertisingIDData = [
         content: [
             'To answer the questionnaire, developers should go to the "App content" tab and press "Manage" in the "Advertising ID" section.',
             <Stack gap={2} mt={2}>
-                <img key="advertisingIDImage2" src={Images.storeSetup.advertisingId.image2} alt="Advertising ID Screenshot" style={Styles.screenshotStyle} />
-                <img key="advertisingIDImage3" src={Images.storeSetup.advertisingId.image3} alt="Advertising ID Screenshot" style={Styles.screenshotStyle} />
+                <img key="advertisingIDImage2" src={Images.storeSetup.advertisingId.image2} alt="Advertising ID Screenshot" style={customStyle.screenshotStyle} />
+                <img key="advertisingIDImage3" src={Images.storeSetup.advertisingId.image3} alt="Advertising ID Screenshot" style={customStyle.screenshotStyle} />
             </Stack>
         ],
     },
@@ -35,8 +35,8 @@ const advertisingIDData = [
         content: [
             'After you click on "Manage", you will see a scroll-down screen with 2 questions. Please respond to these questions as detailed below:',
             <Stack gap={2} mt={2}>
-                <img key="advertisingIDImage4" src={Images.storeSetup.advertisingId.image4} alt="Advertising ID Screenshot" style={Styles.screenshotStyle} />
-                <img key="advertisingIDImage5" src={Images.storeSetup.advertisingId.image5} alt="Advertising ID Screenshot" style={Styles.screenshotStyle} />
+                <img key="advertisingIDImage4" src={Images.storeSetup.advertisingId.image4} alt="Advertising ID Screenshot" style={customStyle.screenshotStyle} />
+                <img key="advertisingIDImage5" src={Images.storeSetup.advertisingId.image5} alt="Advertising ID Screenshot" style={customStyle.screenshotStyle} />
             </Stack>
         ],
     },
@@ -98,7 +98,7 @@ export const AdvertisingID: React.FC = () => {
                         </Stack>
                         {advertisingIDData.map((step, index) => (
                             <Stack direction="row" gap={1} key={index} pl={2} pr={2} mt={2}>
-                                <Box key={index} sx={Styles.numberStyle} bgcolor={theme.palette.primary.main}>
+                                <Box key={index} sx={customStyle.numberStyle} bgcolor={theme.palette.primary.main}>
                                     {index + 1}
                                 </Box>
                                 <Stack>
@@ -110,7 +110,7 @@ export const AdvertisingID: React.FC = () => {
                                     {step.imageUrl && <>
                                         <br />
                                         <Box
-                                            component="img" src={step.imageUrl} alt={`Step ${index + 1} screenshot`} style={Styles.screenshotStyle} />
+                                            component="img" src={step.imageUrl} alt={`Step ${index + 1} screenshot`} style={customStyle.screenshotStyle} />
                                         <br />
                                     </>}
                                 </Stack>

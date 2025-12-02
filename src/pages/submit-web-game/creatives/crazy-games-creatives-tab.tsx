@@ -1,5 +1,5 @@
 import { Button, Divider, Paper, Stack, Typography } from "@mui/material"
-import { Styles } from "../../../common/styles";
+import { customStyle } from "../../../common/styles";
 import { FileUploadOutlined } from "@mui/icons-material";
 import { handleFileDrop, handleFileUpload } from "../../../common/utils";
 import { CustomImageUploader } from "../../../components/CustomImageUploader";
@@ -52,8 +52,8 @@ export const CrazyGamesCreativesTab = () => {
                 {creativesImage.map((creative) => (
                     <Stack>
                         <Typography mb={2} fontWeight={"bold"}>{creative.content.label}</Typography >
-                        <Stack gap={4} sx={{ ...Styles.stackStyle, ...Styles.outlineStyle }}>
-                            <Stack direction="row" gap={2} sx={Styles.stackStyle} flexWrap={"wrap"}>
+                        <Stack gap={4} sx={{ ...customStyle.stackStyle, ...customStyle.outlineStyle }}>
+                            <Stack direction="row" gap={2} sx={customStyle.stackStyle} flexWrap={"wrap"}>
                                 {creative.content.requirements.map((requirement) => (
                                     <CustomImageUploader
                                         customProps={{
@@ -75,7 +75,7 @@ export const CrazyGamesCreativesTab = () => {
                 {creativesVideo.map((creative) => (
                     <Stack>
                         <Typography mb={2} fontWeight={"bold"}>{creative.content.label}</Typography >
-                        <Stack gap={4} sx={{ ...Styles.stackStyle, ...Styles.outlineStyle }}>
+                        <Stack gap={4} sx={{ ...customStyle.stackStyle, ...customStyle.outlineStyle }}>
                             {creative.content.requirements.map((requirement) => (
                                 <Stack gap={2} width={'100%'}>
                                     <Stack gap={1} width="100%">
@@ -84,7 +84,6 @@ export const CrazyGamesCreativesTab = () => {
                                             sx={{
                                                 p: 4,
                                                 borderStyle: "dashed",
-                                                cursor: "pointer",
                                             }}
                                             onDrop={(e) => handleFileDrop(e, requirement.setValue, fileFormat, maxFileSize)}
                                             onDragOver={(e) => e.preventDefault()}

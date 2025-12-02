@@ -1,8 +1,8 @@
 import { Box, Checkbox, FormControlLabel, IconButton, InputAdornment, Stack, TextField, Typography, useTheme } from "@mui/material"
 import { Check, ContentCopy, Visibility, VisibilityOff } from "@mui/icons-material";
 import { useCopied, useSDKIntegrationActions, useShowPassword, useStep1Completed } from "../../../store/sdk/sdk-integration-store";
-import { Images, ImageSize, STUDIO_TOKEN } from "../../../common/constants";
-import { Styles } from "../../../common/styles";
+import { Images, ImageSize, STUDIO_TOKEN, UNITY_SDK_PACKAGE_URL } from "../../../common/constants";
+import { customStyle } from "../../../common/styles";
 import { useCurrentGameDetails } from "../../../store/play-tests/play-tests-store";
 import { useCurrentGameSetupDetails } from "../../../store/sdk/sdk-details-store";
 
@@ -38,7 +38,7 @@ export const SDKIntegrationStep1 = () => {
                         placeholder="Token"
                         value={currentGameSetupDetails.token}
                         type={showPassword ? "text" : "password"}
-                        sx={{ ...Styles.textFieldSmallStyle, width: "640px", mt: 1 }}
+                        sx={{ ...customStyle.textFieldSmallStyle, width: "640px", mt: 1 }}
                         slotProps={{
                             inputLabel: {
                                 shrink: false, // prevents label from shrinking automatically
@@ -82,7 +82,7 @@ export const SDKIntegrationStep1 = () => {
     return (
         <>
             <Stack gap={5}>
-                <Stack direction={"row"} sx={Styles.stackStyle} gap={2}>
+                <Stack direction={"row"} sx={customStyle.stackStyle} gap={2}>
                     <Box>
                         <img
                             src="https://img.icons8.com/?size=100&id=EGUjkmeZxwn4&format=png&color=000000"
@@ -93,7 +93,7 @@ export const SDKIntegrationStep1 = () => {
                     </Box>
                     <Stack gap={1}>
                         <Typography variant={'h6'} fontWeight={"bold"}>Import</Typography>
-                        <Typography variant="body2">Import <a href="https://drive.google.com/uc?export=download&id=14KMB5SdihkpzZF8WupB-hCbJg1oW823p" download={"hyper-rabbit-sdk"} style={{ textDecoration: "none", color: theme.palette.primary.main }}>HyperRabbitSDK.unitypackage</a> into your project</Typography>
+                        <Typography variant="body2">Import <a href={UNITY_SDK_PACKAGE_URL} download={"hyper-rabbit-sdk"} style={{ textDecoration: "none", color: theme.palette.primary.main }}>HyperRabbitSDK.unitypackage</a> into your project</Typography>
                     </Stack>
                 </Stack>
 
@@ -110,7 +110,7 @@ export const SDKIntegrationStep1 = () => {
                         <Typography variant={'h6'} fontWeight={"bold"}>Edit Settings</Typography>
                         {editSettingsInfo.map((step, index) => (
                             <Stack direction="row" gap={1} key={index}>
-                                <Box sx={Styles.numberStyle} bgcolor={theme.palette.primary.main}>
+                                <Box sx={customStyle.numberStyle} bgcolor={theme.palette.primary.main}>
                                     {index + 1}
                                 </Box>
                                 <Stack>
@@ -123,7 +123,7 @@ export const SDKIntegrationStep1 = () => {
                                     <img
                                         src={step.imageUrl}
                                         alt={`Step ${index + 1} screenshot`}
-                                        style={Styles.screenshotStyle}
+                                        style={customStyle.screenshotStyle}
                                     />
                                     <br />
                                 </Stack>
@@ -140,7 +140,7 @@ export const SDKIntegrationStep1 = () => {
                         />
                     }
                     label="Mark this step as done"
-                    sx={Styles.checkboxTextStyle}
+                    sx={customStyle.checkboxTextStyle}
                 />
             </Stack>
         </>

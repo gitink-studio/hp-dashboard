@@ -9,7 +9,7 @@ import { getFilesInfo, sendFormDataRequest, sendRequest, slugify, waitForSeconds
 import { CREATE_GAME_SUBMISSION_DATA_URL, CREATIVES_ROOT_URL, CURRENT_SDK_SETUP_STATE_ID, FileTypes as FileType, HttpMethod, PlayStoreDataFetchState, ROOT_URL, SDK_SETUP_GAME_ID, STUDIO_ID, UPLOAD_FILES_URL } from "../../../common/constants";
 import { CheckCircleRounded } from "@mui/icons-material";
 import { useActiveStep, useCurrentSetupStateId, useCurrentStep, useDataSending, useDisableComponents, useGameId, useSDKDetailActions } from "../../../store/sdk/sdk-details-store";
-import { Styles } from "../../../common/styles";
+import { customStyle } from "../../../common/styles";
 import { localStorageData } from "../../../common/localStorage";
 
 const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
@@ -145,7 +145,7 @@ export const GameSubmissionStep = () => {
             let fileInfoList = getFilesInfo(commonFilePath, fileList as File[]);
             let response = await sendFormDataRequest('game-submission-data', CREATE_GAME_SUBMISSION_DATA_URL, fileList, { ...data, fileInfoList: fileInfoList });
             console.log(`Response: ${response}`);
-            setCurrentGameSetupDetails(response.data);
+            setCurrentGameSetupDetails(response.data.data);
             resetGameSubmissionData();
             setDisableComponents(false);
             setDataSending(false);
@@ -232,10 +232,10 @@ export const GameSubmissionStep = () => {
     return (
         <Box>
             <Stack gap={5}>
-                <Paper elevation={0} sx={Styles.paperStyle}>
+                <Paper elevation={1} sx={customStyle.paperStyle}>
                     <Typography fontWeight='bold' mb={3}> Game Details</Typography>
                     <Stack spacing={2}>
-                        <Stack direction="row" sx={Styles.stackStyle}>
+                        <Stack direction="row" sx={customStyle.stackStyle}>
                             <Typography width={250}>Store Status</Typography>
                             <StyledToggleButtonGroup
                                 value={storeStatus}
@@ -246,12 +246,12 @@ export const GameSubmissionStep = () => {
                                 }}
                                 fullWidth
                             >
-                                <ToggleButton value="Live" sx={Styles.leftRounded} disabled={canDisableAllComponents || isStepCompleted(activeStep)}>Live</ToggleButton>
-                                <ToggleButton value="Not Live" sx={Styles.rightRounded} disabled={canDisableAllComponents || isStepCompleted(activeStep)}>Not Live</ToggleButton>
+                                <ToggleButton value="Live" sx={customStyle.leftRounded} disabled={canDisableAllComponents || isStepCompleted(activeStep)}>Live</ToggleButton>
+                                <ToggleButton value="Not Live" sx={customStyle.rightRounded} disabled={canDisableAllComponents || isStepCompleted(activeStep)}>Not Live</ToggleButton>
                             </StyledToggleButtonGroup>
                         </Stack>
                         {storeStatus === "Live" ?
-                            <Stack direction="row" sx={Styles.stackStyle}>
+                            <Stack direction="row" sx={customStyle.stackStyle}>
                                 <Typography width={250}>Store URL</Typography>
                                 <TextField
                                     fullWidth
@@ -261,7 +261,7 @@ export const GameSubmissionStep = () => {
                                     onChange={handleStoreURLChange}
                                     // value={storeUrl}
                                     disabled={canDisableAllComponents || isStepCompleted(activeStep)}
-                                    sx={Styles.textFieldStyle}
+                                    sx={customStyle.textFieldStyle}
                                     slotProps={{
                                         inputLabel: {
                                             shrink: false, // prevents label from shrinking automatically
@@ -278,7 +278,7 @@ export const GameSubmissionStep = () => {
                                 />
                             </Stack> : null}
 
-                        <Stack direction="row" sx={Styles.stackStyle}>
+                        <Stack direction="row" sx={customStyle.stackStyle}>
                             <Typography width={250}>Game Title</Typography>
                             <TextField
                                 fullWidth
@@ -288,12 +288,12 @@ export const GameSubmissionStep = () => {
                                 value={gameTitle}
                                 onChange={(e) => setGameTitle(e.target.value)}
                                 required
-                                sx={Styles.textFieldStyle}
+                                sx={customStyle.textFieldStyle}
                                 disabled={storeStatus === 'Live' || canDisableAllComponents || isStepCompleted(activeStep)}
                             />
                         </Stack>
 
-                        <Stack direction="row" sx={Styles.stackStyle}>
+                        <Stack direction="row" sx={customStyle.stackStyle}>
                             <Typography width={250}>Platform</Typography>
                             <StyledToggleButtonGroup
                                 value={platform}
@@ -301,14 +301,14 @@ export const GameSubmissionStep = () => {
                                 onChange={(e, value) => value !== null && setPlatform(value)}
                                 fullWidth
                             >
-                                <ToggleButton value="Android" sx={Styles.leftRounded}>Android</ToggleButton>
-                                <ToggleButton value="iOS" sx={Styles.rightRounded} disabled={storeStatus === 'Live' || canDisableAllComponents || isStepCompleted(activeStep)}>iOS</ToggleButton>
+                                <ToggleButton value="Android" sx={customStyle.leftRounded}>Android</ToggleButton>
+                                <ToggleButton value="iOS" sx={customStyle.rightRounded} disabled={storeStatus === 'Live' || canDisableAllComponents || isStepCompleted(activeStep)}>iOS</ToggleButton>
                             </StyledToggleButtonGroup>
                         </Stack>
 
                         {storeStatus === "Live" ?
                             <FormControl fullWidth variant="outlined" >
-                                <Stack direction="row" sx={Styles.stackStyle}>
+                                <Stack direction="row" sx={customStyle.stackStyle}>
                                     <Typography width={250}>Min OS Compatibility</Typography >
                                     <Select
                                         name="minOSCompatibility"
@@ -316,7 +316,7 @@ export const GameSubmissionStep = () => {
                                         onChange={(e) => setMinOSCompatibility(e.target.value)}
                                         displayEmpty
                                         fullWidth
-                                        sx={Styles.selectStyle}
+                                        sx={customStyle.selectStyle}
                                         disabled={storeStatus === 'Live' || canDisableAllComponents || isStepCompleted(activeStep)}
                                     >
                                         <MenuItem value="" disabled>Please Select</MenuItem>
@@ -330,9 +330,9 @@ export const GameSubmissionStep = () => {
                             </FormControl> : null
                         }
 
-                        <Stack direction="row" sx={Styles.stackStyle}>
+                        <Stack direction="row" sx={customStyle.stackStyle}>
                             <Typography width={250}>Tags</Typography >
-                            <Stack direction="row" sx={{ ...Styles.stackStyle, display: "flex", justifyContent: "space-between" }}>
+                            <Stack direction="row" sx={{ ...customStyle.stackStyle, display: "flex", justifyContent: "space-between" }}>
                                 <FormControl variant="outlined">
                                     <Select
                                         name="genre"
@@ -340,8 +340,8 @@ export const GameSubmissionStep = () => {
                                         onChange={(e) => setGenre(e.target.value)}
                                         displayEmpty
                                         sx={{
-                                            ...Styles.selectStyle,
-                                            ...Styles.selectGroupStyle
+                                            ...customStyle.selectStyle,
+                                            ...customStyle.selectGroupStyle
                                         }}
                                         renderValue={(selected) => selected === '' ? 'Genre' : selected}
                                         disabled={canDisableAllComponents || isStepCompleted(activeStep)}
@@ -361,8 +361,8 @@ export const GameSubmissionStep = () => {
                                         displayEmpty
                                         renderValue={(selected): any => selected.length === 0 ? 'Control' : selected.join(', ')}
                                         sx={{
-                                            ...Styles.selectStyle,
-                                            ...Styles.selectGroupStyle
+                                            ...customStyle.selectStyle,
+                                            ...customStyle.selectGroupStyle
                                         }}
                                         disabled={canDisableAllComponents || isStepCompleted(activeStep)}
                                     >
@@ -381,8 +381,8 @@ export const GameSubmissionStep = () => {
                                         displayEmpty
                                         renderValue={(selected): any => selected.length === 0 ? 'Mechanic' : selected.join(', ')}
                                         sx={{
-                                            ...Styles.selectStyle,
-                                            ...Styles.selectGroupStyle
+                                            ...customStyle.selectStyle,
+                                            ...customStyle.selectGroupStyle
                                         }}
                                         disabled={canDisableAllComponents || isStepCompleted(activeStep)}
                                     >
@@ -394,7 +394,7 @@ export const GameSubmissionStep = () => {
                             </Stack>
                         </Stack>
 
-                        <Stack direction="row" sx={Styles.stackStyle}>
+                        <Stack direction="row" sx={customStyle.stackStyle}>
                             <Typography width={250}>Tags (Optional )</Typography >
                             <FormControl fullWidth variant="outlined">
                                 <Select
@@ -402,7 +402,7 @@ export const GameSubmissionStep = () => {
                                     value={optionalTags}
                                     onChange={(e) => setOptionalTags(e.target.value as string[])}
                                     displayEmpty
-                                    sx={Styles.selectStyle}
+                                    sx={customStyle.selectStyle}
                                     multiple
                                     renderValue={(selected): any => selected.length === 0 ? 'Please Select' : selected.join(', ')}
                                     disabled={canDisableAllComponents || isStepCompleted(activeStep)}
@@ -415,7 +415,7 @@ export const GameSubmissionStep = () => {
                             </FormControl>
                         </Stack>
 
-                        <Stack direction="row" sx={Styles.stackStyle}>
+                        <Stack direction="row" sx={customStyle.stackStyle}>
                             <Typography width={250}>Game Type</Typography >
                             <FormControl fullWidth variant="outlined">
                                 <Select
@@ -423,7 +423,7 @@ export const GameSubmissionStep = () => {
                                     value={gameType}
                                     onChange={(e) => setGameType(e.target.value)}
                                     displayEmpty
-                                    sx={Styles.selectStyle}
+                                    sx={customStyle.selectStyle}
                                     disabled={canDisableAllComponents || isStepCompleted(activeStep)}
                                 >
                                     <MenuItem value="" disabled>Please Select</MenuItem>
@@ -436,26 +436,27 @@ export const GameSubmissionStep = () => {
                     </Stack>
                 </Paper>
                 <GameAssetsForm />
-                <Box sx={{
-                    display: 'flex',
-                    justifyContent: 'flex-end',
-                    mt: 3
-                }}>
-                    <Button
-                        variant="contained"
-                        onClick={handleNext}
-                        sx={{ px: 4, py: 1, textTransform: "none" }}
-                        disabled={isStepCompleted(activeStep) || isDataSending}
-                    >
-                        {
-                            isDataSending ? (
-                                <Stack gap={2} direction={'row'}>
-                                    <Typography>Processing</Typography>
-                                    <CircularProgress size={20} />
-                                </Stack>
-                            ) : "Add Game"
-                        }
-                    </Button>
+                <Box display='flex' justifyContent={'flex-end'}>
+                    {
+                        isDataSending ?
+                            (<Button
+                                variant="contained"
+                                onClick={handleNext}
+                                sx={{ px: 2, py: 1, textTransform: "none", borderRadius: 20 }}
+                                disabled={isStepCompleted(activeStep) || isDataSending}
+                                endIcon={<CircularProgress size={20} />}
+                            >
+                                Processing
+                            </Button>) :
+                            (<Button
+                                variant="contained"
+                                onClick={handleNext}
+                                sx={{ px: 2, py: 1, textTransform: "none", borderRadius: 20 }}
+                                disabled={isStepCompleted(activeStep) || isDataSending}
+                            >
+                                Add Game
+                            </Button>)
+                    }
                 </Box>
             </Stack>
         </Box>

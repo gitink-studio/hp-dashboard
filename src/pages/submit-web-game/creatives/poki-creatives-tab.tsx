@@ -1,5 +1,5 @@
 import { Stack, Typography } from "@mui/material"
-import { Styles } from "../../../common/styles";
+import { customStyle } from "../../../common/styles";
 import { CustomImageUploader } from "../../../components/CustomImageUploader";
 import { useLargeIconFile, useLargeScreenshotFile, usePokiCreativesActions, useSmallIconFile, useSmallScreenshotFile } from "../../../store/submit-web-game/poki-creatives-store";
 
@@ -44,8 +44,8 @@ export const PokiCreativesTab = () => {
                 {creativesImage.map((creative) => (
                     <Stack>
                         <Typography mb={2} fontWeight={"bold"}>{creative.content.label}</Typography >
-                        <Stack gap={4} sx={{ ...Styles.stackStyle, ...Styles.outlineStyle }}>
-                            <Stack direction="row" gap={2} sx={Styles.stackStyle} flexWrap={"wrap"}>
+                        <Stack gap={4} sx={{ ...customStyle.stackStyle, ...customStyle.outlineStyle }}>
+                            <Stack direction="row" gap={2} sx={customStyle.stackStyle} flexWrap={"wrap"}>
                                 {creative.content.requirements.map((requirement) => (
                                     <CustomImageUploader customProps={{
                                         imageFile: requirement.value,

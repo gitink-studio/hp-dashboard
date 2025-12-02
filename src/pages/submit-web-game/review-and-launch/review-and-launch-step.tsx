@@ -1,5 +1,5 @@
 import { Box, Button, CircularProgress, InputAdornment, Paper, Stack, TextField, Typography } from "@mui/material"
-import { Styles } from "../../../common/styles";
+import { customStyle } from "../../../common/styles";
 import { HttpMethod, REVIEW_AND_LAUNCH_URL } from "../../../common/constants";
 import { useAgeRating, useGameTitle, useLanguages, usePrivacyPolicyUrl, useRegionalAvailability, useShortDescription, useSupportUrl } from "../../../store/submit-web-game/metadata-and-ratings-store";
 import { notify } from "../../../components/notify";
@@ -42,10 +42,11 @@ export const ReviewAndLaunchStep = () => {
                 currentSetupIndex: currentSetupGameDetails.currentSetupStateIndex,
                 gameRequestId: currentSetupGameDetails.id,
                 webGameRequestId: currentSetupGameDetails.webGameRequest.id,
+                webGameRequestDetails: currentSetupGameDetails.webGameRequest.webGameRequestDetails.id,
             });
 
             console.log(response);
-            setCurrentSetupGameDetails(response.data);
+            setCurrentSetupGameDetails(response.data.data);
             window.location.href = '/#/getAllGameRequests'
         } catch (err) {
             console.error(err);
@@ -80,10 +81,10 @@ export const ReviewAndLaunchStep = () => {
 
     return (
         <Box>
-            <Paper elevation={0} sx={Styles.paperStyle}>
+            <Paper elevation={0} sx={customStyle.paperStyle}>
                 <Stack gap={2}>
                     <Typography variant="h6" fontWeight='bold' mb={3}> Review and Launch</Typography>
-                    <Stack direction="row" sx={Styles.stackStyle}>
+                    <Stack direction="row" sx={customStyle.stackStyle}>
                         <Typography width={250}>Game Title</Typography>
                         <TextField
                             fullWidth
@@ -93,7 +94,7 @@ export const ReviewAndLaunchStep = () => {
                         />
                     </Stack>
 
-                    <Stack direction="row" sx={Styles.stackStyle}>
+                    <Stack direction="row" sx={customStyle.stackStyle}>
                         <Typography width={250}>Platforms</Typography>
                         <TextField
                             fullWidth
@@ -117,7 +118,7 @@ export const ReviewAndLaunchStep = () => {
                     <Stack gap={2}>
                         {
                             currentSetupGameDetails.selectedPlatforms.map((data: any, index: any) => (
-                                <Stack direction="row" sx={Styles.stackStyle} key={index}>
+                                <Stack direction="row" sx={customStyle.stackStyle} key={index}>
                                     <Typography width={250}>{data.name}</Typography>
                                     <TextField
                                         fullWidth
@@ -143,7 +144,7 @@ export const ReviewAndLaunchStep = () => {
                     </Stack>
 
                     <Typography mt={3} fontWeight='bold'>Meta Data</Typography>
-                    <Stack gap={2} direction="row" sx={Styles.stackStyle}>
+                    <Stack gap={2} direction="row" sx={customStyle.stackStyle}>
                         <Typography width={250}>Short Description</Typography>
                         <TextField
                             fullWidth
@@ -153,7 +154,7 @@ export const ReviewAndLaunchStep = () => {
                         />
                     </Stack>
 
-                    <Stack gap={2} direction="row" sx={Styles.stackStyle}>
+                    <Stack gap={2} direction="row" sx={customStyle.stackStyle}>
                         <Typography width={250}>Languages</Typography>
                         <TextField
                             fullWidth
@@ -163,7 +164,7 @@ export const ReviewAndLaunchStep = () => {
                         />
                     </Stack>
 
-                    <Stack gap={2} direction="row" sx={Styles.stackStyle}>
+                    <Stack gap={2} direction="row" sx={customStyle.stackStyle}>
                         <Typography width={250}>Age Rating</Typography>
                         <TextField
                             fullWidth
@@ -173,7 +174,7 @@ export const ReviewAndLaunchStep = () => {
                         />
                     </Stack>
 
-                    <Stack gap={2} direction="row" sx={Styles.stackStyle}>
+                    <Stack gap={2} direction="row" sx={customStyle.stackStyle}>
                         <Typography width={250}>Regions</Typography>
                         <TextField
                             fullWidth
@@ -183,7 +184,7 @@ export const ReviewAndLaunchStep = () => {
                         />
                     </Stack>
 
-                    <Stack gap={2} direction="row" sx={Styles.stackStyle}>
+                    <Stack gap={2} direction="row" sx={customStyle.stackStyle}>
                         <Typography width={250}>Privacy Policy Url</Typography>
                         <TextField
                             fullWidth
@@ -193,7 +194,7 @@ export const ReviewAndLaunchStep = () => {
                         />
                     </Stack>
 
-                    <Stack gap={2} direction="row" sx={Styles.stackStyle}>
+                    <Stack gap={2} direction="row" sx={customStyle.stackStyle}>
                         <Typography width={250}>Support Url</Typography>
                         <TextField
                             fullWidth

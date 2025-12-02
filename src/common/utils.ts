@@ -5,7 +5,7 @@ import { notify } from "../components/notify";
 import { print } from "graphql";
 
 const imageFormats = ['.png', '.jpg', '.jpeg'];
-const videoFormats = ['.mp4'];
+const videoFormats = ['.mp4', '.mov', '.mkv', '.webm', '.m4a'];
 const buildFormats = ['.zip'];
 
 export const validateValue = async (
@@ -176,7 +176,8 @@ export const waitForSeconds = (seconds: number) => {
 };
 
 const isValidVideoFileFormat = (file: File) => {
-  return file.name.endsWith(".mp4");
+  const fileName = file.name.toLowerCase();
+  return videoFormats.some(ext => fileName.endsWith(ext));
 };
 
 const isValidZipFileFormat = (file: File) => {
@@ -243,13 +244,13 @@ export const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, width:
   }
 }
 
-export const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, action: (value: any) => void, format: string, maxFileSize: number) => {
-  console.log("file name: ", e.target.files);
-  if (e.target.files && e.target.files[0]) {
-    const file = e.target.files[0];
+const setVideoFile = (format: string, maxFileSize: number, files: FileList, action: (value: any) => void) => {
+  console.log("file name: ", files);
+  if (files && files[0]) {
+    const file = files[0];
 
     if (!isValidFileFormat(file, format)) {
-      notify("Invalid file format", { type: "error" });
+      notify(`Please upload ${format} file format`, { type: "warning" });
       return;
     }
 
@@ -261,23 +262,15 @@ export const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, action:
     console.log(file.name);
     action(file);
   }
+}
+
+export const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, action: (value: any) => void, format: string, maxFileSize: number) => {
+  const files: FileList = e.target.files as FileList;
+  setVideoFile(format, maxFileSize, files, action);
 };
 
 export const handleFileDrop = (e: React.DragEvent<HTMLDivElement>, action: (value: any) => void, format: string, maxFileSize: number) => {
   e.preventDefault();
-  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-    const file = e.dataTransfer.files[0];
-
-    if (!isValidFileFormat(file, format)) {
-      notify("Invalid file format", { type: "error" });
-      return;
-    }
-
-    if (file.size > maxFileSize * 1024 * 1024) {
-      notify(`File size must be ${maxFileSize} MB or less`, { type: "warning" });
-      return;
-    }
-
-    action(file.name);
-  }
+  const files: FileList = e.dataTransfer.files as FileList;
+  setVideoFile(format, maxFileSize, files, action);
 };

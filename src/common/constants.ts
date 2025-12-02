@@ -66,9 +66,10 @@ const PUT = "PUT";
 const LOCAL_HOST_URL = "http://localhost:3000";
 const HR_WELOADIN_URL = "https://hr.weloadin.lol";
 const HR_RENDER = 'https://hr-backend-render.onrender.com';
+const AWS = 'https://qpbw9zk7uk.ap-south-1.awsapprunner.com';
 
 // Exports
-export const ROOT_URL = LOCAL_HOST_URL;
+export const ROOT_URL = AWS;
 export const GRAPHQL_URL = ROOT_URL + "/graphql";
 export const DECIMAL_LENGTH = 2;
 export const MIN_DATE = "2025-07-21";
@@ -313,6 +314,8 @@ const SDK_INTEGRATION_IMAGE_PATH = "/sdk-integration-setup";
 const STORE_PRIVACY_GUIDE_IMAGE_PATH = "/store-setup/privacy-guide";
 const STORE_ADVERTISING_ID_IMAGE_PATH = "/store-setup/advertising-id";
 
+export const UNITY_SDK_PACKAGE_URL = S3_PUBLIC_URL + "/uploads/public/sdk/unity/hyper-rabbit-sdk-v0.0.4.unitypackage"
+export const HR_SDK_DOCUMENTATION_URL = S3_PUBLIC_URL + "/uploads/public/sdk/documentation/hyper-rabbit-sdk-documentation.pdf";
 export const Images = {
   fbSetup: {
     newApp: {
@@ -326,7 +329,7 @@ export const Images = {
       image3: `${IMAGE_ROOT_URL}${FB_BASICS_IMAGE_PATH}/fb-guide-2-4.png`,
       image4: `${IMAGE_ROOT_URL}${FB_BASICS_IMAGE_PATH}/fb-guide-2-5.png`,
       image5: `${IMAGE_ROOT_URL}${FB_BASICS_IMAGE_PATH}/fb-guide-2-6.png`,
-      image6: `${IMAGE_ROOT_URL}${FB_BASICS_IMAGE_PATH}/fb-guide-2-7.png`,
+      image6: `${IMAGE_ROOT_URL}${FB_BASICS_IMAGE_PATH}/fb-guide-2-7-android.png`,
       image7: `${IMAGE_ROOT_URL}${FB_BASICS_IMAGE_PATH}/fb-guide-2-8-android.png`,
       image8: `${IMAGE_ROOT_URL}${FB_BASICS_IMAGE_PATH}/fb-guide-2-9-android.png`,
       image9: `${IMAGE_ROOT_URL}${FB_BASICS_IMAGE_PATH}/fb-guide-2-10-android.png`,
@@ -423,13 +426,12 @@ export const Platform = {
 }
 
 const WEB_GAME_SUBMISSION_PAGE = 'WebSubmissionPage'
-const MOBILE_GAME_SUBMISSION_PAGE = 'MobileSubmissonPage'
+const MOBILE_GAME_SUBMISSION_PAGE = 'MobileSubmissionPage'
 
 export const GameSubmissionPage = {
   WEB_GAME_SUBMISSION_PAGE,
   MOBILE_GAME_SUBMISSION_PAGE
 }
-
 
 export const WebGameSubmissionSetup = {
   WEB_GAME_SUBMISSION: 0,
@@ -439,4 +441,13 @@ export const WebGameSubmissionSetup = {
   CREATIVES: 4,
   METADATA_AND_RATINGS: 5,
   REVIEW_AND_LAUNCH_URL: 6
+}
+
+export const MobileGameSubmissionSetup = {
+  GAME_SUBMISSION: 0,
+  APPROVAL: 1,
+  FACEBOOK_SETUP: 2,
+  SDK_INTEGRATION: 3,
+  STORE_SETUP: 4,
+  TEST_SETUP: 5,
 }

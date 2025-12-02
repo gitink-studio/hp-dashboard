@@ -1,7 +1,7 @@
 import { Alert, Box, Button, Checkbox, CircularProgress, FormControlLabel, Paper, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material"
 import { FileDownloadDoneOutlined, FileDownloadOutlined, FileUploadOutlined, PlayArrow } from "@mui/icons-material"
 import { useState } from "react";
-import { Styles } from "../../../common/styles";
+import { customStyle } from "../../../common/styles";
 import { useCrazyGamesBuildFile, useMetaBuildFile, useMsnBuildFile, usePokiBuildFile, useUniversalBuildFile, useUploadMode, useUploadWebBuildsActions } from "../../../store/submit-web-game/upload-web-builds-store";
 import { useCrazyGamesSelected, useMetaSelected, useMsnSelected, usePokiSelected } from "../../../store/submit-web-game/select-platform-store";
 import { useNotify } from "react-admin";
@@ -177,13 +177,13 @@ export const UploadWebBuildStep = () => {
                 webGameSubmissionSetupCurrentStateId: currentSetupGameDetails.webGameRequest.webGameSubmissionSetupCurrentState.id,
                 currentSetupIndex: currentSetupGameDetails.currentSetupStateIndex,
                 webGameRequestId: currentSetupGameDetails.webGameRequest.id,
-                webGameRequestDetailsId: currentSetupGameDetails.webGameRequestDetailsId,
+                webGameRequestDetails: currentSetupGameDetails.webGameRequest.webGameRequestDetails.id,
                 fileInfoList: fileInfoList,
                 studioId: currentSetupGameDetails.studioId
             });
             console.log(response);
 
-            setCurrentSetupGameDetails(response.data);
+            setCurrentSetupGameDetails(response.data.data);
             setCurrentStep();
         } catch (err) {
             notify("Something went wrong!", { type: "error" });
@@ -228,15 +228,15 @@ export const UploadWebBuildStep = () => {
                 Your pickle ball clash game has been approved.
             </Alert> */}
             <Stack gap={5}>
-                <Paper elevation={0} sx={Styles.paperStyle}>
+                <Paper elevation={0} sx={customStyle.paperStyle}>
                     <Stack gap={3}>
-                        <Stack direction="row" sx={Styles.stackStyle}>
+                        <Stack direction="row" sx={customStyle.stackStyle}>
                             <Typography width={250}>Upload Mode</Typography >
                             <ToggleButtonGroup
                                 exclusive
                                 value={uploadMode}
                                 onChange={(event, value) => value !== null && setUploadMode(value)}
-                                sx={Styles.toggleButtonGroupStyle}
+                                sx={customStyle.toggleButtonGroupStyle}
                                 fullWidth
                             >
                                 <ToggleButton
@@ -256,7 +256,7 @@ export const UploadWebBuildStep = () => {
                             </ToggleButtonGroup>
                         </Stack>
                         {uploadMode === SINGLE_UNIVERSAL_ZIP && (
-                            <Stack direction="row" sx={Styles.stackStyle}>
+                            <Stack direction="row" sx={customStyle.stackStyle}>
                                 <Typography width={250}>Single universal ZIP</Typography >
                                 <Stack gap={1} width="100%">
                                     <Paper
@@ -294,7 +294,7 @@ export const UploadWebBuildStep = () => {
                             platforms.map(
                                 (platform: any) => (
                                     (
-                                        <Stack key={platform.label} direction="row" sx={Styles.stackStyle}>
+                                        <Stack key={platform.label} direction="row" sx={customStyle.stackStyle}>
                                             <Typography width={250}>{platform.label}</Typography >
                                             <Stack gap={1} width="100%">
                                                 <Paper

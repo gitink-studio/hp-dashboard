@@ -17,7 +17,7 @@ import { useAdvancedAppStepCompleted, useAppId, useBasicAppStepCompleted, useCli
 import { useNotify } from 'react-admin';
 import { UPDATE_FB_DATA_URL, CREATE_GAME_SUBMISSION_DATA_URL, CURRENT_SDK_SETUP_STATE_ID, FB_APP_ID_LENGTH, HttpMethod, MINIMUM_FB_CLIENT_TOKEN_LENGTH, MINIMUM_FB_REFERRER_DECRYPTION_KEY, SDK_SETUP_GAME_ID, STUDIO_TOKEN } from '../../../common/constants';
 import { sendRequest } from '../../../common/utils';
-import { Styles } from '../../../common/styles';
+import { customStyle } from '../../../common/styles';
 
 // Props for TabPanel component
 interface TabPanelProps {
@@ -131,8 +131,7 @@ export const FacebookSetupStep: React.FC = () => {
             console.log(response);
 
             console.log("FB data sent successfully!", response.data);
-            localStorage.setItem(STUDIO_TOKEN, response.data.data.token);
-            setCurrentGameSetupDetails(response.data.currentGameSetupDetails);
+            setCurrentGameSetupDetails(response.data.data.currentGameSetupDetails.data);
             setCurrentStep();
         } catch (err) {
             console.error(err);
@@ -164,7 +163,7 @@ export const FacebookSetupStep: React.FC = () => {
                     </Tabs>
                 </Box>
 
-                <Stack direction={"row"} gap={1} sx={{ ...Styles.stackStyle, justifyContent: "flex-end" }} >
+                <Stack direction={"row"} gap={1} sx={{ ...customStyle.stackStyle, justifyContent: "flex-end" }} >
                     <LinearProgress variant='determinate' value={progress} sx={{ width: "150px", height: "5px", borderRadius: "5px" }} />
                     <Typography variant='body2'>{progress}%</Typography>
                 </Stack>

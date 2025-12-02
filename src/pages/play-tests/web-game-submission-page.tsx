@@ -10,7 +10,7 @@ import { GameSubmissionDetailedView } from './game-submission-detailed-view';
 import { useSubmitWebGameActions, useWebGameSubmissionDetails } from '../../store/submit-web-game/submit-web-game-store';
 import { VideoPlayer } from '../../components/VideoPlayer';
 import { notify } from '../../components/notify';
-import { Styles } from '../../common/styles';
+import { customStyle } from '../../common/styles';
 import { useMetaCreativesActions } from '../../store/submit-web-game/meta-creatives-store';
 import { useMetadataAndRatingsActions } from '../../store/submit-web-game/metadata-and-ratings-store';
 import { usePlatformRequirementsActions } from '../../store/submit-web-game/platform-requirements-store';
@@ -304,8 +304,6 @@ export const WebGameSubmissionPage = () => {
         },
     ];
 
-
-
     const resetAllWebGameSubmissionStates = () => {
         resetPlayTestsStore();
         resetSubmitWebGameStore();
@@ -347,7 +345,7 @@ export const WebGameSubmissionPage = () => {
                 ) :
                     (
                         <Box style={{ width: '100%' }}>
-                            <Stack direction={'row'} sx={{ ...Styles.stackStyle, justifyContent: 'space-between' }}>
+                            <Stack direction={'row'} sx={{ ...customStyle.stackStyle, justifyContent: 'space-between' }}>
                                 <Stack direction={'row'} gap={2}>
                                     <TextField variant="outlined" placeholder="Search Game" sx={{ mb: 2 }}
                                         onChange={handleSearch}

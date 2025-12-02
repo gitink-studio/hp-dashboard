@@ -24,6 +24,13 @@ export const StoreStep: React.FC = () => {
     const { isStepCompleted, setCurrentStep, setDataSending, setCurrentGameSetupDetails } = useSDKDetailActions();
     const { setDisplayPrivacyGuide, setDisplayAdvertisingID, setIsAppAvailableInAllStores, setIsPrivacyGuideAnswered, setIsAdvertisingIDAnswered, setIsAllFieldsFilled } = useStoreStepActions();
 
+    const storeContent = [
+        { label: "Make sure your app is available in all stores worldwide", checked: isAppAvailableInAllStores },
+        { label: "Use the guide to answer Google Play’s privacy questionnaire", checked: isPrivacyGuideAnswered },
+        { label: "Use the guide to answer Google Play’s Android 13 Advertising ID Questionnaire", checked: isAdvertisingIDAnswered },
+        { label: "Make sure to fill the following fields", checked: isAllFieldsFilled },
+    ]
+
     const handleDisable = () => {
         return !isStepCompleted(activeStep);
     }
@@ -59,6 +66,7 @@ export const StoreStep: React.FC = () => {
 
         return true;
     }
+
     const submitData = async () => {
         setDataSending(true);
 
@@ -70,7 +78,7 @@ export const StoreStep: React.FC = () => {
             });
 
             console.log("Store step data sent successfully!", response.data);
-            setCurrentGameSetupDetails(response.data);
+            setCurrentGameSetupDetails(response.data.data);
             setCurrentStep();
         } catch (err) {
             console.error(err);
@@ -80,39 +88,25 @@ export const StoreStep: React.FC = () => {
     }
 
     return (
-        <Paper
-            elevation={0}
-            sx={{
-                p: 4,
-                borderRadius: 3,
-                backgroundColor: "#fff",
-                border: "1px solid #eee",
-            }}
-        >
-            {/* Step Header */}
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+        <Box>
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
                 <Typography variant="h6" fontWeight="bold">
                     Store
                 </Typography>
             </Stack>
 
-            {/* Step Title */}
-            <Typography variant="subtitle1" fontWeight="medium" mb={3}>
+            <Typography variant="body2" mb={2}>
                 Step 5: Upload to Google Play
             </Typography>
 
-            {/* Validation Card */}
-            <Paper
-                variant="outlined"
+            <Box
                 sx={{
                     borderRadius: 3,
                     p: 3,
-                    backgroundColor: "#fcfcfc",
                     border: "1px solid #eee",
                 }}
             >
                 <Stack direction="row" alignItems="flex-start" gap={3}>
-                    {/* Left Icon */}
                     <Box
                         sx={{
                             width: 64,
@@ -132,7 +126,6 @@ export const StoreStep: React.FC = () => {
                         />
                     </Box>
 
-                    {/* Right Content */}
                     <Stack flex={1} gap={1}>
                         <Typography fontWeight="bold">
                             Validate your game in the store
@@ -141,14 +134,8 @@ export const StoreStep: React.FC = () => {
                             Create / update the application on the Google Play account
                         </Typography>
 
-                        {/* Checklist (disabled items mimic “grayed out”) */}
                         <Stack>
-                            {[
-                                { label: "Make sure your app is available in all stores worldwide", checked: isAppAvailableInAllStores },
-                                { label: "Use the guide to answer Google Play’s privacy questionnaire", checked: isPrivacyGuideAnswered },
-                                { label: "Use the guide to answer Google Play’s Android 13 Advertising ID Questionnaire", checked: isAdvertisingIDAnswered },
-                                { label: "Make sure to fill the following fields", checked: isAllFieldsFilled },
-                            ].map((data, index) => (
+                            {storeContent.map((data, index) => (
                                 <FormControlLabel
                                     key={index}
                                     control={
@@ -201,30 +188,22 @@ export const StoreStep: React.FC = () => {
                         <Stack direction="row" gap={2} mt={2}>
                             <Button
                                 variant="outlined"
-                                color="warning"
                                 size="small"
                                 onClick={handlePrivacyGuide}
                                 sx={{
                                     borderRadius: 5,
                                     textTransform: "none",
-                                    borderColor: theme.palette.primary.main,
-                                    color: theme.palette.primary.main,
-                                    "&:hover": { borderColor: theme.palette.primary.main, backgroundColor: "#fff5f2" },
                                 }}
                             >
                                 Privacy guide
                             </Button>
                             <Button
                                 variant="outlined"
-                                color="warning"
                                 size="small"
                                 onClick={handleAdvertisingID}
                                 sx={{
                                     borderRadius: 5,
                                     textTransform: "none",
-                                    borderColor: theme.palette.primary.main,
-                                    color: theme.palette.primary.main,
-                                    "&:hover": { borderColor: theme.palette.primary.main, backgroundColor: "#fff5f2" },
                                 }}
                             >
                                 Advertising ID
@@ -232,7 +211,7 @@ export const StoreStep: React.FC = () => {
                         </Stack>
                     </Stack>
                 </Stack>
-            </Paper>
+            </Box>
 
             {/* Footer Note */}
             <Typography
@@ -260,7 +239,7 @@ export const StoreStep: React.FC = () => {
                     Complete Step
                 </Button>
             </Box>
-        </Paper>
+        </Box>
     );
 };
 

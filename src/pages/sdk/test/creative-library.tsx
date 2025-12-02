@@ -8,6 +8,7 @@ import {
     Dialog,
     IconButton,
     useTheme,
+    Divider,
 } from "@mui/material";
 import { Close, FileUploadOutlined } from "@mui/icons-material";
 import { useDisplayCreativeLibrary, useTestSetupActions, useVideoFiles } from "../../../store/sdk/test-setup-store";
@@ -18,37 +19,39 @@ const CreativesLibrary: React.FC = () => {
     const canDisplayCreativeLibrary = useDisplayCreativeLibrary();
     const videoFiles = useVideoFiles();
     const { setDisplayCreativeLibrary, setVideoFiles } = useTestSetupActions();
-    const [isDragOver, setIsDragOver] = useState(false);
     const theme = useTheme();
     let uploadedFiles: any = [];
 
     const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        const files: FileList | null = e.dataTransfer.files;
         e.preventDefault();
-        setIsDragOver(false);
-        // Handle dropped files here
+        setFiles(files);
     };
 
     const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
-        setIsDragOver(true);
     };
-
-    const handleDragLeave = () => setIsDragOver(false);
 
     const handleClose = () => {
         setDisplayCreativeLibrary(false);
     }
 
-    const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files: FileList | null = e.target.files;
-        uploadedFiles = [];
+    const setFiles = (files: FileList | null) => {
         let totalFileSize = 0;
+        uploadedFiles = [];
         console.log(files);
         if (files !== null) {
             if (files.length >= 4 && files.length <= 6) {
 
                 for (let i = 0; i < files.length; i++) {
                     let file = files[i];
+                    let extension = file.name.split('.').pop()?.toLowerCase();
+
+                    if (extension !== 'mp4') {
+                        notify("Only MP4 format is allowed", { type: "warning" });
+                        return;
+                    }
+
                     totalFileSize += file?.size;
                     uploadedFiles.push(file);
                 }
@@ -64,42 +67,40 @@ const CreativesLibrary: React.FC = () => {
                 return;
             }
         }
+    }
+
+    const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files: FileList | null = e.target.files;
+        setFiles(files);
     };
 
     return (
-        <Dialog open={canDisplayCreativeLibrary}>
-            <Paper
-                elevation={0}
-                sx={{
-                    p: 4,
-                    borderRadius: 3,
-                    backgroundColor: "#fff",
-                    border: "1px solid #eee",
-                    minHeight: "70vh",
-                }}
-            >
-                {/* Header */}
-                <IconButton
+        <Dialog open={canDisplayCreativeLibrary} maxWidth="md" fullWidth>
+            <Paper elevation={0}>
+                {/* <IconButton
                     aria-label="close"
                     onClick={handleClose}
                     sx={{ position: "absolute", right: 8, top: 8 }}
                 >
                     <Close />
-                </IconButton>
-                <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    mb={4}
+                </IconButton> */}
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        height: "75px",
+                        backgroundColor: `${theme.palette.background.paper}`,
+                        borderBottom: `1px solid ${theme.palette.divider}`
+                    }}
+                    px={4}
                 >
                     <Typography
                         variant="h6"
                         fontWeight="bold"
-                        sx={{ color: "#333", fontSize: "1rem" }}
                     >
                         Creatives Library
                     </Typography>
-
                     <Button
                         variant="outlined"
                         sx={{
@@ -107,22 +108,13 @@ const CreativesLibrary: React.FC = () => {
                             borderRadius: 20,
                             borderColor: theme.palette.primary.main,
                             color: theme.palette.primary.main,
-                            mr: 2,
-                            px: 2,
-                            py: 0.5,
-                            fontSize: "0.85rem",
-                            "&:hover": {
-                                borderColor: theme.palette.primary.main,
-                                backgroundColor: "#fff5f0",
-                            },
                         }}
                     >
                         Creatives Guide
                     </Button>
-                </Stack>
+                </Box>
 
-                {/* Upload Creatives Section */}
-                <Stack gap={1.5}>
+                <Stack gap={1.5} px={4} py={2}>
                     <Typography variant="subtitle1" fontWeight="bold">
                         Upload Creatives
                     </Typography>
@@ -160,24 +152,17 @@ const CreativesLibrary: React.FC = () => {
                     <Box
                         onDrop={handleDrop}
                         onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
                         sx={{
                             mt: 2,
                             p: 3,
                             border: "2px dashed #ccc",
-                            borderColor: isDragOver ? theme.palette.primary.main : "#ccc",
                             borderRadius: 2,
                             textAlign: "center",
-                            cursor: "pointer",
-                            transition: "border-color 0.2s ease",
-                            "&:hover": {
-                                borderColor: theme.palette.primary.main,
-                            },
                         }}
                     >
-                        <Stack direction={"row"} sx={{ display: "flex", alignItems: "center", justifyContent: "center" }} gap={3}>
-                            <FileUploadOutlined fontSize="large" />
-                            <Stack>
+                        <Stack>
+                            <Stack direction={"row"} sx={{ display: "flex", alignItems: "center", justifyContent: "center" }} gap={3}>
+                                <FileUploadOutlined fontSize="large" />
                                 <Typography>
                                     Drag & drop your files here or
                                     <Button component="label" variant="text" sx={{ textTransform: 'none', textDecoration: "underline" }}>
@@ -186,10 +171,12 @@ const CreativesLibrary: React.FC = () => {
                                     </Button>
                                     your computer
                                 </Typography>
-                                {videoFiles !== null && <Typography variant="caption" sx={{ whiteSpace: "pre-wrap" }}>
-                                    {videoFiles.map((file) => `${file.name.slice(0, 25)}${file.name.length > 25 ? "..." : ""}`).join("\n")}
-                                </Typography>}
                             </Stack>
+                            {videoFiles !== null &&
+                                <Typography variant="caption" sx={{ whiteSpace: "pre-wrap" }}>
+                                    {videoFiles.map((file) => `${file.name.slice(0, 25)}${file.name.length > 25 ? "..." : ""}`).join("\n")}
+                                </Typography>
+                            }
                         </Stack>
                     </Box>
 
@@ -203,6 +190,34 @@ const CreativesLibrary: React.FC = () => {
                         Video Length: 15–30s
                     </Typography>
                 </Stack>
+
+                <Box sx={{
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    alignItems: "center",
+                    pr: 2,
+                    position: 'sticky',
+                    bottom: 0,
+                    height: "75px",
+                    width: "100%",
+                    backgroundColor: theme.palette.background.paper,
+                    borderTop: `1px solid ${theme.palette.divider}`
+                }}>
+                    <Button
+                        variant="outlined"
+                        sx={{
+                            borderRadius: 20,
+                            borderColor: theme.palette.divider,
+                            color: theme.palette.text.disabled,
+                            textTransform: "none",
+                            fontSize: "14px",
+                            height: "35px"
+                        }}
+                        onClick={handleClose}
+                    >
+                        Close
+                    </Button>
+                </Box>
             </Paper>
         </Dialog >
     );

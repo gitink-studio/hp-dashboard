@@ -3,7 +3,7 @@ import { FileUploadOutlined, PlayArrow } from "@mui/icons-material"
 import { useAdditionalNotes, useControlsDescription, useWebGameTitle, usePlayableLink, useShortGameplayVideoFile, useValidateWebGameSubmissionInputs, useWebGameSubmissionActions } from "../../../store/submit-web-game/web-game-submission-store";
 import { useActiveStep, useCurrentStep, useDataSending, useSubmitWebGameActions } from "../../../store/submit-web-game/submit-web-game-store";
 import { useNotify } from "react-admin";
-import { Styles } from "../../../common/styles";
+import { customStyle } from "../../../common/styles";
 import { getFilesInfo, handleFileDrop, handleFileUpload, sendFormDataRequest, sendRequest, slugify } from "../../../common/utils";
 import { CREATE_WEB_GAME_SUBMISSION_DATA_URL, CREATIVES_ROOT_URL, HttpMethod, STUDIO_ID, TEST_SUBMISSION, WebGameSubmissionSetup } from "../../../common/constants";
 import { localStorageData } from "../../../common/localStorage";
@@ -90,10 +90,10 @@ export const WebGameSubmissionStep = () => {
     return (
         <Box>
             <Stack gap={5}>
-                <Paper elevation={0} sx={Styles.paperStyle}>
+                <Paper elevation={1} sx={customStyle.paperStyle}>
                     <Typography fontWeight='bold' mb={3}> Web Game Details</Typography>
                     <Stack spacing={2}>
-                        <Stack direction="row" sx={Styles.stackStyle}>
+                        <Stack direction="row" sx={customStyle.stackStyle}>
                             <Typography width={250}>Game Title</Typography>
                             <TextField
                                 fullWidth
@@ -108,10 +108,10 @@ export const WebGameSubmissionStep = () => {
                             />
                         </Stack>
 
-                        <Stack direction="row" sx={Styles.stackStyle}>
+                        <Stack direction="row" sx={customStyle.stackStyle}>
                             <Typography width={250}>Playable Link (HTML 5)</Typography>
 
-                            <Stack direction="row" sx={Styles.stackStyle} gap={1}><TextField
+                            <Stack direction="row" sx={customStyle.stackStyle} gap={1}><TextField
                                 fullWidth
                                 variant="outlined"
                                 placeholder="Enter playable link here"
@@ -131,7 +131,7 @@ export const WebGameSubmissionStep = () => {
                                 </Button></Stack>
                         </Stack>
 
-                        <Stack direction="row" sx={Styles.stackStyle}>
+                        <Stack direction="row" sx={customStyle.stackStyle}>
                             <Typography width={250}>Controls Description</Typography>
                             <TextField
                                 fullWidth
@@ -147,7 +147,7 @@ export const WebGameSubmissionStep = () => {
                             />
                         </Stack>
 
-                        <Stack direction="row" sx={Styles.stackStyle}>
+                        <Stack direction="row" sx={customStyle.stackStyle}>
                             <Typography width={250}>Additional Notes (Optional)</Typography>
                             <TextField
                                 fullWidth
@@ -165,7 +165,7 @@ export const WebGameSubmissionStep = () => {
                     </Stack>
                 </Paper>
 
-                <Paper elevation={0} sx={Styles.paperStyle}>
+                <Paper elevation={1} sx={customStyle.paperStyle}>
                     <Stack gap={1}>
                         <Typography>Short Gameplay Video </Typography>
                         <Typography variant="body2" color="textSecondary" mb={1}>
@@ -208,24 +208,7 @@ export const WebGameSubmissionStep = () => {
                     sx={{
                         display: 'flex',
                         justifyContent: 'flex-end',
-                        mt: 3
                     }}>
-                    {/* <Button
-                        variant="contained"
-                        // onClick={handleNext}
-                        sx={{ px: 4, py: 1, textTransform: "none" }}
-                    // disabled={isStepCompleted(activeStep) || isDataSending}
-                    >
-                        {
-                            isDataSending ? (
-                                <Stack gap={2} direction={'row'}>
-                                    <Typography>Processing</Typography>
-                                    <CircularProgress size={20} />
-                                </Stack>
-                            ) : "Save Draft"
-                        }
-                    </Button> */}
-
                     <Button
                         variant="contained"
                         onClick={() => handleSubmit()}

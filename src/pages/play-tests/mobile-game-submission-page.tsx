@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { DataGrid, GridColDef, useGridApiRef } from '@mui/x-data-grid';
-import { Box, Button, CircularProgress, IconButton, InputAdornment, Stack, TextField } from '@mui/material';
+import { Box, Button, IconButton, InputAdornment, Stack, TextField } from '@mui/material';
 import { Add, Close, Done, PlayArrow, Search, Visibility } from '@mui/icons-material';
 import { useDataSending, useDetailedView, useOpenVideo, usePlayTestsActions, useReviewNotes, useRolePublisher, useVideoUrl } from '../../store/play-tests/play-tests-store';
 import { sendGraphqlRequest, sendRequest } from '../../common/utils';
@@ -9,7 +9,7 @@ import { Queries } from '../../graphql/queries';
 import { GameSubmissionDetailedView } from './game-submission-detailed-view';
 import { VideoPlayer } from '../../components/VideoPlayer';
 import { notify } from '../../components/notify';
-import { Styles } from '../../common/styles';
+import { customStyle } from '../../common/styles';
 import { useMobileGameSubmissionDetails, useSDKDetailActions } from '../../store/sdk/sdk-details-store';
 import { useFacebookSetupActions } from '../../store/sdk/facebook-setup-store';
 import { useGameSubmissionActions } from '../../store/sdk/game-submission-store';
@@ -17,7 +17,6 @@ import { useSDKIntegrationActions } from '../../store/sdk/sdk-integration-store'
 import { useStoreStepActions } from '../../store/sdk/store-step-store';
 import { useTestSetupActions } from '../../store/sdk/test-setup-store';
 import { useTestingTermActions } from '../../store/sdk/testing-terms-store';
-import { platform } from 'os';
 
 export const MobileGameSubmissionPage = () => {
     const apiRef = useGridApiRef();
@@ -59,6 +58,7 @@ export const MobileGameSubmissionPage = () => {
         console.log('Game Request Details: ', gameRequestDetails);
         setDetailedView(true);
         setGameRequestDetails(gameRequestDetails);
+        setCurrentGameSetupDetails(gameRequestDetails);
     }
 
     const handleAcceptGameRequest = async (gameRequestDetails: any) => {
@@ -170,13 +170,12 @@ export const MobileGameSubmissionPage = () => {
             renderCell: (params) => {
                 let gameRequestStatus = params.value;
                 let status = params.value;
-                const totalSteps = params.row.platform === Platform.WEB ? TOTAL_WEB_GAME_SUBMISSION_STEPS : TOTAL_MOBILE_GAME_SUBMISSION_STEPS;
 
                 const canDisable = () => {
                     if (isDataSending) return true;
 
                     if (!isRolePublisher) {
-                        if (gameRequestStatus === GameRequestStatus.ACCEPTED && params.row.currentSetupStateIndex < totalSteps) {
+                        if (gameRequestStatus === GameRequestStatus.ACCEPTED && params.row.currentSetupStateIndex < TOTAL_MOBILE_GAME_SUBMISSION_STEPS) {
                             return false;
                         }
                     } else if (isRolePublisher && gameRequestStatus === GameRequestStatus.PENDING) {
@@ -187,7 +186,7 @@ export const MobileGameSubmissionPage = () => {
                 }
 
                 if (!isRolePublisher) {
-                    if (params.row.currentSetupStateIndex === totalSteps) {
+                    if (params.row.currentSetupStateIndex === TOTAL_MOBILE_GAME_SUBMISSION_STEPS) {
                         status = GameRequestStatus.WAITING_FOR_APPROVAL;
                     }
                     else {
@@ -290,7 +289,7 @@ export const MobileGameSubmissionPage = () => {
     return (
         <>
             <Box style={{ width: '100%' }}>
-                <Stack direction={'row'} sx={{ ...Styles.stackStyle, justifyContent: 'space-between' }}>
+                <Stack direction={'row'} sx={{ ...customStyle.stackStyle, justifyContent: 'space-between' }}>
                     <TextField variant="outlined" placeholder="Search Game" sx={{ mb: 2 }}
                         onChange={handleSearch}
                         slotProps={{

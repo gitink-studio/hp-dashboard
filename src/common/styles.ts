@@ -119,7 +119,7 @@ const facebookIconStyle = {
 const paperStyle = {
   px: 4,
   py: 4,
-  borderRadius: "25px"
+  borderRadius: "5px"
 }
 
 const numberStyle = {
@@ -146,7 +146,38 @@ const outlineStyle = {
   borderColor: "divider"
 }
 
-export const Styles = {
+const button = {
+  height: 36
+}
+
+const filterPaper = {
+  padding: 2
+}
+
+const dropdown = {
+  height: 40,
+  width: 265,
+  size: "small"
+}
+
+const search = {
+  height: 40,
+  width: 265,
+  size: 'small'
+}
+
+const dataGrid = {
+  border: 1,
+  borderColor: 'divider',
+  '& .MuiDataGrid-cell:focus': {
+    outline: 'none',
+  },
+  '& .MuiDataGrid-cell:focus-within': {
+    outline: 'none',
+  },
+}
+
+export const customStyle = {
   centerIcon,
   datePickerWidth,
   toggleButtonGroupStyle,
@@ -165,4 +196,9 @@ export const Styles = {
   numberStyle,
   codeStyle,
   outlineStyle,
+  button,
+  filterPaper,
+  dropdown,
+  search,
+  dataGrid
 };

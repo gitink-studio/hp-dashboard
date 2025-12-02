@@ -103,7 +103,6 @@ export const PlatformRequirementsStep = (): JSX.Element => {
     }
 
     const submitData = async () => {
-        console.log("submitData", currentSetupGameDetails);
         try {
             setDataSending(true);
 
@@ -112,11 +111,12 @@ export const PlatformRequirementsStep = (): JSX.Element => {
                 webGameSubmissionSetupCurrentStateId: currentSetupGameDetails.webGameRequest.webGameSubmissionSetupCurrentState.id,
                 currentSetupIndex: currentSetupGameDetails.currentSetupStateIndex,
                 webGameRequestId: currentSetupGameDetails.webGameRequest.id,
-                webGameRequestDetails: currentSetupGameDetails.webGameRequestDetailsId,
+                webGameRequestDetails: currentSetupGameDetails.webGameRequest.webGameRequestDetails.id,
                 studioId: currentSetupGameDetails.studioId
             });
 
-            setCurrentSetupGameDetails(response.data);
+            console.log("Response Data: ", response.data.data);
+            setCurrentSetupGameDetails(response.data.data);
             setCurrentStep();
         } catch (err) {
             console.error(err);

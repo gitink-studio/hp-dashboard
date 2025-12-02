@@ -151,12 +151,12 @@ export const CreativesStep = (): JSX.Element => {
                 webGameSubmissionSetupCurrentStateId: currentSetupGameDetails.webGameRequest.webGameSubmissionSetupCurrentState.id,
                 currentSetupIndex: currentSetupGameDetails.currentSetupStateIndex,
                 webGameRequestId: currentSetupGameDetails.webGameRequest.id,
-                webGameRequestDetails: currentSetupGameDetails.webGameRequestDetailsId,
+                webGameRequestDetails: currentSetupGameDetails.webGameRequest.webGameRequestDetails.id,
                 fileInfoList: fileInfoList,
                 studioId: currentSetupGameDetails.studioId
             });
 
-            setCurrentSetupGameDetails(response.data);
+            setCurrentSetupGameDetails(response.data.data);
             setCurrentStep();
             console.log('Response: ', response);
         } catch (err) {

@@ -19,7 +19,7 @@ import {
   Stack,
 } from "@mui/material";
 import { CircleNotifications, ExitToApp, AdminPanelSettings } from "@mui/icons-material";
-import { Styles } from "../../common/styles";
+import { customStyle } from "../../common/styles";
 
 const CustomAppBar = () => {
   const resources = useResourceDefinitions();
@@ -47,7 +47,7 @@ const CustomAppBar = () => {
         {/* Right side: Horizontal Menu */}
         <Box display="flex" flexDirection="row" gap={2}>
           {/* Left side: Title */}
-          <Stack sx={{ ...Styles.stackStyle, lineHeight: '0.5' }} >
+          <Stack sx={{ ...customStyle.stackStyle, lineHeight: '0.5' }} >
             <Typography variant="body1" fontWeight="bold" sx={{ lineHeight: '1', mt: 1 }}>Hyper Rabbit</Typography>
             <Typography variant="caption">v0.0.1</Typography>
           </Stack>

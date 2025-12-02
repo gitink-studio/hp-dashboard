@@ -2,7 +2,7 @@ import { Box, Checkbox, FormControlLabel, Stack, TextField, Typography, useTheme
 import { FB_APP_ID_LENGTH, Images, ImageSize, MINIMUM_FB_REFERRER_DECRYPTION_KEY } from "../../../common/constants";
 import { useAppId, useBasicAppStepCompleted, useFacebookSetupActions, useReferrerDecryptionKey } from "../../../store/sdk/facebook-setup-store";
 import { useNotify } from "react-admin";
-import { Styles } from "../../../common/styles";
+import { customStyle } from "../../../common/styles";
 
 
 
@@ -32,7 +32,7 @@ export const BasicsSteps = () => {
                         value={appId}
                         onChange={(event) => setAppId(event.target.value)}
                         sx={{
-                            ...Styles.textFieldSmallStyle,
+                            ...customStyle.textFieldSmallStyle,
                             position: "relative",
                             bottom: "5px",
                             width: "460px",
@@ -114,7 +114,7 @@ export const BasicsSteps = () => {
                         placeholder="Enter Referrer Decryption Key"
                         value={referrerDecryptionKey}
                         onChange={(event) => setReferrerDecryptionKey(event.target.value)}
-                        sx={{ ...Styles.textFieldSmallStyle, width: "640px", mt: 1 }}
+                        sx={{ ...customStyle.textFieldSmallStyle, width: "640px", mt: 1 }}
                         slotProps={{
                             inputLabel: {
                                 shrink: false, // prevents label from shrinking automatically
@@ -157,7 +157,7 @@ export const BasicsSteps = () => {
             <Stack direction="row" gap={1} key={index}>
                 <Stack>
                     <Stack direction={'row'} gap={2} >
-                        <Box sx={Styles.numberStyle} bgcolor={theme.palette.primary.main}>
+                        <Box sx={customStyle.numberStyle} bgcolor={theme.palette.primary.main}>
                             {index + 1}
                         </Box>
                         <Stack>
@@ -171,7 +171,7 @@ export const BasicsSteps = () => {
                                     <img
                                         src={step.imageUrl}
                                         alt={`Step ${index + 1} screenshot`}
-                                        style={{ ...Styles.screenshotStyle, objectFit: "cover", }}
+                                        style={{ ...customStyle.screenshotStyle, objectFit: "cover", }}
                                     />
                                     <br />
                                 </>
@@ -194,7 +194,7 @@ export const BasicsSteps = () => {
                 />
             }
             label="Mark this step as done"
-            sx={Styles.checkboxTextStyle}
+            sx={customStyle.checkboxTextStyle}
         />
     </>
 }

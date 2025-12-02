@@ -30,7 +30,8 @@ import { CustomRoutes } from "react-admin";
 import { SDKDetails } from "./pages/sdk/sdk-details";
 import { SubmitWebGameDetails } from "./pages/submit-web-game/submit-web-game-details";
 import { PlayTests } from "./pages/play-tests/play-tests";
-import { ResetPasswordPage } from "./pages/auth/reset-password-page";
+import { GameplayReportsPage } from "./pages/gameplay-reports/gameplay-reports-page";
+// import { ResetPasswordPage } from "./pages/auth/reset-password-page";
 
 export const App = () => {
   const userRole = localStorage.getItem("userRole");
@@ -89,6 +90,16 @@ export const App = () => {
         options={{ label: "Reports" }}
       />
 
+      {
+        isPublisher && (
+          <Resource
+            name="gameplay-reports"
+            list={GameplayReportsPage}
+            options={{ label: "Gameplay Reports" }}
+          />
+        )
+      }
+
       {/* Tests Hub */}
       <Resource
         name="tests"
@@ -122,11 +133,13 @@ export const App = () => {
         )
       }
 
+
+
       {/* Tests detail routes */}
       <CustomRoutes>
         <Route path="tests/developer/:id" element={<DeveloperTestDetail />} />
         <Route path="tests/publisher/:id" element={<PublisherTestDetail />} />
-        <Route path="reset-password" element={<ResetPasswordPage />} />
+        {/* <Route path="reset-password" element={<ResetPasswordPage />} /> */}
       </CustomRoutes>
 
       {/* Role-based menu items

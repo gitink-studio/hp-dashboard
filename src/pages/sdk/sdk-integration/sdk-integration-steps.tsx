@@ -67,7 +67,7 @@ export const SDKIntegrationSteps = (): JSX.Element => {
             });
 
             console.log("Sdk integration data sent successfully!", response.data);
-            setCurrentGameSetupDetails(response.data);
+            setCurrentGameSetupDetails(response.data.data);
             setCurrentStep();
         } catch (err) {
             console.error(err);

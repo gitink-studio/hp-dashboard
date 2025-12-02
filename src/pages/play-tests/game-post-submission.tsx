@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { DataGrid, GridColDef, useGridApiRef } from '@mui/x-data-grid';
 import { Box, Button, CircularProgress, FormControl, IconButton, InputAdornment, InputLabel, MenuItem, Select, Stack, TextField, Typography } from '@mui/material';
 import { Close, Done, PlayArrow, PlayArrowRounded, Search, Visibility } from '@mui/icons-material';
-import { Styles } from '../../common/styles';
+import { customStyle } from '../../common/styles';
 import { useDataSending, useDisplayGamePostSubmissionDetails, useDetailedView, useGameRequestDetails, useGameRequests, usePlayTestsActions } from '../../store/play-tests/play-tests-store';
 import { sendGraphqlRequest, sendRequest } from '../../common/utils';
 import { GRAPHQL_URL, HttpMethod, LAUNCH_GAME_URL, QueryNames, ROOT_URL, TOTAL_WEB_GAME_SUBMISSION_STEPS, WEB_GAME_SUBMISSION_STATUS_UPDATE_URL } from '../../common/constants';

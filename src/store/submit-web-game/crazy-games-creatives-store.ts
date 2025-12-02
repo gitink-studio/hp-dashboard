@@ -76,5 +76,3 @@ export const isAllCrazyGamesCreativeFilesUploaded = () => useCrazyGamesCreatives
         portraitGameplayVideoFile !== null
     );
 })
-
-

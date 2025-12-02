@@ -3,13 +3,13 @@ import { Box, Typography, Button, Paper, Stack } from "@mui/material";
 import { useNotify } from "react-admin";
 import { FileUploadOutlined } from "@mui/icons-material";
 import { useGameIconFile, useGamePlayVideoFile, useGameSubmissionActions, useStoreStatus } from "../../../store/sdk/game-submission-store";
-import { Styles } from "../../../common/styles";
+import { customStyle } from "../../../common/styles";
 
 const GameAssetsForm = () => {
     const notify = useNotify();
-    const [videoFile, setVideoFile] = useState<File | null>(null);
     const storeStatus = useStoreStatus();
     const gameIconFile = useGameIconFile();
+    const [videoFile, setVideoFile] = useState<File | null>(null);
     const { setGameIconFile, setGamePlayVideoFile } = useGameSubmissionActions();
 
     useEffect(() => { console.log(`GameIconUrl Changed: ${gameIconFile}`) }, [gameIconFile]);
@@ -52,7 +52,6 @@ const GameAssetsForm = () => {
 
             setGameIconFile(file);
             console.log("File name: ", gameIconFile);
-            e.target.value = "";
         }
     };
 
@@ -66,6 +65,7 @@ const GameAssetsForm = () => {
             setVideoFile(file);
             setGamePlayVideoFile(file);
         }
+        e.target.value = "";
     };
 
     const handleVideoDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -77,6 +77,7 @@ const GameAssetsForm = () => {
                 return;
             }
             setVideoFile(file);
+            setGamePlayVideoFile(file);
         }
     };
 
@@ -89,11 +90,11 @@ const GameAssetsForm = () => {
     }
 
     return (
-        <Paper elevation={0} sx={Styles.paperStyle}>
+        <Paper elevation={1} sx={customStyle.paperStyle}>
             <Stack gap={3}>
                 <Typography fontWeight={"bold"}>Game Assets</Typography>
 
-                <Stack direction={"row"} sx={Styles.stackStyle} gap={3}>
+                <Stack direction={"row"} sx={customStyle.stackStyle} gap={3}>
                     <Button
                         variant={gameIconFile === null ? "outlined" : "text"}
                         component="label"
@@ -108,7 +109,7 @@ const GameAssetsForm = () => {
                         disabled={storeStatus === 'Live'}
                     >
                         {!gameIconFile && (
-                            <Stack sx={Styles.stackStyle} gap={1}>
+                            <Stack sx={customStyle.stackStyle} gap={1}>
                                 <FileUploadOutlined />
                                 <Typography fontSize="12px" sx={{ textTransform: "none" }}>
                                     Upload
@@ -118,7 +119,7 @@ const GameAssetsForm = () => {
 
                         <input type="file" hidden accept="image/png" onChange={handleIconUpload} />
 
-                        {(typeof gameIconFile === 'string' && gameIconFile !== "" && gameIconFile !== null) && (
+                        {(typeof gameIconFile === 'string' && gameIconFile) && (
                             <Box
                                 component="img"
                                 src={gameIconFile}
@@ -129,12 +130,11 @@ const GameAssetsForm = () => {
                                     height: "100%",
                                     objectFit: "contain",
                                     objectPosition: "center",
-                                    imageRendering: "auto",
                                 }}
                             />
                         )}
 
-                        {gameIconFile instanceof File && gameIconFile !== null && (
+                        {gameIconFile instanceof File && gameIconFile && (
                             <><Typography variant="body2">Culprit</Typography>
                                 <Box
                                     component="img"
@@ -173,7 +173,6 @@ const GameAssetsForm = () => {
                         sx={{
                             p: 4,
                             borderStyle: "dashed",
-                            cursor: "pointer",
                         }}
                         onDrop={handleVideoDrop}
                         onDragOver={(e) => e.preventDefault()}

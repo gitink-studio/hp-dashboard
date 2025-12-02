@@ -1,18 +1,17 @@
 import { Button, Divider, Paper, Stack, Typography } from "@mui/material"
-import { Styles } from "../../../common/styles";
+import { customStyle } from "../../../common/styles";
 import { FileUploadOutlined } from "@mui/icons-material";
 import { handleFileDrop, handleFileUpload } from "../../../common/utils";
-import { useLargeAppIconFile, useSmallLandscapeBannerImageFile, useMetaCreativesActions, useSmallAppIconFile, useLargeLandscapeBannerImageFile, useCoverImageFile, useLandscapeSplashImageFile, usePortraitSplashImageFile, useGameplayLandscapeVideoFile, useGameplayPortraitVideoFile, useGameplaySquareVideoFile, } from "../../../store/submit-web-game/meta-creatives-store";
+import { useLargeAppIconFile, useSmallLandscapeBannerImageFile, useMetaCreativesActions, useSmallAppIconFile, useLargeLandscapeBannerImageFile, useCoverImageFile, useLandscapeSplashImageFile, usePortraitSplashImageFile, useGameplayLandscapeVideoFile, useGameplayPortraitVideoFile, useGameplaySquareVideoFile, usePortraitBannerImageFile, useSquareBannerImageFile, } from "../../../store/submit-web-game/meta-creatives-store";
 import { CustomImageUploader } from "../../../components/CustomImageUploader";
-import { usePortraitBannerFile, useSquareBannerFile } from "../../../store/submit-web-game/crazy-games-creatives-store";
 
 export const MetaCreativesTab = () => {
     const largeAppIconFile = useLargeAppIconFile();
     const smallAppIconFile = useSmallAppIconFile();
     const smallLandscapeBannerImageFile = useSmallLandscapeBannerImageFile();
     const largeLandscapeBannerImageFile = useLargeLandscapeBannerImageFile();
-    const portraitBannerImageFile = usePortraitBannerFile();
-    const squareBannerImageFile = useSquareBannerFile();
+    const portraitBannerImageFile = usePortraitBannerImageFile();
+    const squareBannerImageFile = useSquareBannerImageFile();
     const coverImageFile = useCoverImageFile();
     const landscapeSplashImageFile = useLandscapeSplashImageFile();
     const portraitSplashImageFile = usePortraitSplashImageFile();
@@ -97,8 +96,8 @@ export const MetaCreativesTab = () => {
                 {creativesImage.map((creative) => (
                     <Stack>
                         <Typography mb={2} fontWeight={"bold"}>{creative.content.label}</Typography >
-                        <Stack gap={4} sx={{ ...Styles.stackStyle, ...Styles.outlineStyle }}>
-                            <Stack direction="row" gap={2} sx={Styles.stackStyle} flexWrap={"wrap"}>
+                        <Stack gap={4} sx={{ ...customStyle.stackStyle, ...customStyle.outlineStyle }}>
+                            <Stack direction="row" gap={2} sx={customStyle.stackStyle} flexWrap={"wrap"}>
                                 {creative.content.requirements.map((requirement) => (
                                     <CustomImageUploader customProps={{
                                         imageFile: requirement.value,
@@ -119,7 +118,7 @@ export const MetaCreativesTab = () => {
                 {creativesVideo.map((creative) => (
                     <Stack>
                         <Typography mb={2} fontWeight={"bold"}>{creative.content.label}</Typography >
-                        <Stack gap={4} sx={{ ...Styles.outlineStyle }} >
+                        <Stack gap={4} sx={{ ...customStyle.outlineStyle }} >
                             {creative.content.requirements.map((requirement) => (
                                 <Stack gap={2} width="100%">
                                     <Stack gap={1} width="100%">
@@ -128,7 +127,6 @@ export const MetaCreativesTab = () => {
                                             sx={{
                                                 p: 4,
                                                 borderStyle: "dashed",
-                                                cursor: "pointer",
                                             }}
                                             onDrop={(e) => handleFileDrop(e, requirement.setValue, fileFormat, maxFileSize)}
                                             onDragOver={(e) => e.preventDefault()}

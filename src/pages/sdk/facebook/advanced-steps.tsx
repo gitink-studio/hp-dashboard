@@ -2,7 +2,7 @@ import { Box, Checkbox, FormControlLabel, Stack, TextField, Typography, useTheme
 import { useAdvancedAppStepCompleted, useClientToken, useFacebookSetupActions } from "../../../store/sdk/facebook-setup-store";
 import { Images, MINIMUM_FB_CLIENT_TOKEN_LENGTH } from "../../../common/constants";
 import { useCurrentGameSetupDetails, useDataSending } from "../../../store/sdk/sdk-details-store";
-import { Styles } from "../../../common/styles";
+import { customStyle } from "../../../common/styles";
 
 
 export const AdvancedSteps = () => {
@@ -47,7 +47,7 @@ export const AdvancedSteps = () => {
                             onChange={(event) => setClientToken(event.target.value)}
                             disabled={isDataSending}
                             sx={{
-                                ...Styles.textFieldSmallStyle,
+                                ...customStyle.textFieldSmallStyle,
                                 position: "relative",
                                 bottom: "5px",
                                 width: "500px",
@@ -88,7 +88,7 @@ export const AdvancedSteps = () => {
             <Stack direction="row" gap={1} key={index}>
                 <Stack>
                     <Stack direction={'row'} gap={2} >
-                        <Box sx={Styles.numberStyle} bgcolor={theme.palette.primary.main}>
+                        <Box sx={customStyle.numberStyle} bgcolor={theme.palette.primary.main}>
                             {index + 1}
                         </Box>
                         <Stack>
@@ -101,7 +101,7 @@ export const AdvancedSteps = () => {
                                 key={index}
                                 src={step.imageUrl}
                                 alt={`Step ${index + 1} screenshot`}
-                                style={{ ...Styles.screenshotStyle, objectFit: "cover" }}
+                                style={{ ...customStyle.screenshotStyle, objectFit: "cover" }}
                             />
                             <br />
                         </Stack>
@@ -119,7 +119,7 @@ export const AdvancedSteps = () => {
                 />
             }
             label="Mark this step as done"
-            sx={Styles.checkboxTextStyle}
+            sx={customStyle.checkboxTextStyle}
         />
     </>
 }

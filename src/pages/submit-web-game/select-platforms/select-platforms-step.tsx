@@ -2,7 +2,7 @@ import { Alert, Box, Button, Checkbox, CircularProgress, FormControlLabel, Paper
 import { useCrazyGamesSelected, useMetaSelected, useMsnSelected, usePokiSelected, useSelectPlatformActions } from "../../../store/submit-web-game/select-platform-store"
 import { useNotify } from "react-admin"
 import { useCurrentSetupGameDetails, useDataSending, useSubmitWebGameActions } from "../../../store/submit-web-game/submit-web-game-store"
-import { Styles } from "../../../common/styles"
+import { customStyle } from "../../../common/styles"
 import { sendRequest } from "../../../common/utils"
 import { CREATE_WEB_GAME_SUBMISSION_DATA_URL, HttpMethod, CREATE_WEB_SUBMISSION_SELECT_PLATFORMS_URL, WEB_GAME_SUBMISSION_SETUP_CURRENT_STATE_UPDATE_URL, WebGameSubmissionSetup, META, POKI, CRAZY_GAMES } from "../../../common/constants"
 import { useEffect } from "react"
@@ -83,7 +83,7 @@ export const SelectPlatformsStep = () => {
             });
 
             console.log("Select platform response: ", response);
-            setCurrentSetupGameDetails(response.data);
+            setCurrentSetupGameDetails(response.data.data);
             setCurrentStep();
         } catch (err) {
             console.error(err);

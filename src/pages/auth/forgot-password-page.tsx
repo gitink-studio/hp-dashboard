@@ -3,7 +3,7 @@ import { Dialog, DialogContent, IconButton, Stack, Typography, Box, Alert } from
 import { email, required, SaveButton, SimpleForm, TextInput, Toolbar, useNotify, } from "react-admin";
 import { useState } from "react";
 import { sendRequest } from "../../common/utils";
-import { FORGOT_PASSWORD_URL, HTTP_METHODS } from "../../common/constants";
+import { FORGOT_PASSWORD_URL, HttpMethod } from "../../common/constants";
 
 export const ForgotPasswordPage = ({ enable, setState, }: { enable: boolean; setState: any; }) => {
   const notify = useNotify();
@@ -31,7 +31,7 @@ export const ForgotPasswordPage = ({ enable, setState, }: { enable: boolean; set
 
   const handleForgotPassword = async (data: any) => {
     const emailAddress = data.email?.trim().toLowerCase();
-    
+
     if (!emailAddress) {
       notify("Please enter a valid email address", { type: "error" });
       return;
@@ -40,7 +40,7 @@ export const ForgotPasswordPage = ({ enable, setState, }: { enable: boolean; set
     setIsLoading(true);
     try {
       const response: any = await sendRequest(
-        HTTP_METHODS.POST,
+        HttpMethod.POST,
         FORGOT_PASSWORD_URL,
         { email: emailAddress },
       );
@@ -80,7 +80,7 @@ export const ForgotPasswordPage = ({ enable, setState, }: { enable: boolean; set
           >
             <Close />
           </IconButton>
-          
+
           {isSubmitted ? (
             <Stack spacing={2} sx={{ width: "100%", pt: 2 }}>
               <Typography

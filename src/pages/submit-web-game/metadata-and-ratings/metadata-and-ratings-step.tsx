@@ -1,5 +1,5 @@
 import { Alert, Box, Button, CircularProgress, FormControl, MenuItem, Paper, Select, Stack, TextField, Typography } from "@mui/material"
-import { Styles } from "../../../common/styles";
+import { customStyle } from "../../../common/styles";
 import { CREATE_METADATA_AND_RATINGS_DATA_URL, CREATE_WEB_GAME_SUBMISSION_DATA_URL, Genres, HttpMethod, Languages, Regions, SubGenres, WebGameSubmissionSetup } from "../../../common/constants";
 import { useAgeRating, useGameTitle, useGenre, useLanguages, useLongDescription, useMetadataAndRatingsActions, usePrivacyPolicyUrl, useRegionalAvailability, useShortDescription, useSubGenre, useSupportUrl } from "../../../store/submit-web-game/metadata-and-ratings-store";
 import { notify } from "../../../components/notify";
@@ -80,7 +80,7 @@ export const MetaDataAndRatingsStep = () => {
                 webGameSubmissionSetupCurrentStateId: currentSetupGameDetails.webGameRequest.webGameSubmissionSetupCurrentState.id,
                 currentSetupIndex: currentSetupGameDetails.currentSetupStateIndex,
                 webGameRequestId: currentSetupGameDetails.webGameRequest.id,
-                webGameRequestDetailsId: currentSetupGameDetails.webGameRequestDetailsId,
+                webGameRequestDetailsId: currentSetupGameDetails.webGameRequest.webGameRequestDetails.id,
                 metadataAndRatings: {
                     name: gameTitle,
                     shortDescription: shortDescription,
@@ -96,7 +96,7 @@ export const MetaDataAndRatingsStep = () => {
                 },
             });
             console.log(response);
-            setCurrentSetupGameDetails(response.data);
+            setCurrentSetupGameDetails(response.data.data);
             setCurrentStep();
         } catch (err) {
             console.error(err);
@@ -154,11 +154,11 @@ export const MetaDataAndRatingsStep = () => {
                 <Alert severity="success" sx={{ mb: 2 }}>
                     You already completed this step
                 </Alert>}
-            <Paper elevation={0} sx={Styles.paperStyle}>
+            <Paper elevation={0} sx={customStyle.paperStyle}>
                 <Stack gap={2}>
                     <Typography fontWeight='bold' mb={3}> Metadata and Ratings</Typography>
                     <Stack spacing={2}>
-                        <Stack direction="row" sx={Styles.stackStyle}>
+                        <Stack direction="row" sx={customStyle.stackStyle}>
                             <Typography width={250}>Game Title</Typography>
                             <TextField
                                 fullWidth
@@ -174,7 +174,7 @@ export const MetaDataAndRatingsStep = () => {
                     </Stack>
 
                     <Stack spacing={2}>
-                        <Stack direction="row" sx={Styles.stackStyle}>
+                        <Stack direction="row" sx={customStyle.stackStyle}>
                             <Typography width={250}>Short Description</Typography>
                             <TextField
                                 fullWidth
@@ -190,7 +190,7 @@ export const MetaDataAndRatingsStep = () => {
                     </Stack>
 
                     <Stack spacing={2}>
-                        <Stack direction="row" sx={Styles.stackStyle}>
+                        <Stack direction="row" sx={customStyle.stackStyle}>
                             <Typography width={250}>Long Description</Typography>
                             <TextField
                                 fullWidth
@@ -205,7 +205,7 @@ export const MetaDataAndRatingsStep = () => {
                         </Stack>
                     </Stack>
 
-                    <Stack direction="row" sx={Styles.stackStyle}>
+                    <Stack direction="row" sx={customStyle.stackStyle}>
                         <Typography width={250}>Genre</Typography >
                         <FormControl fullWidth variant="outlined">
                             <Select
@@ -223,7 +223,7 @@ export const MetaDataAndRatingsStep = () => {
                         </FormControl>
                     </Stack>
 
-                    <Stack direction="row" sx={Styles.stackStyle}>
+                    <Stack direction="row" sx={customStyle.stackStyle}>
                         <Typography width={250}>Sub Genre</Typography >
                         <FormControl fullWidth variant="outlined">
                             <Select
@@ -241,7 +241,7 @@ export const MetaDataAndRatingsStep = () => {
                         </FormControl>
                     </Stack>
 
-                    <Stack direction="row" sx={Styles.stackStyle}>
+                    <Stack direction="row" sx={customStyle.stackStyle}>
                         <Typography width={250}>Languages</Typography >
                         <FormControl fullWidth variant="outlined">
                             <Select
@@ -262,7 +262,7 @@ export const MetaDataAndRatingsStep = () => {
                     </Stack>
 
                     <Stack spacing={2}>
-                        <Stack direction="row" sx={Styles.stackStyle}>
+                        <Stack direction="row" sx={customStyle.stackStyle}>
                             <Typography width={250}>Age Rating</Typography>
                             <TextField
                                 fullWidth
@@ -277,7 +277,7 @@ export const MetaDataAndRatingsStep = () => {
                         </Stack>
                     </Stack>
 
-                    <Stack direction="row" sx={Styles.stackStyle}>
+                    <Stack direction="row" sx={customStyle.stackStyle}>
                         <Typography width={250}>Regional Availability</Typography >
                         <FormControl fullWidth variant="outlined">
                             <Select
@@ -298,7 +298,7 @@ export const MetaDataAndRatingsStep = () => {
                     </Stack>
 
                     <Stack spacing={2}>
-                        <Stack direction="row" sx={Styles.stackStyle}>
+                        <Stack direction="row" sx={customStyle.stackStyle}>
                             <Typography width={250}>Privacy Policy Url</Typography>
                             <TextField
                                 fullWidth
@@ -314,7 +314,7 @@ export const MetaDataAndRatingsStep = () => {
                     </Stack>
 
                     <Stack spacing={2}>
-                        <Stack direction="row" sx={Styles.stackStyle}>
+                        <Stack direction="row" sx={customStyle.stackStyle}>
                             <Typography width={250}>Support Url</Typography>
                             <TextField
                                 fullWidth

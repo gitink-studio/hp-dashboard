@@ -1,6 +1,6 @@
 import { FileUploadOutlined } from "@mui/icons-material"
 import { Box, Button, Stack, Typography } from "@mui/material"
-import { Styles } from "../common/styles"
+import { customStyle } from "../common/styles"
 import { handleImageUpload } from "../common/utils";
 
 type CustomImageUploaderProps = {
@@ -34,7 +34,7 @@ export const CustomImageUploader = ({ customProps }: CustomImageUploaderPropsWra
 
     return (
         <>
-            <Stack direction={"row"} sx={Styles.stackStyle} gap={3}>
+            <Stack direction={"row"} sx={customStyle.stackStyle} gap={3}>
                 <Button
                     variant={imageFile === null ? "outlined" : "text"}
                     component="label"
@@ -49,7 +49,7 @@ export const CustomImageUploader = ({ customProps }: CustomImageUploaderPropsWra
                     disabled={disabled}
                 >
                     {imageFile === null && (
-                        <Stack sx={Styles.stackStyle} gap={1}>
+                        <Stack sx={customStyle.stackStyle} gap={1}>
                             <FileUploadOutlined />
                             <Typography fontSize="12px" sx={{ textTransform: "none" }}>
                                 Upload

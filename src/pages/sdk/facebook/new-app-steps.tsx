@@ -1,7 +1,7 @@
 import { Box, Checkbox, FormControlLabel, Stack, Typography, useTheme } from "@mui/material";
 import { Images, ImageSize } from "../../../common/constants";
 import { useFacebookSetupActions, useNewAppStepCompleted } from "../../../store/sdk/facebook-setup-store";
-import { Styles } from "../../../common/styles";
+import { customStyle } from "../../../common/styles";
 
 
 const newAppSteps = [
@@ -38,7 +38,7 @@ export const NewAppSteps = () => {
     return <>
         {newAppSteps.map((step, index) => (
             <Stack direction="row" gap={1} key={index}>
-                <Box sx={Styles.numberStyle} bgcolor={theme.palette.primary.main}>
+                <Box sx={customStyle.numberStyle} bgcolor={theme.palette.primary.main}>
                     {index + 1}
                 </Box>
                 <Stack>
@@ -52,7 +52,7 @@ export const NewAppSteps = () => {
                         src={step.imageUrl}
                         key={index}
                         alt={`Step ${index + 1} screenshot`}
-                        style={Styles.screenshotStyle}
+                        style={customStyle.screenshotStyle}
                     />
                     <br />
                 </Stack>
@@ -67,7 +67,7 @@ export const NewAppSteps = () => {
                 />
             }
             label="Mark this step as done"
-            sx={Styles.checkboxTextStyle}
+            sx={customStyle.checkboxTextStyle}
         />
     </>
 }
