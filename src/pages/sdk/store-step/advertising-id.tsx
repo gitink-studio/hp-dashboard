@@ -58,7 +58,7 @@ export const AdvertisingID: React.FC = () => {
     }
 
     return (
-        <Dialog open={canDisplayAdvertisingID} fullWidth maxWidth="md">
+        <Dialog open={canDisplayAdvertisingID} fullWidth maxWidth="lg">
             <Paper
                 elevation={0}
                 sx={{
@@ -92,12 +92,12 @@ export const AdvertisingID: React.FC = () => {
                     </Box>
 
                     <Stack overflow={"auto"} >
-                        <Stack gap={1} pl={2}>
+                        <Stack gap={1} pl={4}>
                             <Typography variant="body2" fontWeight="bold" >Getting Started</Typography>
                             <Typography variant="body2" >Google Play added a new section under App content &rarr; Advertising ID.</Typography>
                         </Stack>
                         {advertisingIDData.map((step, index) => (
-                            <Stack direction="row" gap={1} key={index} pl={2} pr={2} mt={2}>
+                            <Stack direction="row" gap={1} key={index} pl={4} pr={2} mt={2}>
                                 <Box key={index} sx={customStyle.numberStyle} bgcolor={theme.palette.primary.main}>
                                     {index + 1}
                                 </Box>
@@ -116,7 +116,7 @@ export const AdvertisingID: React.FC = () => {
                                 </Stack>
                             </Stack>
                         ))}
-                        <Typography variant="body2" fontWeight="bold" pl={2}>Congratulations! You completed the questionnaire!</Typography>
+                        <Typography variant="body2" fontWeight="bold" pl={4}>Congratulations! You completed the questionnaire!</Typography>
 
                     </Stack>
 

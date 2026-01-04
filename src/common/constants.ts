@@ -23,6 +23,8 @@ const GET_USER_DETAILS = "getUserDetails";
 const GET_PLAY_STORE_GAME_DETAILS = "getPlayStoreGameDetails";
 const GET_ALL_GAME_REQUESTS = "getAllGameRequests";
 const GET_ALL_GAME_REQUEST_BY_STUDIO_ID = "getAllGameRequestByStudioId";
+const GET_GAME_EVENT_REPORT = "getGameEventReport";
+const GET_PLAYER_EVENT_REPORT = "getPlayerEventReport";
 
 // New Dashboard Query Names
 const DASHBOARD_FILTERS = "dashboardFilters";
@@ -121,6 +123,8 @@ export const QueryNames = {
   IS_VALID_USER,
   GET_USER_DETAILS,
   GET_PLAY_STORE_GAME_DETAILS,
+  GET_GAME_EVENT_REPORT,
+  GET_PLAYER_EVENT_REPORT,
   // New Dashboard Query Names
   DASHBOARD_FILTERS,
   PORTFOLIO_KPIS,
@@ -450,4 +454,14 @@ export const MobileGameSubmissionSetup = {
   SDK_INTEGRATION: 3,
   STORE_SETUP: 4,
   TEST_SETUP: 5,
+}
+
+export const GameplayEventReportType = {
+  GAMEPLAY_DATA: 'Gameplay Data',
+  IN_APP_PURCHASE_DATA: 'In App Purchase Data',
+  AD_DATA: 'Ad Data',
+  ECONOMY_DATA: 'Economy Data',
+  LOG_DATA: 'Log Data',
+  FPS_DATA: 'FPS Data',
+  MEMORY_USAGE_DATA: 'Memory Usage Data',
 }

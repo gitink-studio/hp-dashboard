@@ -244,6 +244,22 @@ const IsValidUser = gql`
   }
 `;
 
+const GetGameEventReport = gql`
+  query GetGameEventReport {
+    getGameEventReport {
+      data
+    }
+}
+`
+
+const GetPlayerEventReport = gql`
+  query GetPlayerEventReport($gameId: String, $limit: Int, $lastRecordId: String) {
+  getPlayerEventReport(gameId: $gameId, limit: $limit, lastRecordId: $lastRecordId) {
+    data
+  }
+}
+`
+
 const GetUserDetails = gql`
   query GetUserDetails($email: String!, $password: String!) {
     getUserDetails(email: $email, password: $password) {
@@ -587,6 +603,15 @@ const Roles = gql`
   }
 `;
 
+const GetStudioList = gql`
+  query Studios {
+    studios {
+      id
+      name
+    }
+  }
+`
+
 // Publisher Feature Queries
 const Studios = gql`
   query Studios {
@@ -852,6 +877,9 @@ export const Queries = {
   IsValidUser,
   GetUserDetails,
   GetPlayStoreGameDetails,
+  GetGameEventReport,
+  GetPlayerEventReport,
+  GetStudioList,
   // New Dashboard Queries
   DashboardFilters,
   PortfolioKPIs,
@@ -891,4 +919,5 @@ export const Queries = {
   AlertRules,
   GetAllGameRequests,
   GetAllGameRequestByStudioId,
+
 };

@@ -1,12 +1,13 @@
 import { FormControl, InputLabel, MenuItem, Select, SelectProps } from "@mui/material"
 import { customStyle } from "../common/styles";
 
-
 export const CustomDropdown = (props: any) => {
-    const { label, value, options, handleChange } = props.data;
+    const { label, value, options = [], handleChange } = props.data;
+    const allOption = { id: 'All', name: 'All' }
+    const newOptions = [allOption, ...options]
 
     return (
-        <FormControl>
+        <FormControl key={label}>
             <InputLabel>{label}</InputLabel>
             <Select
                 value={value}
@@ -16,8 +17,8 @@ export const CustomDropdown = (props: any) => {
                 sx={{ width: customStyle.dropdown.width }}
             >
                 {
-                    options.map((option: any, index: number) => (
-                        <MenuItem key={index} value={option.value}>{option.label}</MenuItem>
+                    newOptions.map((option: any) => (
+                        <MenuItem key={option.id} value={option.name}>{option.name}</MenuItem>
                     ))
                 }
             </Select>

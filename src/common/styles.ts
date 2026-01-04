@@ -147,7 +147,8 @@ const outlineStyle = {
 }
 
 const button = {
-  height: 36
+  height: 36,
+  textTransform: 'none'
 }
 
 const filterPaper = {

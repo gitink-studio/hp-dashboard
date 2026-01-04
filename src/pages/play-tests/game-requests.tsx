@@ -214,7 +214,7 @@ export const GameRequests = () => {
 
     useEffect(() => {
         const fetchGameSubmissionRequests = async () => {
-            let response = await sendGraphqlRequest(GRAPHQL_URL, QueryNames.GET_ALL_GAME_REQUESTS, {
+            let response = await sendGraphqlRequest(QueryNames.GET_ALL_GAME_REQUESTS, {
                 query: Queries.GetAllGameRequests,
                 variables: {}
             });

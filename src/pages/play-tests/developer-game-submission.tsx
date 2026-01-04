@@ -123,7 +123,7 @@ export const DeveloperGameSubmission = () => {
 
     useEffect(() => {
         const fetchGameSubmissionRequests = async () => {
-            let response = await sendGraphqlRequest(GRAPHQL_URL, QueryNames.GET_ALL_GAME_REQUEST_BY_STUDIO_ID, {
+            let response = await sendGraphqlRequest(QueryNames.GET_ALL_GAME_REQUEST_BY_STUDIO_ID, {
                 query: Queries.GetAllGameRequestByStudioId,
                 variables: { studioId: localStorage.getItem('studioId') ?? undefined }
             });

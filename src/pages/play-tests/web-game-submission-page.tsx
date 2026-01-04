@@ -319,7 +319,7 @@ export const WebGameSubmissionPage = () => {
         const fetchGameSubmissionRequests = async () => {
             const queryName = isRolePublisher ? QueryNames.GET_ALL_GAME_REQUESTS : QueryNames.GET_ALL_GAME_REQUEST_BY_STUDIO_ID;
 
-            let response = await sendGraphqlRequest(GRAPHQL_URL, queryName, {
+            let response = await sendGraphqlRequest(queryName, {
                 query: isRolePublisher ? Queries.GetAllGameRequests : Queries.GetAllGameRequestByStudioId,
                 variables: isRolePublisher ? {} : { studioId: localStorage.getItem('studioId') ?? undefined }
             });

@@ -1,8 +1,9 @@
 import { fetchUtils } from "react-admin";
-import { DECIMAL_LENGTH, FileTypes, HttpMethod } from "./constants";
+import { DECIMAL_LENGTH, FileTypes, GRAPHQL_URL, HttpMethod } from "./constants";
 import { FetchData } from "../data-providers/data-provider";
 import { notify } from "../components/notify";
 import { print } from "graphql";
+import React from "react";
 
 const imageFormats = ['.png', '.jpg', '.jpeg'];
 const videoFormats = ['.mp4', '.mov', '.mkv', '.webm', '.m4a'];
@@ -97,8 +98,8 @@ export const sendFormDataRequest = async (name: string, url: string, fileList: a
   }
 }
 
-export const sendGraphqlRequest = async (resource: string, queryName: string, params: any) => {
-  const response = await fetch(resource, {
+export const sendGraphqlRequest = async (queryName: string, params: any) => {
+  const response = await fetch(GRAPHQL_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -274,3 +275,29 @@ export const handleFileDrop = (e: React.DragEvent<HTMLDivElement>, action: (valu
   const files: FileList = e.dataTransfer.files as FileList;
   setVideoFile(format, maxFileSize, files, action);
 };
+
+
+export const isEmptyContent = (node: any): boolean => React.Children.count(node) === 0;
+
+export const isEmptyObject = (object: Record<string, any>): boolean => object && Object.keys(object).length === 0;
+
+export const formatTime = (_milliSeconds: string) => {
+  const milliSeconds = Number(_milliSeconds);
+  const totalSeconds = Math.floor(milliSeconds / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const time: string[] = [];
+
+  if (hours > 0) time.push(`${hours} hr${hours !== 1 ? 's' : ''}`);
+  if (minutes > 0) time.push(`${minutes} min${minutes !== 1 ? 's' : ''}`);
+  if (seconds > 0 || time.length === 0)
+    time.push(`${seconds} sec${seconds !== 1 ? 's' : ''}`);
+
+  // console.log(`Formatted Time: ${time.join(' ')}`);
+  return time.join(' ');
+}
+
+export const removeWhiteSpace = (data: string) => data.replace(/\s+/g, '');
+
+export const isObjectEmpty = (obj: object) => Object.keys(obj).length === 0;

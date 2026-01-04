@@ -64,6 +64,10 @@ const getQuery: any = (resource: string) => {
       return Queries.GetAllDataSuggestion;
     case QueryNames.GET_ALL_DATA_BY_USERNAME_OR_VALUE:
       return Queries.GetAllDataByUserNameOrValue;
+    case QueryNames.GET_GAME_EVENT_REPORT:
+      return Queries.GetGameEventReport;
+    case QueryNames.GET_PLAYER_EVENT_REPORT:
+      return Queries.GetPlayerEventReport;
     // New Dashboard Queries
     case QueryNames.DASHBOARD_FILTERS:
       return Queries.DashboardFilters;

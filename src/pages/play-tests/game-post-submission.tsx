@@ -149,7 +149,7 @@ export const GamePostSubmission = () => {
     useEffect(() => {
         if (gameRequests.length === 0 || data.length === 0 || filteredRows.length === 0) {
             const fetchGameSubmissionRequests = async () => {
-                let response = await sendGraphqlRequest(GRAPHQL_URL, QueryNames.GET_ALL_GAME_REQUESTS, {
+                let response = await sendGraphqlRequest(QueryNames.GET_ALL_GAME_REQUESTS, {
                     query: Queries.GetAllGameRequests,
                     variables: {}
                 });

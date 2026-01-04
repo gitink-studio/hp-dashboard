@@ -30,7 +30,8 @@ import { CustomRoutes } from "react-admin";
 import { SDKDetails } from "./pages/sdk/sdk-details";
 import { SubmitWebGameDetails } from "./pages/submit-web-game/submit-web-game-details";
 import { PlayTests } from "./pages/play-tests/play-tests";
-import { GameplayReportsPage } from "./pages/gameplay-reports/gameplay-reports-page";
+import { GameplayReportPage } from "./pages/gameplay-reports/gameplay-report-page";
+import { PlayerReport } from "./pages/gameplay-reports/player-report";
 // import { ResetPasswordPage } from "./pages/auth/reset-password-page";
 
 export const App = () => {
@@ -90,15 +91,13 @@ export const App = () => {
         options={{ label: "Reports" }}
       />
 
-      {
-        isPublisher && (
-          <Resource
-            name="gameplay-reports"
-            list={GameplayReportsPage}
-            options={{ label: "Gameplay Reports" }}
-          />
-        )
-      }
+
+      <Resource
+        name="gameplay-reports"
+        list={GameplayReportPage}
+        options={{ label: "Gameplay Reports" }}
+      />
+
 
       {/* Tests Hub */}
       <Resource
@@ -120,7 +119,7 @@ export const App = () => {
             < Resource
               name="sdk"
               list={SDKDetails}
-              options={{ label: "SDK", hasShow: false }}
+              options={{ label: "Submit Android Game", hasShow: false }}
             />
 
             {/* Web Game Submission */}
@@ -133,12 +132,11 @@ export const App = () => {
         )
       }
 
-
-
       {/* Tests detail routes */}
       <CustomRoutes>
         <Route path="tests/developer/:id" element={<DeveloperTestDetail />} />
         <Route path="tests/publisher/:id" element={<PublisherTestDetail />} />
+        <Route path="gameplay-reports/player-details" element={<PlayerReport />} />
         {/* <Route path="reset-password" element={<ResetPasswordPage />} /> */}
       </CustomRoutes>
 
