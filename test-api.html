@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Daily Metrics API</title>
+</head>
+<body>
+    <h1>Test Daily Metrics API</h1>
+    <button onclick="testAPI()">Test API Call</button>
+    <pre id="result"></pre>
+
+    <script>
+        async function testAPI() {
+            const gameId = '14314e21-b6a7-4d93-8eeb-84bbf2a7db20';
+            const startDate = '2025-07-28';
+            const endDate = '2025-10-26';
+            
+            const url = `http://localhost:3000/hyper-rabbit/metrics/daily/${gameId}?startDate=${startDate}&endDate=${endDate}`;
+            
+            document.getElementById('result').textContent = 'Loading...';
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('result').textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
