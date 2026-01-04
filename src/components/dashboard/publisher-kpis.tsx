@@ -1,16 +1,8 @@
-import { Typography, Box, Card, CardContent, Grid } from "@mui/material";
+import { Box, Card, CardContent, Grid } from "@mui/material";
 import { formatNumber } from "../../common/utils";
 import { DECIMAL_LENGTH, QueryNames } from "../../common/constants";
 import { useGetList } from "react-admin";
-
-export const PublishKPIs = (props: any) => {
-    const { data: kpiData, isLoading, error } = useGetList(QueryNames.PUBLISHER_KPIS, {
-        filter: props.filter || {}
-    });
-
-    const Text = ({ data, ...props }: { data: string; }) => {
-        return (<Typography sx={{ p: 2, pt: 0, }} {...props}> {data} </Typography>);
-    }
+import { Text } from "../Text";
 
     if (isLoading) return <Text data="Loading Publisher KPIs..." />;
     if (error) return <Text data="Error loading Publisher KPIs" />;
