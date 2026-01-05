@@ -4,6 +4,8 @@
  * Implements Group 2 Reports specification
  */
 
+import { ROOT_URL } from '../common/constants';
+
 export interface ReportFilters {
   studio?: string;
   platform?: string;
@@ -181,7 +183,7 @@ export interface ReportsHubData {
 }
 
 class ReportsService {
-  private baseUrl = '/reports';
+  private baseUrl = `${ROOT_URL}/reports`;
 
   private buildQueryParams(filters: ReportFilters): string {
     const params = new URLSearchParams();

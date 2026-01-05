@@ -1,7 +1,7 @@
 import { DataProvider } from "react-admin";
 import { graphqlDataProvider } from "./graphql-data-provider";
 import { restDataProvider } from "./rest-data-provider";
-import { QueryNames, ROOT_URL } from "../common/constants";
+import { QueryNames, GRAPHQL_URL } from "../common/constants";
 import { Queries } from "../graphql/queries";
 import { print } from "graphql";
 
@@ -129,7 +129,7 @@ export const dataProvider: DataProvider = {
 const isDataAlreadyExist = async (_modelName: string, _fieldName: string, _value: string,) => {
   const query = print(Queries.IsDataAlreadyExist);
   const variables = { modelName: _modelName, fieldName: _fieldName, value: _value.trim(), };
-  const isDataExist = await dataProvider.isDataExistOrNot(ROOT_URL + "/graphql", { query: query, variables: variables, });
+  const isDataExist = await dataProvider.isDataExistOrNot(GRAPHQL_URL, { query: query, variables: variables, });
 
   return isDataExist;
 }
@@ -138,7 +138,7 @@ const isValidUser = async (_email: string, _password: string) => {
   console.log("login auth-provider")
   const query = print(Queries.IsValidUser);
   const variables = { email: _email, password: _password, };
-  const isValidUser = await dataProvider.isValidUser(ROOT_URL + "/graphql", { query: query, variables: variables, });
+  const isValidUser = await dataProvider.isValidUser(GRAPHQL_URL, { query: query, variables: variables, });
 
   return isValidUser;
 }
@@ -146,14 +146,14 @@ const isValidUser = async (_email: string, _password: string) => {
 const getUserDetails = async (_email: string, _password: string) => {
   const query = print(Queries.GetUserDetails);
   const variables = { email: _email, password: _password };
-  const userDetails = await dataProvider.getUserDetails(ROOT_URL + "/graphql", { query: query, variables: variables });
+  const userDetails = await dataProvider.getUserDetails(GRAPHQL_URL, { query: query, variables: variables });
   return userDetails;
 };
 
 const getPlayStoreGameDetails = async (_url: string) => {
   const query = print(Queries.GetPlayStoreGameDetails);
   const variables = { url: _url };
-  const playStoreDetails = await dataProvider.getPlayStoreGameDetails(ROOT_URL + "/graphql", { query: query, variables: variables });
+  const playStoreDetails = await dataProvider.getPlayStoreGameDetails(GRAPHQL_URL, { query: query, variables: variables });
   return playStoreDetails;
 }
 
