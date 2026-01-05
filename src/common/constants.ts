@@ -71,7 +71,7 @@ const HR_RENDER = 'https://hr-backend-render.onrender.com';
 const AWS = 'https://qpbw9zk7uk.ap-south-1.awsapprunner.com';
 
 // Exports
-export const ROOT_URL = LOCAL_HOST_URL;
+export const ROOT_URL = AWS;
 export const GRAPHQL_URL = ROOT_URL + "/graphql";
 export const DECIMAL_LENGTH = 2;
 export const MIN_DATE = "2025-07-21";
