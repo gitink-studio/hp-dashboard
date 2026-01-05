@@ -48,6 +48,7 @@ import {
 } from '@mui/icons-material';
 import { exportReportData } from '../../common/export-utils';
 import { reportsService } from '../../services/reports.service';
+import { ROOT_URL } from '../../common/constants';
 
 interface DeveloperReportsProps {
   reportType: string;
@@ -126,7 +127,7 @@ export const DeveloperReports: React.FC<DeveloperReportsProps> = ({
           throw new Error(`Unknown report type: ${reportType}`);
       }
 
-      const response = await fetch(`http://localhost:3000${endpoint}?${queryParams}`);
+      const response = await fetch(`${ROOT_URL}${endpoint}?${queryParams}`);
       if (!response.ok) {
         throw new Error(`Failed to fetch ${reportType} data`);
       }

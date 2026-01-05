@@ -1,7 +1,7 @@
 import {
   useListController,
 } from "react-admin";
-import { QueryNames } from "../../common/constants";
+import { QueryNames, GRAPHQL_URL } from "../../common/constants";
 import { Stack, Typography, Box, Grid, FormControl, Select, MenuItem } from "@mui/material";
 import { useState, useEffect } from "react";
 import { PlatformFilter } from "../../components/dashboard/platform-filter";
@@ -67,7 +67,7 @@ export const Dashboard = () => {
   useEffect(() => {
     const fetchPlatforms = async () => {
       try {
-        const response = await fetch('http://localhost:3000/graphql', {
+        const response = await fetch(GRAPHQL_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -127,7 +127,7 @@ export const Dashboard = () => {
       // Get current user ID from localStorage
       const userId = localStorage.getItem("userId");
       
-      const response = await fetch('http://localhost:3000/graphql', {
+      const response = await fetch(GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

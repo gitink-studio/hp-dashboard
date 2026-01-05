@@ -65,13 +65,26 @@ const GET = "GET";
 const PUT = "PUT";
 
 // URLs
-const LOCAL_HOST_URL = "http://localhost:3000";
+const LOCAL_HOST_URL_VALUE = "http://localhost:3000";
 const HR_WELOADIN_URL = "https://hr.weloadin.lol";
 const HR_RENDER = 'https://hr-backend-render.onrender.com';
 const AWS = 'https://qpbw9zk7uk.ap-south-1.awsapprunner.com';
 
+// Determine ROOT_URL from environment variable or default to AWS
+// Use VITE_API_URL environment variable if set, otherwise default to AWS for production
+// For local development, set VITE_API_URL=http://localhost:3000 in .env file
+const getRootUrl = (): string => {
+  // Check for VITE_API_URL environment variable first
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  // Default to AWS for production if no env var is set
+  return AWS;
+};
+
 // Exports
-export const ROOT_URL = AWS;
+export const LOCAL_HOST_URL = LOCAL_HOST_URL_VALUE; // Export for direct use if needed
+export const ROOT_URL = getRootUrl();
 export const GRAPHQL_URL = ROOT_URL + "/graphql";
 export const DECIMAL_LENGTH = 2;
 export const MIN_DATE = "2025-07-21";

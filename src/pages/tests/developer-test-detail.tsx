@@ -21,6 +21,7 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { useParams, useNavigate } from "react-router-dom";
+import { ROOT_URL } from "../../common/constants";
 import {
     LineChart,
     Line,
@@ -76,7 +77,7 @@ export const DeveloperTestDetail: React.FC = () => {
             setLoading(true);
             try {
                 // Fetch test details
-                const testResponse = await fetch(`http://localhost:3000/tests/${id}`);
+                const testResponse = await fetch(`${ROOT_URL}/tests/${id}`);
                 if (!testResponse.ok) {
                     throw new Error('Failed to fetch test');
                 }
@@ -84,20 +85,20 @@ export const DeveloperTestDetail: React.FC = () => {
                 setTestData(test);
 
                 // Fetch test metrics
-                const metricsResponse = await fetch(`http://localhost:3000/tests/${id}/metrics`);
+                const metricsResponse = await fetch(`${ROOT_URL}/tests/${id}/metrics`);
                 if (metricsResponse.ok) {
                     const metrics = await metricsResponse.json();
                     setTestMetrics(metrics);
                 }
 
                 // Fetch chart data
-                const chartsResponse = await fetch(`http://localhost:3000/tests/${id}/charts`);
+                const chartsResponse = await fetch(`${ROOT_URL}/tests/${id}/charts`);
                 if (chartsResponse.ok) {
                     const charts = await chartsResponse.json();
                     setChartData(charts);
                 } else {
                     // Fallback: try to get chart data from metrics if charts endpoint fails
-                    const metricsResponse2 = await fetch(`http://localhost:3000/tests/${id}/metrics`);
+                    const metricsResponse2 = await fetch(`${ROOT_URL}/tests/${id}/metrics`);
                     if (metricsResponse2.ok) {
                         const metrics = await metricsResponse2.json();
                         if (metrics.metrics?.charts) {

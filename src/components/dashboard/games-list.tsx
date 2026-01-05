@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useGetList } from 'react-admin';
-import { QueryNames } from '../../common/constants';
+import { QueryNames, ROOT_URL } from '../../common/constants';
 import { formatNumber } from '../../common/utils';
 import { 
   Box, 
@@ -198,9 +198,9 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
       
       // Fetch sequentially to avoid hanging
       const [metricsResponse, dailyResponse, cohortResponse] = await Promise.all([
-        fetch(`http://localhost:3000/hyper-rabbit/metrics/${gameId}?startDate=${startDate}&endDate=${endDate}`),
-        fetch(`http://localhost:3000/hyper-rabbit/metrics/daily/${gameId}?startDate=${startDate}&endDate=${endDate}`),
-        fetch(`http://localhost:3000/hyper-rabbit/retention/cohort/${gameId}?startDate=${startDate}&endDate=${endDate}`)
+        fetch(`${ROOT_URL}/hyper-rabbit/metrics/${gameId}?startDate=${startDate}&endDate=${endDate}`),
+        fetch(`${ROOT_URL}/hyper-rabbit/metrics/daily/${gameId}?startDate=${startDate}&endDate=${endDate}`),
+        fetch(`${ROOT_URL}/hyper-rabbit/retention/cohort/${gameId}?startDate=${startDate}&endDate=${endDate}`)
       ]);
       
       console.log('Metrics response status:', metricsResponse.status);

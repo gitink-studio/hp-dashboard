@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { formatNumber } from '../../common/utils';
+import { ROOT_URL, GRAPHQL_URL } from '../../common/constants';
 
 // Helper function to get game icon based on game name
 const getGameIcon = (gameName: string) => {
@@ -181,8 +182,8 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
       const { startDate, endDate } = getDateRange();
       console.log(`📊 Fetching metrics for game ${gameId} (${startDate} to ${endDate})`);
       
-      const metricsResponse = await fetch(`http://localhost:3000/hyper-rabbit/metrics/${gameId}?startDate=${startDate}&endDate=${endDate}`);
-      const dailyResponse = await fetch(`http://localhost:3000/hyper-rabbit/metrics/daily/${gameId}?startDate=${startDate}&endDate=${endDate}`);
+      const metricsResponse = await fetch(`${ROOT_URL}/hyper-rabbit/metrics/${gameId}?startDate=${startDate}&endDate=${endDate}`);
+      const dailyResponse = await fetch(`${ROOT_URL}/hyper-rabbit/metrics/daily/${gameId}?startDate=${startDate}&endDate=${endDate}`);
       
       if (metricsResponse.ok) {
         const result = await metricsResponse.json();
@@ -408,7 +409,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
       setLoadingStudioData(true);
       try {
         // Fetch revenue by geo
-        const geoResponse = await fetch('http://localhost:3000/graphql', {
+        const geoResponse = await fetch(GRAPHQL_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -440,7 +441,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         }
         
         // Fetch payout summary
-        const payoutResponse = await fetch('http://localhost:3000/graphql', {
+        const payoutResponse = await fetch(GRAPHQL_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -524,7 +525,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
   // Simple GraphQL fetch for sub-platforms
   const fetchSubPlatforms = async () => {
     try {
-      const response = await fetch('http://localhost:3000/graphql', {
+      const response = await fetch(GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -557,7 +558,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
   // Simple GraphQL fetch for platforms
   const fetchPlatforms = async () => {
     try {
-      const response = await fetch('http://localhost:3000/graphql', {
+      const response = await fetch(GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -589,7 +590,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
   // Simple GraphQL fetch for studios
   const fetchStudios = async () => {
     try {
-      const response = await fetch('http://localhost:3000/graphql', {
+      const response = await fetch(GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -624,7 +625,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
   // Simple GraphQL fetch for all games (fallback method)
   const fetchAllGames = async () => {
     try {
-      const response = await fetch('http://localhost:3000/graphql', {
+      const response = await fetch(GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -695,7 +696,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         };
         
         try {
-          const response = await fetch('http://localhost:3000/graphql', {
+          const response = await fetch(GRAPHQL_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -758,7 +759,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         currency: currentFilters.currency
       };
       
-      const response = await fetch('http://localhost:3000/graphql', {
+      const response = await fetch(GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -838,7 +839,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         allFilters: currentFilters
       });
 
-      const response = await fetch('http://localhost:3000/graphql', {
+      const response = await fetch(GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

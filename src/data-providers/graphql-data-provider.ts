@@ -9,6 +9,17 @@ let resource = "";
 const requestCache = new Map<string, { timestamp: number; promise: Promise<any> }>();
 const CACHE_DURATION = 1000; // 1 second cache to prevent duplicate requests
 
+// Helper function to check if response data has nested data structure
+const isResponseJsonData = (responseData: any, fieldName?: string): boolean => {
+  if (!responseData || typeof responseData !== 'object') {
+    return false;
+  }
+  if (fieldName && responseData[fieldName]) {
+    return typeof responseData[fieldName] === 'object' && 'data' in responseData[fieldName];
+  }
+  return false;
+};
+
 // Map resource names to their actual GraphQL field names
 const getGraphQLFieldName = (resourceName: string): string => {
   const fieldMapping: { [key: string]: string } = {

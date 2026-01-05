@@ -41,7 +41,7 @@ import {
   Timeline as TimelineIcon,
 } from '@mui/icons-material';
 import { useGetList } from 'react-admin';
-import { QueryNames } from '../../common/constants';
+import { QueryNames, ROOT_URL } from '../../common/constants';
 
 interface ImportResult {
   imported: number;
@@ -87,7 +87,7 @@ export const GameAnalyticsImportExport: React.FC = () => {
       formData.append('file', selectedFile);
 
       const response = await fetch(
-        `http://localhost:3000/game-analytics/import/events/${selectedGame}`,
+        `${ROOT_URL}/game-analytics/import/events/${selectedGame}`,
         {
           method: 'POST',
           body: formData,
@@ -121,7 +121,7 @@ export const GameAnalyticsImportExport: React.FC = () => {
 
     setLoading(true);
     try {
-      const url = `http://localhost:3000/game-analytics/export/events/${selectedGame}?startDate=${startDate}&endDate=${endDate}&format=${format}`;
+      const url = `${ROOT_URL}/game-analytics/export/events/${selectedGame}?startDate=${startDate}&endDate=${endDate}&format=${format}`;
       
       const response = await fetch(url);
       const blob = await response.blob();
@@ -150,7 +150,7 @@ export const GameAnalyticsImportExport: React.FC = () => {
 
     setLoading(true);
     try {
-      const url = `http://localhost:3000/game-analytics/export/metrics/${selectedGame}?startDate=${startDate}&endDate=${endDate}`;
+      const url = `${ROOT_URL}/game-analytics/export/metrics/${selectedGame}?startDate=${startDate}&endDate=${endDate}`;
       
       const response = await fetch(url);
       const blob = await response.blob();
@@ -174,7 +174,7 @@ export const GameAnalyticsImportExport: React.FC = () => {
   const handleDownloadTemplate = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:3000/game-analytics/import/template');
+      const response = await fetch(`${ROOT_URL}/game-analytics/import/template`);
       const blob = await response.blob();
       
       const url = window.URL.createObjectURL(blob);
@@ -199,7 +199,7 @@ export const GameAnalyticsImportExport: React.FC = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:3000/game-analytics/import/stats/${selectedGame}`
+        `${ROOT_URL}/game-analytics/import/stats/${selectedGame}`
       );
       const result = await response.json();
 
@@ -227,7 +227,7 @@ export const GameAnalyticsImportExport: React.FC = () => {
 
     setLoading(true);
     try {
-      const url = `http://localhost:3000/game-analytics/events/${selectedGame}?startDate=${startDate}&endDate=${endDate}`;
+      const url = `${ROOT_URL}/game-analytics/events/${selectedGame}?startDate=${startDate}&endDate=${endDate}`;
       
       const response = await fetch(url, { method: 'DELETE' });
       const result = await response.json();

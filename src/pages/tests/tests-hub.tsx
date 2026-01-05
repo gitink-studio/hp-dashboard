@@ -19,6 +19,7 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { AdvancedDateFilter } from "../../components/dashboard/advanced-date-filter";
+import { GRAPHQL_URL, ROOT_URL } from "../../common/constants";
 
 type TestRow = {
     id: string;
@@ -64,7 +65,7 @@ export const TestsHub: React.FC = () => {
         const fetchPlatforms = async () => {
             setLoading(true);
             try {
-                const response = await fetch('http://localhost:3000/graphql', {
+                const response = await fetch(GRAPHQL_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -105,7 +106,7 @@ export const TestsHub: React.FC = () => {
     const fetchGames = async (currentFilters: typeof filters) => {
         try {
             const userId = localStorage.getItem("userId");
-            const response = await fetch('http://localhost:3000/graphql', {
+            const response = await fetch(GRAPHQL_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -171,7 +172,7 @@ export const TestsHub: React.FC = () => {
                     queryParams.append('status', testStatus);
                 }
 
-                const response = await fetch(`http://localhost:3000/tests?${queryParams}`);
+                const response = await fetch(`${ROOT_URL}/tests?${queryParams}`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch tests');
                 }
