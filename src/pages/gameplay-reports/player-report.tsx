@@ -9,12 +9,20 @@ import { formatTime, sendGraphqlRequest } from "../../common/utils";
 import { Queries } from "../../graphql/queries";
 import { QueryNames } from "../../common/constants";
 import { GameplayDetailedReport } from "./gameplay-detailed-report";
+import { PlayerDetailedReportViewer } from "../../components/gameplay-report/player-detailed-report-viewer";
 
 export const PlayerReport = () => {
     const canOpenPlayersReport = useOpenPlayersReport();
     const [playerDetails, setPlayerDetails] = useState([]);
     const selectedGameId = useSelectedGameId();
+    const [detailedReportData, setDetailedReportData] = useState<any>();
     const [canOpenDetailedView, setOpenDetailedView] = useState(false);
+
+    const handleViewDetails = (params: any) => {
+        // console.log(`Params: ${JSON.stringify(params.row)}`);
+        setDetailedReportData(params.row)
+        setOpenDetailedView(true);
+    }
 
     const columns: GridColDef[] = [
         {
@@ -48,12 +56,11 @@ export const PlayerReport = () => {
             headerName: 'Action',
             flex: 1,
             renderCell: (params: any) => (
-                <IconButton onClick={() => setOpenDetailedView(true)}>
+                <IconButton onClick={() => handleViewDetails(params)}>
                     <Visibility />
                 </IconButton>
             )
         },
-
     ]
 
     useEffect(() => {
@@ -71,7 +78,7 @@ export const PlayerReport = () => {
 
     return (
         canOpenPlayersReport &&
-        <>
+        <Stack p={4}>
             <Typography variant="h6" p={2}> Player Details  </Typography>
             <CustomDatagrid
                 data={{
@@ -83,13 +90,18 @@ export const PlayerReport = () => {
 
             {
                 canOpenDetailedView && (
-                    <GameplayDetailedReport data={{
-                        type: "Player Gameplay Data",
-                        reportData: playerDetails,
+                    <CustomDialog data={{
+                        title: `${detailedReportData?.name} (${detailedReportData?.id}) detailed gameplay event data`,
+                        component: <PlayerDetailedReportViewer data={{
+                            type: "Player Gameplay Data",
+                            reportData: detailedReportData,
+                            callback: () => setOpenDetailedView(false),
+                        }} />,
                         callback: () => setOpenDetailedView(false),
                     }} />
+
                 )
             }
-        </>
+        </Stack>
     )
 }

@@ -1,8 +1,171 @@
 import { Box, Button, Card, CardContent, Stack, Typography } from "@mui/material"
 import { formatTime } from "../../common/utils";
 
-export const CustomGameplayReportViewer = (props: any) => {
+export const PlayerDetailedReportViewer = (props: any) => {
     const { reportData, displayButton = false, handleButtonClick } = props.data;
+    const {
+        avgSessionTime,
+        totalSessionTime,
+        avgGameplayTime,
+        totalGameplayTime,
+        totalReviveUsed,
+        tutorialData,
+        levelData,
+        iapData,
+        adData,
+        economyData,
+        logData,
+        fpsData,
+        memoryUsageData,
+    } = reportData;
+
+    const detailedReportData: any = {
+        gameplayData: [
+            {
+                name: 'Session Event Data',
+                data: [
+                    {
+                        name: 'Average Session Time',
+                        value: formatTime(avgSessionTime)
+                    },
+                    {
+                        name: 'Total Session Time',
+                        value: formatTime(totalSessionTime)
+                    }
+                ]
+            },
+            {
+                name: 'Gameplay Event Data',
+                data: [
+                    {
+                        name: 'Average Gameplay Time',
+                        value: formatTime(avgGameplayTime)
+                    },
+                    {
+                        name: 'Total Gameplay Time',
+                        value: formatTime(totalGameplayTime)
+                    }
+                ]
+            },
+            {
+                name: 'Tutorial Data',
+                data: tutorialData.stepDetails
+            },
+            {
+                name: 'Level Start Data',
+                data: levelData?.countInfo.levelStart,
+            },
+            {
+                name: 'Level Complete Data',
+                data: levelData?.countInfo.levelComplete,
+            },
+            {
+                name: 'Level Fail Data',
+                data: levelData?.countInfo.levelFail,
+            },
+            {
+                name: 'Revive Used',
+                data: [
+                    {
+                        name: 'Total Revive Used',
+                        value: totalReviveUsed
+                    }
+                ]
+            },
+        ],
+        iapData: [
+            {
+                name: 'IAP Initiated',
+                data: iapData.iapInitiated,
+            },
+            {
+                name: 'IAP Successful',
+                data: iapData.iapSuccessful
+            },
+            {
+                name: 'IAP Failed',
+                data: iapData.iapFailed
+            },
+            {
+                name: 'IAP Consumed',
+                data: iapData.iapConsumed
+            }
+        ],
+        adData: [
+            {
+                name: 'Ad Started',
+                data: adData.adStarted
+            },
+            {
+                name: 'Ad Clicked',
+                data: adData.adClicked
+            },
+            {
+                name: 'Ad Skipped',
+                data: adData.adSkipped
+            },
+            {
+                name: 'Ad Completed',
+                data: adData.adCompleted
+            },
+            {
+                name: 'Ad Failed',
+                data: adData.adFailed
+            },
+        ],
+        economyData: [
+            {
+                name: 'Currency Earned',
+                data: economyData.currencyEarned
+            },
+            {
+                name: 'Currency Spent',
+                data: economyData.currencySpent
+            }
+        ],
+        logData: [
+            {
+                name: 'Error Data',
+                data: logData.error
+            },
+            {
+                name: 'Warning Data',
+                data: logData.warning
+            },
+            {
+                name: 'Info Data',
+                data: logData.info
+            }
+        ],
+        fpsData: [
+            {
+                name: 'Low FPS Data',
+                data: [fpsData.low]
+            },
+            {
+                name: 'Average FPS Data',
+                data: [{ fps: fpsData.average }]
+            },
+            {
+                name: 'High FPS Data',
+                data: [fpsData.high]
+            },
+        ],
+        memoryUsageData: [
+            {
+                name: 'Low Memory Usage Data',
+                data: [memoryUsageData.low]
+            },
+            {
+                name: 'Average Memory Usage Data',
+                data: [{ memoryUsage: memoryUsageData.average }]
+            },
+            {
+                name: 'High Memory Usage Data',
+                data: [memoryUsageData.high]
+            },
+        ]
+    }
 
     const DataNotFound = () => <Typography variant="caption">Data not found</Typography>
 
@@ -127,7 +290,7 @@ export const CustomGameplayReportViewer = (props: any) => {
             <Card variant="outlined" >
                 <CardContent>
                     <Stack direction={'row'} gap={4}>
-                        <DisplayData data={{ name: 'FPS', value: fps }} />
+                        <DisplayData data={{ name: 'FPS', value: Math.floor(fps) }} />
                         {playerId && <DisplayData data={{ name: 'Player Id ', value: playerId }} />}
                     </Stack>
                 </CardContent>
@@ -142,7 +305,7 @@ export const CustomGameplayReportViewer = (props: any) => {
             <Card variant="outlined" >
                 <CardContent>
                     <Stack direction={'row'} gap={4}>
-                        <DisplayData data={{ name: 'Memory Usage', value: memoryUsage }} />
+                        <DisplayData data={{ name: 'Memory Usage', value: Math.floor(memoryUsage) }} />
                         {playerId && <DisplayData data={{ name: 'Player Id ', value: playerId }} />}
                     </Stack>
                 </CardContent>
@@ -203,40 +366,44 @@ export const CustomGameplayReportViewer = (props: any) => {
                 flexWrap: 'wrap',
                 gap: 2,
             }}>
-                <Stack gap={2} sx={{ width: '100%', flexWrap: 'wrap' }}>
-                    {
-                        reportData.map((data: any) => (
-                            <Card variant="outlined" key={data.name}>
-                                <CardContent sx={{ px: 4 }} >
-                                    <Stack gap={2}>
-                                        <Typography variant="subtitle1" textAlign={'left'}>{data.name}</Typography>
-                                        <Stack direction={'row'} gap={4} flexWrap="wrap" justifyContent="flex-start" alignItems={'center'}>
-                                            {
-                                                data?.data.length === 0 ? <DataNotFound /> :
+                {Object.entries(detailedReportData).map(([key, values]: [string, any]) => (
+                    <Stack gap={2} key={key} sx={{ width: '100%', flexWrap: 'wrap' }}>
+                        {
+                            values?.map((data: any) => {
+                                return (
+                                    <Card variant="outlined" key={data.name}>
+                                        <CardContent sx={{ px: 4 }} >
+                                            <Stack gap={2}>
+                                                <Typography variant="subtitle1" textAlign={'left'}>{data.name}</Typography>
+                                                <Stack direction={'row'} gap={4} flexWrap="wrap" justifyContent="flex-start" alignItems={'center'}>
+                                                    {
+                                                        (Array.isArray(data?.data) ? data.data : []).length === 0
+                                                            ? <DataNotFound />
+                                                            : (Array.isArray(data?.data) ? data.data : []).map((eventData: any) => {
+                                                                return (
+                                                                    <>
+                                                                        {getData(data.name, eventData)}
+                                                                    </>
+                                                                )
+                                                            })
+                                                    }
+                                                </Stack>
 
-                                                    data.data.map((eventData: any) => {
-                                                        return (
-                                                            <>
-                                                                {getData(data.name, eventData)}
-                                                            </>
-                                                        )
-                                                    })
-                                            }
-                                        </Stack>
-
-                                        {
-                                            displayButton && (
-                                                <Box display={'flex'} justifyContent={'flex-end'}>
-                                                    <Button onClick={() => handleButtonClick}>View Full Report</Button>
-                                                </Box>
-                                            )
-                                        }
-                                    </Stack>
-                                </CardContent>
-                            </Card>
-                        ))
-                    }
-                </Stack>
+                                                {
+                                                    displayButton && (
+                                                        <Box display={'flex'} justifyContent={'flex-end'}>
+                                                            <Button onClick={() => handleButtonClick}>View Full Report</Button>
+                                                        </Box>
+                                                    )
+                                                }
+                                            </Stack>
+                                        </CardContent>
+                                    </Card>
+                                )
+                            })
+                        }
+                    </Stack>
+                ))}
             </Box >
         </>
     )

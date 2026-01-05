@@ -62,13 +62,20 @@ export const GameplayReportPage = () => {
     const handleStudioFilter = (selectedStudio: string) => {
         console.log(`Selected ${selectedStudio}`);
         if (selectedStudio === 'All') {
+            setGamePlatformFilteredOption(gamePlatformOptions);
             setGameEventReportFilteredData(gameEventReportData);
         } else {
             console.log(`Selected specific studio`);
             const eventData: any = [];
             const filteredEventData = gameEventReportData.find((reportData: any) => selectedStudio === reportData.name);
-            const newOption: any = [gamePlatformOptions[0], filteredEventData.gamePlatforms];
+            const newOption: any = filteredEventData.gamePlatforms.map((eventData: any) => {
+                return {
+                    id: eventData.id,
+                    name: eventData.name
+                }
+            });
             eventData.push(filteredEventData);
+            console.log(`Game platform list: ${JSON.stringify(newOption)}`);
             setGamePlatformFilteredOption(newOption);
             setGameEventReportFilteredData(eventData);
         }
@@ -198,7 +205,7 @@ export const GameplayReportPage = () => {
                                                                                     },
                                                                                     {
                                                                                         name: 'Error Occurred',
-                                                                                        value: game.gameEventReport.totalErrorOccurred
+                                                                                        value: game.gameEventReport.logData?.totalErrorOccurred ?? 0
                                                                                     },
                                                                                 ],
                                                                                 details: <GameEventReport

@@ -137,15 +137,15 @@ export const GameEventReport = (props: any) => {
             data: [
                 {
                     name: 'Total Errors',
-                    value: totalErrorOccurred
+                    value: logData?.totalErrorOccurred ?? 0
                 },
                 {
                     name: 'Total Warnings',
-                    value: logData?.totalWarnings ?? 0
+                    value: logData?.totalWarningOccurred ?? 0
                 },
                 {
                     name: 'Total Info Logs',
-                    value: logData?.totalInfoLogs ?? 0
+                    value: logData?.totalInfoOccurred ?? 0
                 }
             ]
         },
@@ -154,15 +154,15 @@ export const GameEventReport = (props: any) => {
             data: [
                 {
                     name: 'Low FPS',
-                    value: fpsData?.lowFPS ?? 0
+                    value: fpsData?.low.fps ?? 0
                 },
                 {
                     name: 'Average FPS',
-                    value: fpsData?.averageFPS ?? 0
+                    value: Math.floor(fpsData?.average) ?? 0
                 },
                 {
                     name: 'High FPS',
-                    value: fpsData?.highFPS ?? 0
+                    value: fpsData?.high.fps ?? 0
                 }
             ]
         },
@@ -170,12 +170,16 @@ export const GameEventReport = (props: any) => {
             name: 'Memory Usage Data',
             data: [
                 {
+                    name: 'Low Memory Usage',
+                    value: memoryUsageData?.low.memoryUsage ?? 0
+                },
+                {
                     name: 'Average Memory Usage',
-                    value: memoryUsageData?.averageMemoryUsage ?? 0
+                    value: Math.floor(memoryUsageData?.average) ?? 0
                 },
                 {
                     name: 'Peak Memory Usage',
-                    value: memoryUsageData?.peakMemoryUsage ?? 0
+                    value: memoryUsageData?.high.memoryUsage ?? 0
                 }
             ]
         }
@@ -293,6 +297,48 @@ export const GameEventReport = (props: any) => {
                 name: 'Currency Spent',
                 data: economyData.currencySpent
             }
+        ],
+        logData: [
+            {
+                name: 'Error Data',
+                data: logData.error
+            },
+            {
+                name: 'Warning Data',
+                data: logData.warning
+            },
+            {
+                name: 'Info Data',
+                data: logData.info
+            }
+        ],
+        fpsData: [
+            {
+                name: 'Low FPS Data',
+                data: [fpsData.low]
+            },
+            {
+                name: 'Average FPS Data',
+                data: [{ fps: fpsData.average }]
+            },
+            {
+                name: 'High FPS Data',
+                data: [fpsData.high]
+            },
+        ],
+        memoryUsageData: [
+            {
+                name: 'Low Memory Usage Data',
+                data: [memoryUsageData.low]
+            },
+            {
+                name: 'Average Memory Usage Data',
+                data: [{ memoryUsage: memoryUsageData.average }]
+            },
+            {
+                name: 'High Memory Usage Data',
+                data: [memoryUsageData.high]
+            },
         ]
     }
 
@@ -306,6 +352,12 @@ export const GameEventReport = (props: any) => {
                 return detailedReportData.adData;
             case GameplayEventReportType.ECONOMY_DATA:
                 return detailedReportData.economyData;
+            case GameplayEventReportType.LOG_DATA:
+                return detailedReportData.logData;
+            case GameplayEventReportType.FPS_DATA:
+                return detailedReportData.fpsData;
+            case GameplayEventReportType.MEMORY_USAGE_DATA:
+                return detailedReportData.memoryUsageData;
             default:
                 console.log(`Unable to find the report type !`);
                 return [];
