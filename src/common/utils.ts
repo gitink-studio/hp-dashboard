@@ -300,4 +300,12 @@ export const formatTime = (_milliSeconds: string) => {
 
 export const removeWhiteSpace = (data: string) => data.replace(/\s+/g, '');
 
-export const isObjectEmpty = (obj: object) => Object.keys(obj).length === 0;
+export const isObjectEmpty = (obj: object) => {
+  if (!obj) return true
+
+  return Object.keys(obj).length === 0;
+}
+
+export const goToPage = (pageUrl: string) => window.location.href = '/#' + pageUrl;
+
+export const cloneObject = (object: any) => JSON.parse(JSON.stringify(object));

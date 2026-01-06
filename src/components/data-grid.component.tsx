@@ -5,12 +5,14 @@ import { useDataGridActions, useDataGridPageSize } from "../store/common/data-gr
 const pageSizeOptions = [5, 10, 20, 50, 100];
 
 export const CustomDatagrid = (props: any) => {
-    const { rows, columns, rowSelection = true, handleRowSelection } = props.data;
+    const { rows, columns, rowSelection = true } = props.data;
     const pageSize = useDataGridPageSize();
-    const { setPageSize } = useDataGridActions();
+    const { setPageSize, setPage } = useDataGridActions();
+
 
     const handlePaginationModelChange = (newModel: any) => {
-        setPageSize(newModel.pageSize)
+        setPage(newModel.page);
+        setPageSize(newModel.pageSize);
     }
 
     return (

@@ -14,8 +14,6 @@ export const GameEventReport = (props: any) => {
     const [id, setId] = useState("");
     const emptyData = [{ name: 'No data found', value: "" }];
 
-
-
     const {
         gameId = '',
         title,
@@ -154,7 +152,7 @@ export const GameEventReport = (props: any) => {
             data: [
                 {
                     name: 'Low FPS',
-                    value: fpsData?.low.fps ?? 0
+                    value: fpsData?.low?.fps ?? 0
                 },
                 {
                     name: 'Average FPS',
@@ -162,7 +160,7 @@ export const GameEventReport = (props: any) => {
                 },
                 {
                     name: 'High FPS',
-                    value: fpsData?.high.fps ?? 0
+                    value: fpsData?.high?.fps ?? 0
                 }
             ]
         },
@@ -171,7 +169,7 @@ export const GameEventReport = (props: any) => {
             data: [
                 {
                     name: 'Low Memory Usage',
-                    value: memoryUsageData?.low.memoryUsage ?? 0
+                    value: memoryUsageData?.low?.memoryUsage ?? 0
                 },
                 {
                     name: 'Average Memory Usage',
@@ -179,7 +177,7 @@ export const GameEventReport = (props: any) => {
                 },
                 {
                     name: 'Peak Memory Usage',
-                    value: memoryUsageData?.high.memoryUsage ?? 0
+                    value: memoryUsageData?.high?.memoryUsage ?? 0
                 }
             ]
         }
@@ -224,19 +222,19 @@ export const GameEventReport = (props: any) => {
             },
             {
                 name: 'Tutorial Data',
-                data: isObjectEmpty(tutorialData.stepDetails) ? emptyData : tutorialData.stepDetails
+                data: isObjectEmpty(tutorialData?.stepDetails) ? emptyData : tutorialData.stepDetails
             },
             {
                 name: 'Level Start Data',
-                data: levelData?.countInfo.levelStart,
+                data: levelData?.countInfo?.levelStart ?? [],
             },
             {
                 name: 'Level Complete Data',
-                data: levelData?.countInfo.levelComplete,
+                data: levelData?.countInfo?.levelComplete ?? [],
             },
             {
                 name: 'Level Fail Data',
-                data: levelData?.countInfo.levelFail,
+                data: levelData?.countInfo?.levelFail ?? [],
             },
             {
                 name: 'Revive Used',

@@ -6,13 +6,13 @@ import { CustomDropdown } from "../../components/dropdown"
 import { CustomSearch } from "../../components/search"
 import { useGameEventReportActions, useGameEventReportData, useGameFilterValue, useGamePlatformFilterValue, useOpenPlayersReport, useSelectedGameId, useStudioFilterValue } from "../../store/gameplay-event-report/gameplay-event-report-store"
 import { useEffect, useRef, useState } from "react"
-import { formatTime, sendGraphqlRequest } from "../../common/utils"
+import { cloneObject, formatTime, sendGraphqlRequest } from "../../common/utils"
 import { QueryNames } from "../../common/constants"
 import { Queries } from "../../graphql/queries"
 import { CustomAccordion } from "../../components/accordion.component"
 import { GameEventReport } from "./gameplay-report"
 import { PlayerReport } from "./player-report"
-import { useGameOptions, useGamePlatformOptions, useStudioOptions } from "../../store/common/dropdown-options-store"
+import { useDefaultOptions, useGameOptions, useGamePlatformOptions, useStudioOptions } from "../../store/common/dropdown-options-store"
 
 export const GameplayReportPage = () => {
     const gameEventReportData = useGameEventReportData();
@@ -22,7 +22,15 @@ export const GameplayReportPage = () => {
     const studioFilterValue = useStudioFilterValue();
     const gamePlatformFilterValue = useGamePlatformFilterValue();
     const gameFilterValue = useGameFilterValue();
-    const selectedGameId = useSelectedGameId();
+    const defaultOptions = useDefaultOptions();
+    const isFetched = useRef(false);
+    const [gamePlatformFilteredOption, setGamePlatformFilteredOption] = useState([]);
+    const [gameFilteredOption, setGameFilteredOption] = useState([]);
+    const [gameEventReportFilteredData, setGameEventReportFilteredData] = useState([]);
+    const [studioFilterData, setStudioFilterData] = useState<any>([]);
+    const [gamePlatformFilterData, setGamePlatformFilterData] = useState<any>([]);
+    const [gameFilterData, setGameFilterData] = useState<any>([]);
+
     const {
         setStudioFilterValue,
         setGamePlatformFilterValue,
@@ -31,57 +39,85 @@ export const GameplayReportPage = () => {
         setCanOpenPlayersReport,
         setSelectedGameId
     } = useGameEventReportActions();
-    const isFetched = useRef(false);
-    const [gamePlatformFilteredOption, setGamePlatformFilteredOption] = useState([]);
-    const [gameFilteredOption, setGameFilteredOption] = useState([]);
-    const [gameEventReportFilteredData, setGameEventReportFilteredData] = useState([]);
-
-    const setGamePlatformOptions = () => {
-        let filterValue = studioFilterValue;
-
-        if (filterValue === 'All') {
-            setGamePlatformFilteredOption(gamePlatformOptions);
-        }
-
-        const filteredOptions = gameEventReportData.reduce((acc: any, item: any) => {
-            if (filterValue === item.name) {
-                const gamePlatformFilteredOptions = item.gamePlatforms.map((gamePlatform: any) => {
-                    return {
-                        id: gamePlatform.id,
-                        name: gamePlatform.name
-                    }
-                })
-
-                return gamePlatformFilteredOptions;
-            }
-        })
-
-        setGamePlatformFilteredOption(filteredOptions);
-    }
 
     const handleStudioFilter = (selectedStudio: string) => {
-        console.log(`Selected ${selectedStudio}`);
         if (selectedStudio === 'All') {
-            setGamePlatformFilteredOption(gamePlatformOptions);
             setGameEventReportFilteredData(gameEventReportData);
+            setStudioFilterData(gameEventReportData);
+            setGamePlatformFilteredOption([]);
         } else {
-            console.log(`Selected specific studio`);
             const eventData: any = [];
-            const filteredEventData = gameEventReportData.find((reportData: any) => selectedStudio === reportData.name);
-            const newOption: any = filteredEventData.gamePlatforms.map((eventData: any) => {
-                return {
-                    id: eventData.id,
-                    name: eventData.name
-                }
-            });
+            const filteredEventData: any = gameEventReportData.find((data: any) => selectedStudio === data.name);
+            const newOption = filteredEventData?.gamePlatforms
+                ?.filter((data: any) => Array.isArray(data.games) && data.games.length > 0)
+                ?.map((data: any) => ({
+                    id: data.id,
+                    name: data.name,
+                })) ?? [];
             eventData.push(filteredEventData);
-            console.log(`Game platform list: ${JSON.stringify(newOption)}`);
             setGamePlatformFilteredOption(newOption);
             setGameEventReportFilteredData(eventData);
+            setStudioFilterData(filteredEventData);
         }
 
         setStudioFilterValue(selectedStudio);
-        console.log(`Selected specific studio value added`);
+    }
+
+    const handleGamePlatformFilter = (selectedGamePlatform: string) => {
+        console.log(`Selected game platform - ${selectedGamePlatform}`);
+
+        if (selectedGamePlatform === 'All') {
+            setGamePlatformFilterValue('All');
+            setGameEventReportFilteredData([studioFilterData]);
+            setGamePlatformFilterData(studioFilterData);
+            setGameFilteredOption([]);
+        } else {
+            const eventData: any = [];
+            const filteredEventData: any = studioFilterData.gamePlatforms?.find((data: any) => selectedGamePlatform === data.name);
+            const newStudioFilterData: any = cloneObject(studioFilterData);
+            newStudioFilterData.gamePlatforms = [filteredEventData];
+            const newOption: any = filteredEventData?.games?.map((data: any) => {
+                return {
+                    id: data.id,
+                    name: data.name
+                }
+            });
+            eventData.push(newStudioFilterData);
+            setGameFilteredOption(newOption);
+            setGameEventReportFilteredData(eventData);
+            setGamePlatformFilterData(newStudioFilterData);
+        }
+
+        setGamePlatformFilterValue(selectedGamePlatform);
+    }
+
+    const handleGameFilter = (selectedGame: string) => {
+        console.log(`Selected game - ${selectedGame}`);
+
+        if (selectedGame === 'All') {
+            setGameFilterValue('All');
+            setGameFilteredOption(defaultOptions);
+            setGameEventReportFilteredData([gamePlatformFilterData]);
+        } else {
+            const eventData: any = [];
+            console.log(`Game filtered data: ${JSON.stringify(gamePlatformFilterData.gamePlatforms[0].games.length)}`);
+            const filteredEventData: any = gamePlatformFilterData.gamePlatforms[0].games?.find((data: any) => selectedGame === data.name);
+            const newGamePlatformFilterData: any = cloneObject(gamePlatformFilterData);
+            newGamePlatformFilterData.gamePlatforms[0].games = [filteredEventData];
+            eventData.push(newGamePlatformFilterData);
+            setGameEventReportFilteredData(eventData);
+        }
+
+        setGameFilterValue(selectedGame);
+    }
+
+    const handleClearAll = () => {
+        setStudioFilterValue('All');
+        setGamePlatformFilterValue('All');
+        setGameFilterValue('All');
+        setGameEventReportFilteredData(gameEventReportData);
+        setGamePlatformFilteredOption([]);
+        setGameFilteredOption([]);
     }
 
     useEffect(() => {
@@ -132,17 +168,19 @@ export const GameplayReportPage = () => {
                                             label: "Game Platforms",
                                             value: gamePlatformFilterValue,
                                             options: gamePlatformFilteredOption,
-                                            handleChange: (e: any) => { setGamePlatformFilterValue(e.target.value); }
+                                            handleChange: (e: any) => { handleGamePlatformFilter(e.target.value); }
                                         }}
                                     />
                                     <CustomDropdown
                                         data={{
                                             label: "Games",
                                             value: gameFilterValue,
-                                            options: gameOptions,
-                                            handleChange: (e: any) => { setGameFilterValue(e.target.value); }
+                                            options: gameFilteredOption,
+                                            handleChange: (e: any) => { handleGameFilter(e.target.value); }
                                         }}
                                     />
+
+                                    {studioFilterValue !== 'All' && <Button onClick={handleClearAll}>Clear All</Button>}
                                 </Stack>
                             </Stack>
                         </Stack>
@@ -185,27 +223,27 @@ export const GameplayReportPage = () => {
                                                                                     },
                                                                                     {
                                                                                         name: 'Total Player',
-                                                                                        value: game.gameEventReport.playerCount
+                                                                                        value: game.gameEventReport?.playerCount ?? 0
                                                                                     },
                                                                                     {
                                                                                         name: 'Average Session Time',
-                                                                                        value: formatTime(game.gameEventReport.avgSessionTime)
+                                                                                        value: formatTime(game?.gameEventReport?.avgSessionTime)
                                                                                     },
                                                                                     {
                                                                                         name: 'Tutorial Completed Players',
-                                                                                        value: game.gameEventReport.tutorialCompletedPlayerCount
+                                                                                        value: game.gameEventReport?.tutorialCompletedPlayerCount
                                                                                     },
                                                                                     {
                                                                                         name: 'IAP Purchased',
-                                                                                        value: game.gameEventReport.totalIAPCompleted ?? 0
+                                                                                        value: game.gameEventReport?.totalIAPCompleted ?? 0
                                                                                     },
                                                                                     {
                                                                                         name: 'Ad Watched',
-                                                                                        value: game.gameEventReport.totalAdCompleted ?? 0
+                                                                                        value: game.gameEventReport?.totalAdCompleted ?? 0
                                                                                     },
                                                                                     {
                                                                                         name: 'Error Occurred',
-                                                                                        value: game.gameEventReport.logData?.totalErrorOccurred ?? 0
+                                                                                        value: game.gameEventReport?.logData?.totalErrorOccurred ?? 0
                                                                                     },
                                                                                 ],
                                                                                 details: <GameEventReport
@@ -219,7 +257,7 @@ export const GameplayReportPage = () => {
                                                                                         name: "Open Players Report",
                                                                                         onClick: () => {
                                                                                             setSelectedGameId(game.id);
-                                                                                            window.location.href = '/#/gameplay-reports/player-details'
+                                                                                            window.location.href = '/#/gameplay-reports/player-details';
                                                                                             setCanOpenPlayersReport(true);
                                                                                             console.log(`Button clicked for opening the player report`);
                                                                                         }

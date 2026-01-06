@@ -16,6 +16,7 @@ type DropdownOptionsAction = {
 }
 
 type DropdownOptionsState = {
+    defaultOption: any;
     studioOptions: any;
     platformOptions: any;
     gamePlatformOptions: any;
@@ -24,6 +25,7 @@ type DropdownOptionsState = {
 }
 
 const initialState = {
+    defaultOption: [{ id: 'All', name: 'All' }],
     studioOptions: [],
     platformOptions: [],
     gamePlatformOptions: [],
@@ -68,6 +70,7 @@ const useDropdownOptionsStore = create<DropdownOptionsState>((set) => ({
     }
 }))
 
+export const useDefaultOptions = () => useDropdownOptionsStore((state) => state.defaultOption);
 export const useStudioOptions = () => getOptionData('studioOptions', 'fetchStudioOptions');
 export const usePlatformsOptions = () => getOptionData('platformOptions', 'fetchPlatformOptions');
 export const useGamePlatformOptions = () => getOptionData('gamePlatformOptions', 'fetchGamePlatformOptions');
