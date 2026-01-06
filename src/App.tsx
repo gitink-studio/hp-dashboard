@@ -92,11 +92,13 @@ export const App = () => {
       />
 
 
-      <Resource
-        name="gameplay-reports"
-        list={GameplayReportPage}
-        options={{ label: "Gameplay Reports" }}
-      />
+      {
+        isPublisher && <Resource
+          name="gameplay-reports"
+          list={GameplayReportPage}
+          options={{ label: "Gameplay Reports" }}
+        />
+      }
 
 
       {/* Tests Hub */}

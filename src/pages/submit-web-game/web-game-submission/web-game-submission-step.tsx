@@ -61,7 +61,8 @@ export const WebGameSubmissionStep = () => {
                 controlDescription: controlsDescription,
                 additionalNotes: additionalNotes,
                 status: "Pending",
-                fileInfoList: fileInfoList
+                fileInfoList: fileInfoList,
+                emailId: localStorage.getItem('userName')
             });
 
             console.log(`Response from web game submission data: `, response);

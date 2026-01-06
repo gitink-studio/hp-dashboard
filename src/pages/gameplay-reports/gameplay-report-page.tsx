@@ -26,10 +26,9 @@ export const GameplayReportPage = () => {
     const isFetched = useRef(false);
     const [gamePlatformFilteredOption, setGamePlatformFilteredOption] = useState([]);
     const [gameFilteredOption, setGameFilteredOption] = useState([]);
-    const [gameEventReportFilteredData, setGameEventReportFilteredData] = useState([]);
-    const [studioFilterData, setStudioFilterData] = useState<any>([]);
-    const [gamePlatformFilterData, setGamePlatformFilterData] = useState<any>([]);
-    const [gameFilterData, setGameFilterData] = useState<any>([]);
+    const [gameEventReportFilteredData, setGameEventReportFilteredData] = useState([{}]);
+    const [studioFilterData, setStudioFilterData] = useState<any>();
+    const [gamePlatformFilterData, setGamePlatformFilterData] = useState<any>();
 
     const {
         setStudioFilterValue,

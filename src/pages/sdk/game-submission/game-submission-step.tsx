@@ -173,6 +173,7 @@ export const GameSubmissionStep = () => {
                 optionalTags: optionalTags,
                 gameType: gameType,
                 gameIconUrl: gameIconFile,
+                emailId: localStorage.getItem('userName')
             })
 
         }
