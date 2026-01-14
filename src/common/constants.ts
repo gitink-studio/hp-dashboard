@@ -107,6 +107,7 @@ export const WEB_GAME_SUBMISSION_SETUP_CURRENT_STATE_UPDATE_URL = ROOT_URL + "/w
 export const CREATE_WEB_SUBMISSION_SELECT_PLATFORMS_URL = ROOT_URL + "/web-game-submission/select-platforms/new"
 export const CREATE_UPLOAD_WEB_BUILDS_URL = ROOT_URL + "/web-game-submission/upload-web-builds/new"
 export const CREATE_CREATIVES_DATA_URL = ROOT_URL + "/web-game-submission/creatives/new"
+export const DOWNLOAD_CREATIVES_DATA_URL = ROOT_URL + "/web-game-submission/creatives/download"
 export const CREATE_METADATA_AND_RATINGS_DATA_URL = ROOT_URL + "/web-game-submission/metadata-and-ratings/new"
 export const REVIEW_AND_LAUNCH_URL = ROOT_URL + "/web-game-submission/review-and-launch"
 export const LAUNCH_GAME_URL = ROOT_URL + "/web-game-submission/launch-game"

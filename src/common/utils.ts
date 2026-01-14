@@ -72,6 +72,31 @@ export const sendRequest = async (method: string, url: string, data: any) => {
   return json;
 };
 
+export const sendRequestForDownloadFiles = async (url: string, data: any) => {
+  const response = await fetch(url, {
+    method: HttpMethod.POST,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  console.log(`Download Response: ${JSON.stringify(response)}`);
+  if (!response.ok) throw new Error("Download failed");
+
+  const blob = await response.blob();
+  return blob;
+};
+
+export const openDownloadPopupWindow = (blob: any, fileNameWithExtension: any) => {
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileNameWithExtension;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 export const sendFormDataRequest = async (name: string, url: string, fileList: any[], data: any) => {
   try {
     const formData = new FormData();

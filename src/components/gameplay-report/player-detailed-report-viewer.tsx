@@ -49,7 +49,7 @@ export const PlayerDetailedReportViewer = (props: any) => {
             },
             {
                 name: 'Tutorial Data',
-                data: tutorialData.stepDetails
+                data: tutorialData?.stepDetails ?? []
             },
             {
                 name: 'Level Start Data',

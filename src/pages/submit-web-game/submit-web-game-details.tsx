@@ -121,27 +121,7 @@ export const SubmitWebGameDetails = () => {
                         </Box>
 
                         <Box sx={{ p: 3, pl: 0, width: '100%' }}>
-                            {/* {
-                        activeStep > currentStep &&
-                        <Alert severity="warning" sx={{ mb: 2 }}>
-                            You need to complete previous steps
-                        </Alert>
-                    } */}
                             <DisplayCurrentStepContent />
-                            {/* <Box sx={{
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        mt: 3
-                    }}>
-                        <Button
-                            variant="contained"
-                            onClick={handleNext}
-                            sx={{ px: 4, py: 1 }}
-                            disabled={disableStepCompleteButton()}
-                        >
-                            {activeStep === 0 ? "Add Game" : "Complete Step"}
-                        </Button>
-                    </Box> */}
                         </Box>
                     </Stack>
                 </Container >

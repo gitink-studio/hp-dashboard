@@ -1,8 +1,8 @@
 import { Box, Button, CircularProgress, Dialog, IconButton, InputAdornment, Paper, Stack, TextField, Typography } from "@mui/material"
 import { useDataSending, useDetailedView, useGameRequestDetails, usePlayTestsActions, useReviewNotes, useRolePublisher } from "../../store/play-tests/play-tests-store";
 import { Close, Done, Download, Edit, PlayArrow } from "@mui/icons-material";
-import { GameRequestStatus, HttpMethod, LAUNCH_GAME_URL, MobileGameSubmissionSetup, Platform, SDK_LAUNCH_URL, SDK_STATUS_UPDATE_URL, TOTAL_MOBILE_GAME_SUBMISSION_STEPS, TOTAL_WEB_GAME_SUBMISSION_STEPS, UPDATE_FB_AD_ACCOUNT_ID_URL, WEB_GAME_SUBMISSION_STATUS_UPDATE_URL } from "../../common/constants";
-import { sendRequest } from "../../common/utils";
+import { DOWNLOAD_CREATIVES_DATA_URL, GameRequestStatus, HttpMethod, LAUNCH_GAME_URL, MobileGameSubmissionSetup, Platform, SDK_LAUNCH_URL, SDK_STATUS_UPDATE_URL, TOTAL_MOBILE_GAME_SUBMISSION_STEPS, TOTAL_WEB_GAME_SUBMISSION_STEPS, UPDATE_FB_AD_ACCOUNT_ID_URL, WEB_GAME_SUBMISSION_STATUS_UPDATE_URL } from "../../common/constants";
+import { openDownloadPopupWindow, sendRequest, sendRequestForDownloadFiles } from "../../common/utils";
 import { notify } from "../../components/notify";
 import { customStyle } from "../../common/styles";
 import { useFacebookAppAccountId, useSDKDetailActions } from "../../store/sdk/sdk-details-store";
@@ -45,6 +45,17 @@ export const GameSubmissionDetailedView = () => {
         if (!isDataSending) {
             setDetailedView(false);
         }
+    }
+
+    const handleDownload = async (data: any) => {
+        const response = await sendRequestForDownloadFiles(DOWNLOAD_CREATIVES_DATA_URL, data);
+        console.log(`Response: ${JSON.stringify(response)}`);
+        if (!response) {
+            notify(`Something went wrong`, { type: "error" });
+            return;
+        }
+
+        openDownloadPopupWindow(response, 'marketings.zip')
     }
 
     const handleAcceptGameRequest = async () => {
@@ -96,7 +107,6 @@ export const GameSubmissionDetailedView = () => {
                         status: GameRequestStatus.ACCEPTED,
                         studioId: gameRequestDetails.studioId
                     });
-
                 }
             }
 
@@ -161,14 +171,14 @@ export const GameSubmissionDetailedView = () => {
         return isLaunchRequest() ? 'Review Game for Launch' : 'Review Game';
     }
 
-    const getBuildName = (buildUrl: string) => {
+    const getGamePlatformNameByUrl = (buildUrl: string, suffixName: string) => {
         const platformIdIndex = -3;
         const splitUrl = buildUrl.split('/');
         let buildName: string = splitUrl.at(platformIdIndex) ?? '';
 
         selectedPlatforms.forEach((platform: any) => {
             if (platform.id === buildName) {
-                buildName = platform.name + ' Build';
+                buildName = `${platform.name} ${suffixName}`;
             }
         })
 
@@ -205,15 +215,34 @@ export const GameSubmissionDetailedView = () => {
                                             isLaunchRequest() && (
                                                 <>
                                                     <Typography variant="body2" >Selected Platforms : {gameRequestDetails.selectedPlatforms.map((platform: any) => platform.name).join(', ')}</Typography>
-                                                    <Typography variant="body2" fontWeight={'bold'}>Builds </Typography>
 
+                                                    <Typography variant="body2" fontWeight={'bold'}>Builds </Typography>
                                                     <Stack direction={'row'} gap={2} sx={{ ...customStyle.stackStyle, mb: 2 }}>
                                                         {
                                                             webGameRequest.webGameRequestDetails.buildUrls.map((build: any) => {
                                                                 return (
                                                                     <Button startIcon={<Download />} variant="outlined" size="small" href={build} sx={{ textTransform: 'none' }}>
-                                                                        {getBuildName(build)}
+                                                                        {getGamePlatformNameByUrl(build, 'Build')}
                                                                     </Button>)
+                                                            })
+                                                        }
+                                                    </Stack>
+
+                                                    <Typography variant="body2" fontWeight={'bold'}>Creatives </Typography>
+                                                    <Stack direction={'row'} gap={2} sx={{ ...customStyle.stackStyle, mb: 2 }}>
+                                                        {
+                                                            webGameRequest.webGameRequestDetails.creatives.map((creative: any) => {
+                                                                return (
+                                                                    <Button
+                                                                        startIcon={<Download />}
+                                                                        variant="outlined"
+                                                                        size="small"
+                                                                        sx={{ textTransform: 'none' }}
+                                                                        onClick={() => handleDownload(creative.creativeUrls)}
+                                                                    >
+                                                                        All Marketing Materials
+                                                                    </Button>
+                                                                )
                                                             })
                                                         }
                                                     </Stack>

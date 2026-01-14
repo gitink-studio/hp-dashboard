@@ -151,7 +151,7 @@ export const CreativesStep = (): JSX.Element => {
                 webGameSubmissionSetupCurrentStateId: currentSetupGameDetails.webGameRequest.webGameSubmissionSetupCurrentState.id,
                 currentSetupIndex: currentSetupGameDetails.currentSetupStateIndex,
                 webGameRequestId: currentSetupGameDetails.webGameRequest.id,
-                webGameRequestDetails: currentSetupGameDetails.webGameRequest.webGameRequestDetails.id,
+                webGameRequestDetailsId: currentSetupGameDetails.webGameRequest.webGameRequestDetails.id,
                 fileInfoList: fileInfoList,
                 studioId: currentSetupGameDetails.studioId
             });
