@@ -10,16 +10,17 @@ import {
   AppBar,
   Toolbar,
   Box,
-  IconButton,
   Typography,
-  MenuItem,
-  ListItemText,
   Chip,
   Button,
   Stack,
+  Avatar,
+  MenuList,
+  MenuItem,
+  IconButton,
+  Divider,
 } from "@mui/material";
-import { CircleNotifications, ExitToApp, AdminPanelSettings } from "@mui/icons-material";
-import { customStyle } from "../../common/styles";
+import { ExitToApp, AdminPanelSettings, LogoutRounded, LogoutSharp, PeopleOutline, VerifiedUserRounded, Person } from "@mui/icons-material";
 
 const CustomAppBar = () => {
   const resources = useResourceDefinitions();
@@ -28,110 +29,110 @@ const CustomAppBar = () => {
   const isAdmin = userRole?.toLowerCase().includes('admin') || userRole?.toLowerCase().includes('administrator');
 
   return (
-    <AppBar
-      position="fixed"
-      color="primary"
-      sx={{
-        maxHeight: "48px",
-        display: "flex",
-        justifyContent: "center",
-      }}
-    >
-      <Toolbar
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        {/* Right side: Horizontal Menu */}
-        <Box display="flex" flexDirection="row" gap={2}>
-          {/* Left side: Title */}
-          <Stack sx={{ ...customStyle.stackStyle, lineHeight: '0.5' }} >
-            <Typography variant="body1" fontWeight="bold" sx={{ lineHeight: '1', mt: 1 }}>Hyper Rabbit</Typography>
-            <Typography variant="caption">v0.0.1</Typography>
-          </Stack>
+    <AppBar position="fixed">
+      <Toolbar variant="dense">
+        <Stack direction={'row'} alignItems={'center'} justifyContent={'space-between'} sx={{ width: '100%' }}>
+          <Typography variant="subtitle1" fontWeight="bold">Hyper Rabbit</Typography>
 
-          {Object.keys(resources).map((name) => (
-            <MenuItemLink
-              key={name}
-              to={`/${name}`}
-              primaryText={resources[name].options?.label || name}
-              sx={{
-                color: "white",
-                "&.RaMenuItemLink-active": {
-                  color: "white",
-                  textDecoration: "underline",
-                  textDecorationThickness: "2px",
-                  textUnderlineOffset: "4px",
-                },
-              }}
-            />
-          ))}
-        </Box>
-        <Box display="flex" gap={2} alignItems="center">
-          {/* <IconButton aria-label="notification" color="inherit">
-            <CircleNotifications />
-          </IconButton> */}
-
-          {/* Admin indicator */}
-          {isAdmin && (
-            <Chip
-              icon={<AdminPanelSettings />}
-              label="Admin"
-              color="warning"
-              size="small"
-              sx={{ color: 'white', backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
-            />
-          )}
-
-          {/* User info and role */}
-          <Box display="flex" alignItems="center" gap={1}>
-            <Typography variant="body2" sx={{ color: 'white' }}>
-              {userName || "Guest"}
-            </Typography>
-            {userRole && (
-              <Chip
-                label={userRole}
-                size="small"
+          <Stack direction={'row'} gap={3}>
+            {Object.keys(resources).map((name) => (
+              <MenuItemLink
+                key={name}
+                to={`/${name}`}
+                primaryText={resources[name].options?.label || name}
                 sx={{
-                  color: 'white',
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  fontSize: '0.7rem'
+                  color: "white",
+                  fontSize: 14,
+                  width: 'auto',
+                  px: 0,
+                  "&.RaMenuItemLink-active": {
+                    color: "white",
+                    textDecoration: "underline",
+                    textDecorationThickness: "1px",
+                    textUnderlineOffset: "5px",
+                  },
                 }}
               />
+            ))}
+          </Stack>
+
+          <UserMenu>
+            <MenuItemLink
+              to="/"
+              primaryText={`${userName || "Guest"} (${userRole})`}
+              leftIcon={<Person />}
+              disabled
+            />
+            <Divider />
+            <MenuItemLink
+              to="/login"
+              primaryText="Logout"
+              leftIcon={<ExitToApp />}
+              onClick={() => {
+                localStorage.removeItem("userName");
+                localStorage.removeItem("userRole");
+                localStorage.removeItem("userRoleId");
+                localStorage.removeItem("userId");
+                localStorage.removeItem("userStudio");
+                window.location.href = '/#/login';
+              }}
+            />
+          </UserMenu>
+
+          {/* <Box display="flex" gap={2} alignItems="center">
+            {isAdmin && (
+              <Chip
+                icon={<AdminPanelSettings />}
+                label="Admin"
+                color="warning"
+                size="small"
+                sx={{ color: 'white', backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+              />
             )}
-          </Box>
 
-          {/* Logout button */}
-          <Button
-            variant="outlined"
-            startIcon={<ExitToApp />}
-            onClick={() => {
-              // Clear all user data from localStorage
-              localStorage.removeItem("userName");
-              localStorage.removeItem("userRole");
-              localStorage.removeItem("userRoleId");
-              localStorage.removeItem("userId");
-              localStorage.removeItem("userStudio");
-              // Redirect to login page
-              window.location.href = '/#/login';
-            }}
-            sx={{
-              color: 'white',
-              borderColor: 'white',
-              '&:hover': {
+            <Box display="flex" alignItems="center" gap={1}>
+              <Typography variant="body2" sx={{ color: 'white' }}>
+                {userName || "Guest"}
+              </Typography>
+              {userRole && (
+                <Chip
+                  label={userRole}
+                  size="small"
+                  sx={{
+                    color: 'white',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    fontSize: '0.7rem'
+                  }}
+                />
+              )}
+            </Box>
+
+            <Button
+              variant="outlined"
+              startIcon={<ExitToApp />}
+              onClick={() => {
+                // Clear all user data from localStorage
+                localStorage.removeItem("userName");
+                localStorage.removeItem("userRole");
+                localStorage.removeItem("userRoleId");
+                localStorage.removeItem("userId");
+                localStorage.removeItem("userStudio");
+                // Redirect to login page
+                window.location.href = '/#/login';
+              }}
+              sx={{
+                color: 'white',
                 borderColor: 'white',
-                backgroundColor: 'rgba(255, 255, 255, 0.1)'
-              }
-            }}
-          >
-            Logout
-          </Button>
-
-          {/* <ToggleThemeButton /> */}
-          {/* <RefreshButton sx={{ color: "white" }} /> */}
-        </Box>
+                '&:hover': {
+                  borderColor: 'white',
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                }
+              }}
+            >
+              Logout
+            </Button>
+          </Box> */}
+        </Stack>
       </Toolbar>
     </AppBar>
   );
