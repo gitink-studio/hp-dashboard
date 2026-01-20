@@ -84,7 +84,7 @@ const getRootUrl = (): string => {
 
 // Exports
 export const LOCAL_HOST_URL = LOCAL_HOST_URL_VALUE; // Export for direct use if needed
-export const ROOT_URL = getRootUrl();
+export const ROOT_URL = LOCAL_HOST_URL_VALUE;
 export const GRAPHQL_URL = ROOT_URL + "/graphql";
 export const DECIMAL_LENGTH = 2;
 export const MIN_DATE = "2025-07-21";

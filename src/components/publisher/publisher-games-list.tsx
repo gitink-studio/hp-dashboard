@@ -228,6 +228,64 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     };
     
+    // Helper function to get heatmap color based on value (0-100 percentage)
+    const getHeatmapColor = (value: number, maxValue: number = 100): string => {
+      if (value === 0) return '#ffffff'; // White for 0
+      const normalized = Math.min(value / maxValue, 1);
+      // Create gradient from light blue (#e3f2fd) to darker blue (#1976d2)
+      const red = Math.floor(227 - (normalized * 30)); // 227 -> 197
+      const green = Math.floor(242 - (normalized * 65)); // 242 -> 118
+      const blue = Math.floor(253 - (normalized * 55)); // 253 -> 216
+      return `rgb(${red}, ${green}, ${blue})`;
+    };
+    
+    // Helper function to calculate retention for a specific day
+    // Uses interpolation between D1, D7, D30 if needed
+    const calculateDayRetention = (day: number, d1: number, d7: number, d30: number): number => {
+      if (day === 1) return d1;
+      if (day === 7) return d7;
+      if (day === 30) return d30;
+      
+      // Interpolate between D1 and D7 for days 2-6
+      if (day > 1 && day < 7) {
+        const ratio = (day - 1) / 6;
+        return d1 - (d1 - d7) * ratio;
+      }
+      
+      // Interpolate between D7 and D30 for days 8-29
+      if (day > 7 && day < 30) {
+        const ratio = (day - 7) / 23;
+        return d7 - (d7 - d30) * ratio;
+      }
+      
+      // For days beyond 30, use D30 (or extrapolate down)
+      if (day > 30) {
+        const daysPast30 = day - 30;
+        // Exponential decay beyond day 30
+        return d30 * Math.pow(0.95, daysPast30);
+      }
+      
+      return 0;
+    };
+    
+    // Calculate max retention value for normalization
+    const calculateMaxRetention = () => {
+      if (daily.length > 0) {
+        return Math.max(...daily.map(d => Math.max(
+          d.retentionD1 || 0,
+          d.retentionD7 || 0,
+          d.retentionD30 || 0
+        )));
+      }
+      return Math.max(
+        metrics.retentionD1 || 0,
+        metrics.retentionD7 || 0,
+        metrics.retentionD30 || 0
+      ) || 100;
+    };
+    
+    const maxRetention = calculateMaxRetention();
+    
     return [
       {
         id: 'cpi-trends',
@@ -237,18 +295,38 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         color: '#1976d2',
         data: {
           kpi: {
-            // Use metrics.installs which comes from backend
-            installs: formatNumber(metrics.installs || 0),
-            spend: `$${formatNumber((metrics.installs || 0) * (metrics.avgCpi || 0))}`,
-            cpi: `$${(metrics.avgCpi || 0).toFixed(2)}`
+            // Calculate totals from daily data
+            installs: formatNumber(daily.reduce((sum, day) => sum + (day.newUsers || 0), 0)),
+            spend: `₹${formatNumber(daily.reduce((sum, day) => sum + (day.adSpend || 0), 0))}`,
+            cpi: (() => {
+              const totalInstalls = daily.reduce((sum, day) => sum + (day.newUsers || 0), 0);
+              const totalSpend = daily.reduce((sum, day) => sum + (day.adSpend || 0), 0);
+              const avgCpi = totalInstalls > 0 ? totalSpend / totalInstalls : 0;
+              return `₹${avgCpi.toFixed(2)}`;
+            })()
           },
-          table: daily.map(day => ({
-            date: formatDate(day.date),
-            // Daily installs not tracked - show sessions as approximation
-            installs: formatNumber(day.sessions || 0),
-            spend: `$${formatNumber((day.sessions || 0) * (day.avgCpi || 0))}`,
-            cpi: `$${(day.avgCpi || 0).toFixed(2)}`
-          }))
+          table: daily.map(day => {
+            const installs = day.newUsers || 0;
+            const adSpend = day.adSpend || 0;
+            // Calculate CPI: if we have installs and adSpend, use adSpend/installs
+            // Otherwise, if we have CPI from metrics, use that. Otherwise, 0
+            let cpi = 0;
+            if (installs > 0 && adSpend > 0) {
+              cpi = adSpend / installs;
+            } else if (day.cpi && day.cpi > 0) {
+              cpi = day.cpi;
+            }
+            
+            // Spend should be adSpend if available, otherwise calculate from installs * cpi, otherwise 0
+            const spend = adSpend > 0 ? adSpend : (installs > 0 && cpi > 0 ? installs * cpi : 0);
+            
+            return {
+              date: formatDate(day.date),
+              installs: formatNumber(installs),
+              spend: `₹${formatNumber(spend)}`,
+              cpi: `₹${cpi.toFixed(2)}`
+            };
+          })
         }
       },
       {
@@ -265,12 +343,12 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
           },
           table: daily.map(day => ({
             date: formatDate(day.date),
-            spend: `$${formatNumber(day.spend || 0)}`,
-            revD1: `$${formatNumber(day.revenueD1 || 0)}`,
+            spend: `₹${formatNumber(day.spend || 0)}`,
+            revD1: `₹${formatNumber(day.revenueD1 || 0)}`,
             roas1: `${((day.revenueD1 || 0) / (day.spend || 1) * 100).toFixed(0)}%`,
-            revD7: `$${formatNumber(day.revenueD7 || 0)}`,
+            revD7: `₹${formatNumber(day.revenueD7 || 0)}`,
             roas7: `${((day.revenueD7 || 0) / (day.spend || 1) * 100).toFixed(0)}%`,
-            revD30: `$${formatNumber(day.revenueD30 || 0)}`,
+            revD30: `₹${formatNumber(day.revenueD30 || 0)}`,
             roas30: `${((day.revenueD30 || 0) / (day.spend || 1) * 100).toFixed(0)}%`
           }))
         }
@@ -288,26 +366,105 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
             d7: `${(metrics.retentionD7 || 0).toFixed(1)}%`,
             d30: metrics.retentionD30 ? `${metrics.retentionD30.toFixed(1)}%` : 'N/A'
           },
+          // Heatmap format: rows are cohorts/dates, columns are days 1-9
           table: (() => {
-            // Use newUsers from metrics as installs (for D0 cohort)
-            const totalInstalls = metrics.newUsers || 0;
+            let retentionRows: any[] = [];
             
-            // Retention percentages (backend returns as percentage 0-100, convert to decimal)
-            const d1Percentage = (metrics.retentionD1 || 0) / 100;
-            const d7Percentage = (metrics.retentionD7 || 0) / 100;
-            const d30Percentage = metrics.retentionD30 ? metrics.retentionD30 / 100 : 0;
+            if (daily.length > 0) {
+              retentionRows = daily.map(d => {
+                const installs = d.newUsers || 0;
+                const d1 = d.retentionD1 || 0;
+                const d7 = d.retentionD7 || 0;
+                const d30 = d.retentionD30 || 0;
+                const dateStr = formatDate(d.date);
+                const dayName = new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' });
+                
+                // Create row with date and retention for each day (1-9)
+                const row: any = {
+                  cohortDate: `${dayName}, ${dateStr} (${formatNumber(installs)} Users)`,
+                  isMean: false
+                };
+                
+                // Calculate retention for days 1-9
+                for (let day = 1; day <= 9; day++) {
+                  const retention = calculateDayRetention(day, d1, d7, d30);
+                  row[`day${day}`] = {
+                    value: retention,
+                    display: `${retention.toFixed(2)}%`,
+                    color: getHeatmapColor(retention, maxRetention)
+                  };
+                }
+                
+                return row;
+              });
+            } else {
+              // Fallback to summary data if no daily data
+              const totalInstalls = metrics.newUsers || 0;
+              const d1 = metrics.retentionD1 || 0;
+              const d7 = metrics.retentionD7 || 0;
+              const d30 = metrics.retentionD30 || 0;
+              
+              const row: any = {
+                cohortDate: `Overall Period (${formatNumber(totalInstalls)} Users)`,
+                isMean: false
+              };
+              
+              // Calculate retention for days 1-9
+              for (let day = 1; day <= 9; day++) {
+                const retention = calculateDayRetention(day, d1, d7, d30);
+                row[`day${day}`] = {
+                  value: retention,
+                  display: `${retention.toFixed(2)}%`,
+                  color: getHeatmapColor(retention, maxRetention)
+                };
+              }
+              
+              retentionRows = [row];
+            }
             
-            // Return a summary row with cohort-based data
-            return [{
-              cohort: 'Overall Period',
-              installs: formatNumber(totalInstalls),
-              d1Users: formatNumber(Math.round(totalInstalls * d1Percentage)),
-              d1: `${(metrics.retentionD1 || 0).toFixed(1)}%`,
-              d7Users: formatNumber(Math.round(totalInstalls * d7Percentage)),
-              d7: `${(metrics.retentionD7 || 0).toFixed(1)}%`,
-              d30Users: formatNumber(Math.round(totalInstalls * d30Percentage)),
-              d30: metrics.retentionD30 ? `${metrics.retentionD30.toFixed(1)}%` : 'N/A'
-            }];
+            // Calculate Mean row if we have data
+            if (retentionRows.length > 0) {
+              const totalUsers = retentionRows.reduce((sum, row) => {
+                const match = row.cohortDate.match(/\(([\d.,kmMK]+)\s+Users\)/);
+                if (match) {
+                  const userStr = match[1].toUpperCase();
+                  let userCount = 0;
+                  if (userStr.includes('M')) {
+                    userCount = parseFloat(userStr.replace('M', '')) * 1000000;
+                  } else if (userStr.includes('K')) {
+                    userCount = parseFloat(userStr.replace('K', '')) * 1000;
+                  } else {
+                    userCount = parseFloat(userStr.replace(/,/g, '')) || 0;
+                  }
+                  return sum + userCount;
+                }
+                return sum;
+              }, 0);
+              
+              const meanRow: any = {
+                cohortDate: `Mean (${formatNumber(totalUsers)} Users)`,
+                isMean: true
+              };
+              
+              // Calculate average retention for each day
+              for (let day = 1; day <= 9; day++) {
+                const dayValues = retentionRows.map(row => row[`day${day}`]?.value || 0).filter(v => v > 0);
+                const avgRetention = dayValues.length > 0 
+                  ? dayValues.reduce((sum, val) => sum + val, 0) / dayValues.length 
+                  : 0;
+                
+                meanRow[`day${day}`] = {
+                  value: avgRetention,
+                  display: `${avgRetention.toFixed(2)}%`,
+                  color: getHeatmapColor(avgRetention, maxRetention)
+                };
+              }
+              
+              // Add Mean row at the beginning
+              retentionRows = [meanRow, ...retentionRows];
+            }
+            
+            return retentionRows;
           })()
         }
       },
@@ -319,9 +476,9 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         color: '#9c27b0',
         data: {
           kpi: {
-            gross: `$${formatNumber(metrics.totalRevenue || 0)}`,
-            iap: `$${formatNumber(metrics.iapRevenue || 0)}`,
-            ads: `$${formatNumber(metrics.adRevenue || 0)}`
+            gross: `₹${formatNumber(metrics.totalRevenue || 0)}`,
+            iap: `₹${formatNumber(metrics.iapRevenue || 0)}`,
+            ads: `₹${formatNumber(metrics.adRevenue || 0)}`
           },
           table: daily.map(day => ({
             date: formatDate(day.date),
@@ -359,17 +516,17 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         color: '#1976d2',
         data: {
           kpi: {
-            gross: `$${formatNumber(metrics.totalRevenue || 0)}`,
-            net: `$${formatNumber((metrics.totalRevenue || 0) * 0.7)}`,
-            payoutDue: `$${formatNumber((metrics.totalRevenue || 0) * 0.6)}`
+            gross: `₹${formatNumber(metrics.totalRevenue || 0)}`,
+            net: `₹${formatNumber((metrics.totalRevenue || 0) * 0.7)}`,
+            payoutDue: `₹${formatNumber((metrics.totalRevenue || 0) * 0.6)}`
           },
           table: (metrics.geoBreakdown || []).map((geo: any) => ({
             country: geo.country,
             installs: formatNumber(geo.installs || 0),
-            grossRev: `$${formatNumber(geo.revenue || 0)}`,
+            grossRev: `₹${formatNumber(geo.revenue || 0)}`,
             revShare: '30%',
-            netRev: `$${formatNumber((geo.revenue || 0) * 0.7)}`,
-            payoutDue: `$${formatNumber((geo.revenue || 0) * 0.6)}`
+            netRev: `₹${formatNumber((geo.revenue || 0) * 0.7)}`,
+            payoutDue: `₹${formatNumber((geo.revenue || 0) * 0.6)}`
           }))
         }
       },
@@ -381,13 +538,13 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         color: '#673ab7',
         data: {
           kpi: {
-            ecpm: `$${(metrics.avgEcpm || 0).toFixed(2)}`,
+            ecpm: `₹${(metrics.avgEcpm || 0).toFixed(2)}`,
             fillRate: `${(metrics.fillRate || 0).toFixed(1)}%`,
             impressions: formatNumber(metrics.totalImpressions || 0)
           },
           table: daily.map(day => ({
             date: formatDate(day.date),
-            ecpm: `$${(day.avgEcpm || 0).toFixed(2)}`,
+            ecpm: `₹${(day.avgEcpm || 0).toFixed(2)}`,
             fillRate: `${(day.fillRate || 0).toFixed(1)}%`,
             impressions: formatNumber(day.impressions || 0)
           }))
@@ -1113,25 +1270,25 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
             <Grid item xs={12} sm={6} md={2}>
               <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
                 <Typography variant="caption" color="textSecondary">Gross Rev</Typography>
-                <Typography variant="h6" color="primary">${formatNumber(kpiData.grossRev)}</Typography>
+                <Typography variant="h6" color="primary">₹{formatNumber(kpiData.grossRev)}</Typography>
               </Box>
             </Grid>
             <Grid item xs={12} sm={6} md={2}>
               <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
                 <Typography variant="caption" color="textSecondary">Net Rev</Typography>
-                <Typography variant="h6" color="success.main">${formatNumber(kpiData.netRev)}</Typography>
+                <Typography variant="h6" color="success.main">₹{formatNumber(kpiData.netRev)}</Typography>
               </Box>
             </Grid>
             <Grid item xs={12} sm={6} md={2}>
               <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
                 <Typography variant="caption" color="textSecondary">Payout Due</Typography>
-                <Typography variant="h6" color="warning.main">${formatNumber(kpiData.payoutDue)}</Typography>
+                <Typography variant="h6" color="warning.main">₹{formatNumber(kpiData.payoutDue)}</Typography>
               </Box>
             </Grid>
             <Grid item xs={12} sm={6} md={2}>
               <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
                 <Typography variant="caption" color="textSecondary">eCPM</Typography>
-                <Typography variant="h6">${kpiData.ecpm.toFixed(2)}</Typography>
+                <Typography variant="h6">₹{kpiData.ecpm.toFixed(2)}</Typography>
               </Box>
             </Grid>
             <Grid item xs={12} sm={6} md={2}>
@@ -1469,10 +1626,10 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                               <TableRow key={row.country}>
                                                 <TableCell>{row.country}</TableCell>
                                                 <TableCell align="right">{formatNumber(row.installs)}k</TableCell>
-                                                <TableCell align="right">${formatNumber(row.grossRevenue)}</TableCell>
+                                                <TableCell align="right">₹{formatNumber(row.grossRevenue)}</TableCell>
                                                 <TableCell align="right">{row.revenueShare}%</TableCell>
-                                                <TableCell align="right">${formatNumber(row.netRevenue)}</TableCell>
-                                                <TableCell align="right">${formatNumber(row.payoutDue)}</TableCell>
+                                                <TableCell align="right">₹{formatNumber(row.netRevenue)}</TableCell>
+                                                <TableCell align="right">₹{formatNumber(row.payoutDue)}</TableCell>
                                               </TableRow>
                                             ))}
                                           </TableBody>
@@ -1489,9 +1646,9 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                           💰 Payout Summary - {studioDisplayName}
                                         </Typography>
                                         <Typography variant="h6" sx={{ mb: 2 }}>
-                                          Total Net: ${formatNumber(payoutSummaryData.totalNet)} | 
-                                          Paid: ${formatNumber(payoutSummaryData.totalPaid)} | 
-                                          Outstanding: ${formatNumber(payoutSummaryData.totalOutstanding)}
+                                          Total Net: ₹{formatNumber(payoutSummaryData.totalNet)} | 
+                                          Paid: ₹{formatNumber(payoutSummaryData.totalPaid)} | 
+                                          Outstanding: ₹{formatNumber(payoutSummaryData.totalOutstanding)}
                                         </Typography>
                                         <Table>
                                           <TableHead>
@@ -1507,10 +1664,10 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                             {payoutSummaryData.studios.map((studio: any) => (
                                               <TableRow key={studio.studioId}>
                                                 <TableCell>{studio.studioName}</TableCell>
-                                                <TableCell align="right">${formatNumber(studio.grossRevenue)}</TableCell>
-                                                <TableCell align="right">${formatNumber(studio.netRevenue)}</TableCell>
-                                                <TableCell align="right">${formatNumber(studio.paid)}</TableCell>
-                                                <TableCell align="right">${formatNumber(studio.outstanding)}</TableCell>
+                                                <TableCell align="right">₹{formatNumber(studio.grossRevenue)}</TableCell>
+                                                <TableCell align="right">₹{formatNumber(studio.netRevenue)}</TableCell>
+                                                <TableCell align="right">₹{formatNumber(studio.paid)}</TableCell>
+                                                <TableCell align="right">₹{formatNumber(studio.outstanding)}</TableCell>
                                               </TableRow>
                                             ))}
                                           </TableBody>
@@ -1556,20 +1713,20 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                 <Typography variant="caption" color="textSecondary">
                                   (📊) DAU: {formatNumber(game.dau || 0)}
                                   {filters.platform !== 'Web' && (
-                                    <>  Installs: {formatNumber(game.installs || 0)}k  CPI: ${(game.cpi || 0).toFixed(2)}</>
+                                    <>  Installs: {formatNumber(game.installs || 0)}k  CPI: ₹{(game.cpi || 0).toFixed(2)}</>
                                   )}
                                 </Typography>
                               </Box>
                             </Box>
                           </TableCell>
                           <TableCell>{formatNumber(game.dau || 0)}</TableCell>
-                          <TableCell>${formatNumber(game.revenue || 0)}</TableCell>
-                          <TableCell>${formatNumber((game.revenue || 0) * 0.8)}</TableCell>
+                          <TableCell>₹{formatNumber(game.revenue || 0)}</TableCell>
+                          <TableCell>₹{formatNumber((game.revenue || 0) * 0.8)}</TableCell>
                           {filters.platform !== 'Web' && (
                             <TableCell>{formatNumber(game.installs || 0)}</TableCell>
                           )}
                           {filters.platform !== 'Web' && (
-                            <TableCell>${formatNumber(game.cpi || 0)}</TableCell>
+                            <TableCell>₹{formatNumber(game.cpi || 0)}</TableCell>
                           )}
                           <TableCell>
                             <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -1657,28 +1814,87 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                       {/* Data Table */}
                                       {report.data.table && report.data.table.length > 0 && (
                                         <Box sx={{ overflowX: 'auto' }}>
-                                          <Table size="small">
-                                            <TableHead>
-                                              <TableRow sx={{ backgroundColor: `${report.color}20` }}>
-                                                {Object.keys(report.data.table[0] || {}).map((header) => (
-                                                  <TableCell key={header} sx={{ fontWeight: 'bold' }}>
-                                                    {header.charAt(0).toUpperCase() + header.slice(1)}
+                                          {report.id === 'retention' ? (
+                                            // Heatmap format for retention table
+                                            <Table size="small">
+                                              <TableHead>
+                                                <TableRow sx={{ backgroundColor: `${report.color}20` }}>
+                                                  <TableCell sx={{ fontWeight: 'bold', position: 'sticky', left: 0, backgroundColor: `${report.color}20`, zIndex: 1 }}>
+                                                    Cohort Date
                                                   </TableCell>
-                                                ))}
-                                              </TableRow>
-                                            </TableHead>
-                                            <TableBody>
-                                              {report.data.table.map((row: any, index: number) => (
-                                                <TableRow key={index} hover>
-                                                  {Object.values(row).map((cell: any, cellIndex: number) => (
-                                                    <TableCell key={cellIndex}>
-                                                      {String(cell)}
+                                                  {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((day) => (
+                                                    <TableCell key={day} sx={{ fontWeight: 'bold', textAlign: 'center', minWidth: '80px' }}>
+                                                      {day}
                                                     </TableCell>
                                                   ))}
                                                 </TableRow>
-                                              ))}
-                                            </TableBody>
-                                          </Table>
+                                              </TableHead>
+                                              <TableBody>
+                                                {report.data.table.map((row: any, index: number) => (
+                                                  <TableRow key={index} hover>
+                                                    <TableCell 
+                                                      sx={{ 
+                                                        fontWeight: row.isMean ? 'bold' : 'normal',
+                                                        position: 'sticky',
+                                                        left: 0,
+                                                        backgroundColor: row.isMean ? '#f5f5f5' : '#ffffff',
+                                                        zIndex: 1
+                                                      }}
+                                                    >
+                                                      {row.cohortDate}
+                                                    </TableCell>
+                                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((day) => {
+                                                      const dayData = row[`day${day}`];
+                                                      // Calculate local max for text color
+                                                      const localMax = Math.max(...report.data.table
+                                                        .flatMap((r: any) => 
+                                                          [1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => r[`day${d}`]?.value || 0)
+                                                        )
+                                                      );
+                                                      return (
+                                                        <TableCell 
+                                                          key={day}
+                                                          sx={{
+                                                            textAlign: 'center',
+                                                            backgroundColor: dayData?.color || '#ffffff',
+                                                            color: dayData?.value > localMax * 0.5 ? '#ffffff' : '#000000',
+                                                            fontWeight: 'medium',
+                                                            minWidth: '80px'
+                                                          }}
+                                                        >
+                                                          {dayData?.display || '0.00%'}
+                                                        </TableCell>
+                                                      );
+                                                    })}
+                                                  </TableRow>
+                                                ))}
+                                              </TableBody>
+                                            </Table>
+                                          ) : (
+                                            // Generic table format for other reports
+                                            <Table size="small">
+                                              <TableHead>
+                                                <TableRow sx={{ backgroundColor: `${report.color}20` }}>
+                                                  {Object.keys(report.data.table[0] || {}).map((header) => (
+                                                    <TableCell key={header} sx={{ fontWeight: 'bold' }}>
+                                                      {header.charAt(0).toUpperCase() + header.slice(1)}
+                                                    </TableCell>
+                                                  ))}
+                                                </TableRow>
+                                              </TableHead>
+                                              <TableBody>
+                                                {report.data.table.map((row: any, index: number) => (
+                                                  <TableRow key={index} hover>
+                                                    {Object.values(row).map((cell: any, cellIndex: number) => (
+                                                      <TableCell key={cellIndex}>
+                                                        {typeof cell === 'object' && cell !== null && 'display' in cell ? cell.display : String(cell)}
+                                                      </TableCell>
+                                                    ))}
+                                                  </TableRow>
+                                                ))}
+                                              </TableBody>
+                                            </Table>
+                                          )}
                                         </Box>
                                       )}
                                       {(!report.data.table || report.data.table.length === 0) && (

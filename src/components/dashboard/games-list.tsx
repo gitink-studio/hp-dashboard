@@ -332,17 +332,80 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     };
     
-    // Calculate CPI (Cost Per Install) - simple estimate based on daily installs
-    // Note: Real CPI requires ad spend data which isn't in current daily metrics
-    const dailyInstalls = hasDaily ? daily.reduce((sum, d) => sum + (d.dau || 0), 0) : 0;
-    const estimatedAdSpend = dailyInstalls * 0.42; // Placeholder: estimated CPI of $0.42
-    const cpi = dailyInstalls > 0 ? estimatedAdSpend / dailyInstalls : 0;
+    // Helper function to get heatmap color based on value (0-100 percentage)
+    const getHeatmapColor = (value: number, maxValue: number = 100): string => {
+      if (value === 0) return '#ffffff'; // White for 0
+      const normalized = Math.min(value / maxValue, 1);
+      // Create gradient from light blue (#e3f2fd) to darker blue (#1976d2)
+      // Using a blue color scheme similar to the image
+      const red = Math.floor(227 - (normalized * 30)); // 227 -> 197
+      const green = Math.floor(242 - (normalized * 65)); // 242 -> 118
+      const blue = Math.floor(253 - (normalized * 55)); // 253 -> 216
+      return `rgb(${red}, ${green}, ${blue})`;
+    };
+    
+    // Helper function to calculate retention for a specific day
+    // Uses interpolation between D1, D7, D30 if needed
+    const calculateDayRetention = (day: number, d1: number, d7: number, d30: number): number => {
+      if (day === 1) return d1;
+      if (day === 7) return d7;
+      if (day === 30) return d30;
+      
+      // Interpolate between D1 and D7 for days 2-6
+      if (day > 1 && day < 7) {
+        const ratio = (day - 1) / 6;
+        return d1 - (d1 - d7) * ratio;
+      }
+      
+      // Interpolate between D7 and D30 for days 8-29
+      if (day > 7 && day < 30) {
+        const ratio = (day - 7) / 23;
+        return d7 - (d7 - d30) * ratio;
+      }
+      
+      // For days beyond 30, use D30 (or extrapolate down)
+      if (day > 30) {
+        const daysPast30 = day - 30;
+        // Exponential decay beyond day 30
+        return d30 * Math.pow(0.95, daysPast30);
+      }
+      
+      return 0;
+    };
+    
+    // Calculate max retention value for normalization
+    const calculateMaxRetention = () => {
+      if (hasDaily && daily.length > 0) {
+        return Math.max(...daily.map(d => Math.max(
+          d.retentionD1 || 0,
+          d.retentionD7 || 0,
+          d.retentionD30 || 0
+        )));
+      }
+      if (hasCohortRetention && cohortRetention.length > 0) {
+        const allValues = cohortRetention.flatMap((c: any) => [
+          parseFloat(c.d1?.replace('%', '') || '0'),
+          parseFloat(c.d7?.replace('%', '') || '0'),
+          parseFloat(c.d30?.replace('%', '') || '0')
+        ]);
+        return Math.max(...allValues, 0);
+      }
+      return 100; // Default max
+    };
+    
+    const maxRetention = calculateMaxRetention();
+    
+    // Calculate CPI (Cost Per Install) from actual data
+    // Use newUsers for installs and adSpend for spend
+    const dailyInstalls = hasDaily ? daily.reduce((sum, d) => sum + (d.newUsers || 0), 0) : 0;
+    const totalAdSpend = hasDaily ? daily.reduce((sum, d) => sum + (d.adSpend || 0), 0) : 0;
+    const cpi = dailyInstalls > 0 ? (totalAdSpend / dailyInstalls) : 0;
     
     // Calculate ROAS (Return on Ad Spend) - D1/D7/D30 simplified
     const totalRevenue = hasMetrics ? metrics.totalRevenue || 0 : 0;
-    const roasD1 = estimatedAdSpend > 0 ? ((totalRevenue * 0.62) / estimatedAdSpend * 100) : 0;
-    const roasD7 = estimatedAdSpend > 0 ? ((totalRevenue * 1.28) / estimatedAdSpend * 100) : 0;
-    const roasD30 = estimatedAdSpend > 0 ? ((totalRevenue * 2.12) / estimatedAdSpend * 100) : 0;
+    const roasD1 = totalAdSpend > 0 ? ((totalRevenue * 0.62) / totalAdSpend * 100) : 0;
+    const roasD7 = totalAdSpend > 0 ? ((totalRevenue * 1.28) / totalAdSpend * 100) : 0;
+    const roasD30 = totalAdSpend > 0 ? ((totalRevenue * 2.12) / totalAdSpend * 100) : 0;
     
     return [
     {
@@ -356,15 +419,24 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
       data: {
         kpi: { 
           installs: hasDaily ? formatNumber(dailyInstalls) : '0', 
-          spend: hasDaily ? `$${formatNumber(estimatedAdSpend)}` : '$0.00', 
-          cpi: hasDaily ? `$${cpi.toFixed(2)}` : '$0.00' 
+          spend: hasDaily ? `₹${formatNumber(totalAdSpend)}` : '₹0.00', 
+          cpi: hasDaily ? `₹${cpi.toFixed(2)}` : '₹0.00' 
         },
-        table: hasDaily ? daily.map(d => ({
-          date: formatDate(d.date),
-          installs: formatNumber(d.dau || 0),
-          spend: `$${((d.dau || 0) * cpi).toFixed(2)}`,
-          cpi: `$${cpi.toFixed(2)}`
-        })) : []
+        table: hasDaily ? daily.map(d => {
+          const installs = d.newUsers || 0;
+          const adSpend = d.adSpend || 0;
+          // Calculate CPI from adSpend / installs for this day
+          // If no installs, use the CPI from metrics if available, otherwise 0
+          const dayCpi = installs > 0 ? (adSpend / installs) : (d.cpi || 0);
+          const daySpend = adSpend > 0 ? adSpend : (installs > 0 && dayCpi > 0 ? installs * dayCpi : 0);
+          
+          return {
+            date: formatDate(d.date),
+            installs: formatNumber(installs),
+            spend: `₹${formatNumber(daySpend)}`,
+            cpi: `₹${dayCpi.toFixed(2)}`
+          };
+        }) : []
       }
     },
     {
@@ -381,14 +453,23 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
           roasD7: hasMetrics ? `${roasD7.toFixed(0)}%` : '0%', 
           roasD30: hasMetrics ? `${roasD30.toFixed(0)}%` : '0%' 
         },
-        table: hasDaily ? daily.map(d => ({
-          date: formatDate(d.date),
-          spend: `$${((d.dau || 0) * cpi).toFixed(2)}`,
-          revD1: `$${(parseFloat(d.gross || '0') * 0.62).toFixed(2)}`,
-          roas1: `${(parseFloat(d.gross || '0') > 0 ? (parseFloat(d.gross) * 0.62 / ((d.dau || 0) * cpi) * 100) : 0).toFixed(0)}%`,
-          revD7: `$${(parseFloat(d.gross || '0') * 1.28).toFixed(2)}`,
-          roas7: `${(parseFloat(d.gross || '0') > 0 ? (parseFloat(d.gross) * 1.28 / ((d.dau || 0) * cpi) * 100) : 0).toFixed(0)}%`
-        })) : []
+        table: hasDaily ? daily.map(d => {
+          const totalRevenue = d.totalRevenue || d.grossRevenue || 0;
+          const adSpend = d.adSpend || 0;
+          const installs = d.newUsers || 0;
+          // Calculate daily spend: use adSpend if available, otherwise calculate from installs * CPI
+          const dayCpi = installs > 0 ? (adSpend / installs) : (d.cpi || 0);
+          const dailySpend = adSpend > 0 ? adSpend : (installs > 0 && dayCpi > 0 ? installs * dayCpi : 0);
+          
+          return {
+            date: formatDate(d.date),
+            spend: `₹${formatNumber(dailySpend)}`,
+            revD1: `₹${(totalRevenue * 0.62).toFixed(2)}`,
+            roas1: `${(totalRevenue > 0 && dailySpend > 0 ? (totalRevenue * 0.62 / dailySpend * 100) : 0).toFixed(0)}%`,
+            revD7: `₹${(totalRevenue * 1.28).toFixed(2)}`,
+            roas7: `${(totalRevenue > 0 && dailySpend > 0 ? (totalRevenue * 1.28 / dailySpend * 100) : 0).toFixed(0)}%`
+          };
+        }) : []
       }
     },
     {
@@ -405,17 +486,98 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
           d7: hasMetrics ? `${(metrics.retentionD7 || 0).toFixed(1)}%` : '0.0%', 
           d30: hasMetrics ? `${(metrics.retentionD30 || 0).toFixed(1)}%` : 'N/A' 
         },
-        // Use cohort-based retention data from backend
-        table: hasCohortRetention ? cohortRetention.map((cohort: any) => ({
-          cohortD0: new Date(cohort.cohort).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          installs: formatNumber(cohort.installs || 0),
-          d1Users: formatNumber(cohort.d1Users || 0),
-          d1: cohort.d1 || '0.0%',
-          d7Users: formatNumber(cohort.d7Users || 0),
-          d7: cohort.d7 || '0.0%',
-          d30Users: formatNumber(cohort.d30Users || 0),
-          d30: cohort.d30 || 'N/A'
-        })) : []
+        // Heatmap format: rows are cohorts/dates, columns are days 1-9
+        // Use cohort-based retention data from backend, fallback to daily data
+        table: (() => {
+          let retentionRows: any[] = [];
+          
+          if (hasCohortRetention && cohortRetention.length > 0) {
+            retentionRows = cohortRetention.map((cohort: any) => {
+              const cohortDate = new Date(cohort.cohort).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+              const installs = cohort.installs || 0;
+              const d1 = parseFloat(cohort.d1?.replace('%', '') || '0');
+              const d7 = parseFloat(cohort.d7?.replace('%', '') || '0');
+              const d30 = parseFloat(cohort.d30?.replace('%', '') || '0');
+              
+              // Create row with date/cohort label and retention for each day (1-9)
+              const row: any = {
+                cohortDate: `${cohortDate} (${formatNumber(installs)} Users)`,
+                isMean: false
+              };
+              
+              // Calculate retention for days 1-9
+              for (let day = 1; day <= 9; day++) {
+                const retention = calculateDayRetention(day, d1, d7, d30);
+                row[`day${day}`] = {
+                  value: retention,
+                  display: `${retention.toFixed(2)}%`,
+                  color: getHeatmapColor(retention, maxRetention)
+                };
+              }
+              
+              return row;
+            });
+          } else if (hasDaily) {
+            retentionRows = daily.map(d => {
+              const installs = d.newUsers || 0;
+              const d1 = d.retentionD1 || 0;
+              const d7 = d.retentionD7 || 0;
+              const d30 = d.retentionD30 || 0;
+              const dateStr = formatDate(d.date);
+              const dayName = new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' });
+              
+              // Create row with date and retention for each day (1-9)
+              const row: any = {
+                cohortDate: `${dayName}, ${dateStr} (${formatNumber(installs)} Users)`,
+                isMean: false
+              };
+              
+              // Calculate retention for days 1-9
+              for (let day = 1; day <= 9; day++) {
+                const retention = calculateDayRetention(day, d1, d7, d30);
+                row[`day${day}`] = {
+                  value: retention,
+                  display: `${retention.toFixed(2)}%`,
+                  color: getHeatmapColor(retention, maxRetention)
+                };
+              }
+              
+              return row;
+            });
+          }
+          
+          // Calculate Mean row if we have data
+          if (retentionRows.length > 0) {
+            const totalUsers = retentionRows.reduce((sum, row) => {
+              const match = row.cohortDate.match(/\(([\d,]+)\s+Users\)/);
+              return sum + (match ? parseFloat(match[1].replace(/,/g, '')) : 0);
+            }, 0);
+            
+            const meanRow: any = {
+              cohortDate: `Mean (${formatNumber(totalUsers)} Users)`,
+              isMean: true
+            };
+            
+            // Calculate average retention for each day
+            for (let day = 1; day <= 9; day++) {
+              const dayValues = retentionRows.map(row => row[`day${day}`]?.value || 0).filter(v => v > 0);
+              const avgRetention = dayValues.length > 0 
+                ? dayValues.reduce((sum, val) => sum + val, 0) / dayValues.length 
+                : 0;
+              
+              meanRow[`day${day}`] = {
+                value: avgRetention,
+                display: `${avgRetention.toFixed(2)}%`,
+                color: getHeatmapColor(avgRetention, maxRetention)
+              };
+            }
+            
+            // Add Mean row at the beginning
+            retentionRows = [meanRow, ...retentionRows];
+          }
+          
+          return retentionRows;
+        })()
       }
     },
     {
@@ -428,16 +590,21 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
       color: '#9c27b0',
       data: {
         kpi: { 
-          gross: hasMetrics ? `$${formatNumber(metrics.totalRevenue || 0)}` : '$0.00', 
-          iap: hasMetrics ? `$${formatNumber(metrics.iapRevenue || 0)}` : '$0.00', 
-          ads: hasMetrics ? `$${formatNumber(metrics.adRevenue || 0)}` : '$0.00' 
+          gross: hasMetrics ? `₹${formatNumber(metrics.totalRevenue || 0)}` : '₹0.00', 
+          iap: hasMetrics ? `₹${formatNumber(metrics.iapRevenue || 0)}` : '₹0.00', 
+          ads: hasMetrics ? `₹${formatNumber(metrics.adRevenue || 0)}` : '₹0.00' 
         },
-        table: hasDaily ? daily.map(d => ({
-          date: formatDate(d.date),
-          gross: `$${parseFloat(d.gross).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-          iap: `$${parseFloat(d.iap).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-          ads: `$${parseFloat(d.ads).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-        })) : []
+        table: hasDaily ? daily.map(d => {
+          const totalRevenue = d.totalRevenue || d.grossRevenue || 0;
+          const iapRevenue = d.iapRevenue || 0;
+          const adRevenue = d.adRevenue || 0;
+          return {
+            date: formatDate(d.date),
+            gross: `₹${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            iap: `₹${iapRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            ads: `₹${adRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          };
+        }) : []
       }
     },
     {
@@ -456,9 +623,9 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
         },
         table: hasDaily ? daily.map(d => ({
           date: formatDate(d.date),
-          sessions: formatNumber(d.sessions || 0),
-          crashes: formatNumber(d.crashes || 0),
-          crashRate: `${parseFloat(d.crashRate || '0').toFixed(2)}%`
+          sessions: formatNumber(d.numSessions || d.sessions || 0),
+          crashes: formatNumber(d.errorCount || d.crashes || 0),
+          crashRate: `${(d.crashRate || 0).toFixed(2)}%`
         })) : []
       }
     }
@@ -580,7 +747,7 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
                         <Typography variant="caption" color="textSecondary">
                           (📊) DAU: {formatNumber(game.dau || 0)}
                           {filters.platform !== 'Web' && (
-                            <> • Installs: {formatNumber(game.installs || 0)}k • CPI: ${(game.cpi || 0).toFixed(2)}</>
+                            <> • Installs: {formatNumber(game.installs || 0)}k • CPI: ₹{(game.cpi || 0).toFixed(2)}</>
                           )}
                         </Typography>
                       </Box>
@@ -593,9 +760,9 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
                   )}
                   {/* CPI - Only for Major Stores */}
                   {filters.platform !== 'Web' && filters.platform !== 'All' && (
-                    <TableCell>${formatNumber(game.cpi || 0)}</TableCell>
+                    <TableCell>₹{formatNumber(game.cpi || 0)}</TableCell>
                   )}
-                  <TableCell>${formatNumber(game.revenue || 0)}</TableCell>
+                  <TableCell>₹{formatNumber(game.revenue || 0)}</TableCell>
                   <TableCell>
                     <Box display="flex" alignItems="center" justifyContent="space-between">
                       <Typography variant="body2" color="textSecondary">
@@ -687,28 +854,87 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
                               {/* Data Table */}
                               {report.data.table && report.data.table.length > 0 && (
                               <Box sx={{ overflowX: 'auto' }}>
-                                <Table size="small">
-                                  <TableHead>
-                                    <TableRow sx={{ backgroundColor: `${report.color}20` }}>
-                                      {Object.keys(report.data.table[0]).map((header) => (
-                                        <TableCell key={header} sx={{ fontWeight: 'bold' }}>
-                                          {header.charAt(0).toUpperCase() + header.slice(1)}
+                                {report.id === 'retention' ? (
+                                  // Heatmap format for retention table
+                                  <Table size="small">
+                                    <TableHead>
+                                      <TableRow sx={{ backgroundColor: `${report.color}20` }}>
+                                        <TableCell sx={{ fontWeight: 'bold', position: 'sticky', left: 0, backgroundColor: `${report.color}20`, zIndex: 1 }}>
+                                          Cohort Date
                                         </TableCell>
-                                      ))}
-                                    </TableRow>
-                                  </TableHead>
-                                  <TableBody>
-                                      {report.data.table.map((row: any, index: number) => (
-                                      <TableRow key={index} hover>
-                                          {Object.values(row).map((cell: any, cellIndex: number) => (
-                                          <TableCell key={cellIndex}>
-                                            {cell}
+                                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((day) => (
+                                          <TableCell key={day} sx={{ fontWeight: 'bold', textAlign: 'center', minWidth: '80px' }}>
+                                            {day}
                                           </TableCell>
                                         ))}
                                       </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
+                                    </TableHead>
+                                    <TableBody>
+                                      {report.data.table.map((row: any, index: number) => (
+                                        <TableRow key={index} hover>
+                                          <TableCell 
+                                            sx={{ 
+                                              fontWeight: row.isMean ? 'bold' : 'normal',
+                                              position: 'sticky',
+                                              left: 0,
+                                              backgroundColor: row.isMean ? '#f5f5f5' : '#ffffff',
+                                              zIndex: 1
+                                            }}
+                                          >
+                                            {row.cohortDate}
+                                          </TableCell>
+                                          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((day) => {
+                                            const dayData = row[`day${day}`];
+                                            // Calculate local max for text color
+                                            const localMax = Math.max(...report.data.table
+                                              .flatMap((r: any) => 
+                                                [1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => r[`day${d}`]?.value || 0)
+                                              )
+                                            );
+                                            return (
+                                              <TableCell 
+                                                key={day}
+                                                sx={{
+                                                  textAlign: 'center',
+                                                  backgroundColor: dayData?.color || '#ffffff',
+                                                  color: dayData?.value > localMax * 0.5 ? '#ffffff' : '#000000',
+                                                  fontWeight: 'medium',
+                                                  minWidth: '80px'
+                                                }}
+                                              >
+                                                {dayData?.display || '0.00%'}
+                                              </TableCell>
+                                            );
+                                          })}
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                ) : (
+                                  // Generic table format for other reports
+                                  <Table size="small">
+                                    <TableHead>
+                                      <TableRow sx={{ backgroundColor: `${report.color}20` }}>
+                                        {Object.keys(report.data.table[0]).map((header) => (
+                                          <TableCell key={header} sx={{ fontWeight: 'bold' }}>
+                                            {header.charAt(0).toUpperCase() + header.slice(1)}
+                                          </TableCell>
+                                        ))}
+                                      </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                      {report.data.table.map((row: any, index: number) => (
+                                        <TableRow key={index} hover>
+                                          {Object.values(row).map((cell: any, cellIndex: number) => (
+                                            <TableCell key={cellIndex}>
+                                              {typeof cell === 'object' && cell !== null && 'display' in cell ? cell.display : cell}
+                                            </TableCell>
+                                          ))}
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                )}
                               </Box>
                               )}
 
