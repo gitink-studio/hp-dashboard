@@ -167,6 +167,12 @@ const search = {
   size: 'small'
 }
 
+const textField = {
+  height: 40,
+  width: 265,
+  size: 'small'
+}
+
 const dataGrid = {
   border: 1,
   borderColor: 'divider',
@@ -201,5 +207,6 @@ export const customStyle = {
   filterPaper,
   dropdown,
   search,
-  dataGrid
+  dataGrid,
+  textField
 };

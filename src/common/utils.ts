@@ -302,10 +302,6 @@ export const handleFileDrop = (e: React.DragEvent<HTMLDivElement>, action: (valu
 };
 
 
-export const isEmptyContent = (node: any): boolean => React.Children.count(node) === 0;
-
-export const isEmptyObject = (object: Record<string, any>): boolean => object && Object.keys(object).length === 0;
-
 export const formatTime = (_milliSeconds: string) => {
   const milliSeconds = Number(_milliSeconds);
   const totalSeconds = Math.floor(milliSeconds / 1000);
@@ -323,14 +319,35 @@ export const formatTime = (_milliSeconds: string) => {
   return time.join(' ');
 }
 
-export const removeWhiteSpace = (data: string) => data.replace(/\s+/g, '');
-
 export const isObjectEmpty = (obj: object) => {
   if (!obj) return true
 
   return Object.keys(obj).length === 0;
 }
 
-export const goToPage = (pageUrl: string) => window.location.href = '/#' + pageUrl;
+export const getISODateStringByDay = (day: string) => {
+  const date = new Date();
+  date.setDate(date.getDate() - Number(day));
+  return date.toISOString();
+}
 
+export const getISODateStringByDate = (_date: string) => {
+  const date = new Date(_date);
+  return date.toISOString();
+}
+
+export const convertToUTCBoundary = (_date: string, isEndDate: boolean = false) => {
+  const date = new Date(_date);
+
+  isEndDate
+    ? date.setUTCHours(23, 59, 59, 999)
+    : date.setUTCHours(0, 0, 0, 0);
+
+  return date.toISOString();
+};
+
+export const isEmptyContent = (node: any): boolean => React.Children.count(node) === 0;
+export const isEmptyObject = (object: Record<string, any>): boolean => object && Object.keys(object).length === 0;
+export const removeWhiteSpace = (data: string) => data.replace(/\s+/g, '');
+export const goToPage = (pageUrl: string) => window.location.href = '/#' + pageUrl;
 export const cloneObject = (object: any) => JSON.parse(JSON.stringify(object));

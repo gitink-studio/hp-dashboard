@@ -5,6 +5,7 @@ type GameEventReportAction = {
     setStudioFilterValue: (studioFilterValue: string) => void;
     setGamePlatformFilterValue: (gamePlatformFilterValue: string) => void;
     setGameFilterValue: (gameFilterValue: string) => void;
+    setDateRangeFilterValue: (dateRangeFilterValue: number) => void;
     setCanOpenDetailedReport: (canOpenDetailedReport: boolean) => void;
     setCanOpenPlayersReport: (canOpenPlayersReport: boolean) => void;
     setDetailedGameplayReportData: (detailedGameplayReportData: any) => void;
@@ -17,6 +18,7 @@ type GameEventReportState = {
     studioFilterValue: string,
     gamePlatformFilterValue: string,
     gameFilterValue: string,
+    dateRangeFilterValue: number,
     gameEventReportData: any;
     canOpenPlayersReport: boolean;
     canOpenDetailedReport: boolean;
@@ -29,6 +31,7 @@ const initialState = {
     studioFilterValue: "All",
     gamePlatformFilterValue: "All",
     gameFilterValue: 'All',
+    dateRangeFilterValue: 0,
     canOpenPlayersReport: false,
     canOpenDetailedReport: false,
     detailedGameplayReportData: [],
@@ -42,6 +45,7 @@ const useGameEventReportStore = create<GameEventReportState>((set) => ({
         setStudioFilterValue: (studioFilterValue: string) => set({ studioFilterValue }),
         setGamePlatformFilterValue: (gamePlatformFilterValue: string) => set({ gamePlatformFilterValue }),
         setGameFilterValue: (gameFilterValue: string) => set({ gameFilterValue }),
+        setDateRangeFilterValue: (dateRangeFilterValue: number) => set({ dateRangeFilterValue }),
         setCanOpenDetailedReport: (canOpenDetailedReport: boolean) => set({ canOpenDetailedReport }),
         setCanOpenPlayersReport: (canOpenPlayersReport: boolean) => set({ canOpenPlayersReport }),
         setDetailedGameplayReportData: (detailedGameplayReportData: any) => set({ detailedGameplayReportData }),
@@ -54,6 +58,7 @@ export const useSelectedGameId = () => useGameEventReportStore((state) => state.
 export const useStudioFilterValue = () => useGameEventReportStore((state) => state.studioFilterValue);
 export const useGamePlatformFilterValue = () => useGameEventReportStore((state) => state.gamePlatformFilterValue);
 export const useGameFilterValue = () => useGameEventReportStore((state) => state.gameFilterValue);
+export const useDateRangeFilterValue = () => useGameEventReportStore((state) => state.dateRangeFilterValue);
 export const useDetailedGameplayReportData = () => useGameEventReportStore((state) => state.gameEventReportData);
 export const useOpenDetailedReport = () => useGameEventReportStore((state) => state.canOpenDetailedReport);
 export const useOpenPlayersReport = () => useGameEventReportStore((state) => state.canOpenPlayersReport);

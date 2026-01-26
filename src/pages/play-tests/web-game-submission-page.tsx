@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { DataGrid, GridColDef, useGridApiRef } from '@mui/x-data-grid';
 import { Box, Button, CircularProgress, FormControl, IconButton, InputAdornment, InputLabel, MenuItem, Select, Stack, TextField } from '@mui/material';
-import { Add, Close, Done, PlayArrow, Search, Visibility } from '@mui/icons-material';
+import { Add, ArrowCircleRight, ArrowCircleRightOutlined, ArrowForward, ArrowForwardOutlined, Close, Done, PlayArrow, Search, Visibility } from '@mui/icons-material';
 import { useDataSending, useDetailedView, useOpenVideo, usePlayTestsActions, useReviewNotes, useRolePublisher, useVideoUrl } from '../../store/play-tests/play-tests-store';
 import { sendGraphqlRequest, sendRequest } from '../../common/utils';
 import { GameRequestStatus, GRAPHQL_URL, HttpMethod, LAUNCH_GAME_URL, Platform, QueryNames, TOTAL_WEB_GAME_SUBMISSION_STEPS, WEB_GAME_SUBMISSION_STATUS_UPDATE_URL } from '../../common/constants';
@@ -238,9 +238,11 @@ export const WebGameSubmissionPage = () => {
                         }
                     }
                     else {
-                        if (params.value === GameRequestStatus.ACCEPTED) {
-                            status = params.row.currentSetupStateName;
-                        } else if (params.value === GameRequestStatus.PENDING) {
+                        // if (params.value === GameRequestStatus.ACCEPTED) {
+                        //     status = params.row.currentSetupStateName;
+                        // } else 
+
+                        if (params.value === GameRequestStatus.PENDING) {
                             status = GameRequestStatus.WAITING_FOR_APPROVAL;
                         }
                     }
@@ -251,6 +253,7 @@ export const WebGameSubmissionPage = () => {
                         variant="text"
                         sx={{ textTransform: "none" }}
                         disabled={canDisable()}
+                        endIcon={status === GameRequestStatus.ACCEPTED && <ArrowCircleRightOutlined />}
                         onClick={() => {
                             if (isRolePublisher) {
                                 handleDetailedView(params.row);

@@ -25,6 +25,7 @@ const GET_ALL_GAME_REQUESTS = "getAllGameRequests";
 const GET_ALL_GAME_REQUEST_BY_STUDIO_ID = "getAllGameRequestByStudioId";
 const GET_GAME_EVENT_REPORT = "getGameEventReport";
 const GET_PLAYER_EVENT_REPORT = "getPlayerEventReport";
+const GET_GAME_EVENT_REPORT_BY_DATE_RANGE = "getGameEventReportByDateRange";
 
 // New Dashboard Query Names
 const DASHBOARD_FILTERS = "dashboardFilters";
@@ -84,7 +85,7 @@ const getRootUrl = (): string => {
 
 // Exports
 export const LOCAL_HOST_URL = LOCAL_HOST_URL_VALUE; // Export for direct use if needed
-export const ROOT_URL = LOCAL_HOST_URL_VALUE;
+export const ROOT_URL = getRootUrl();
 export const GRAPHQL_URL = ROOT_URL + "/graphql";
 export const DECIMAL_LENGTH = 2;
 export const MIN_DATE = "2025-07-21";
@@ -114,6 +115,7 @@ export const LAUNCH_GAME_URL = ROOT_URL + "/web-game-submission/launch-game"
 export const UPLOAD_FILES_URL = ROOT_URL + "/files/upload"
 export const FORGOT_PASSWORD_URL = ROOT_URL + "/users/forgot-password";
 export const RESET_PASSWORD_URL = ROOT_URL + "/users/reset-password";
+
 export const QueryNames = {
   GET_ALL_DEVICE_DATA,
   GET_ALL_USER_DATA,
@@ -139,6 +141,7 @@ export const QueryNames = {
   GET_PLAY_STORE_GAME_DETAILS,
   GET_GAME_EVENT_REPORT,
   GET_PLAYER_EVENT_REPORT,
+  GET_GAME_EVENT_REPORT_BY_DATE_RANGE,
   // New Dashboard Query Names
   DASHBOARD_FILTERS,
   PORTFOLIO_KPIS,

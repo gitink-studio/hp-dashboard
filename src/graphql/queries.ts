@@ -846,16 +846,21 @@ const GetAllGameRequests = gql`
   getAllGameRequests {
     data
   }
-}
-`;
+}`;
 
 const GetAllGameRequestByStudioId = gql`
   query GetAllGameRequestByStudioId($studioId: String!) {
   getAllGameRequestByStudioId(studioId: $studioId) {
     data
   }
-}
-`;
+}`;
+
+const GetGameEventReportByDateRange = gql`
+  query GetGameEventReportByDateRange($startDate: String, $endDate: String) {
+  getGameEventReportByDateRange(startDate: $startDate, endDate: $endDate) {
+    data
+  }
+}`;
 
 export const Queries = {
   DeviceList,
@@ -919,5 +924,5 @@ export const Queries = {
   AlertRules,
   GetAllGameRequests,
   GetAllGameRequestByStudioId,
-
+  GetGameEventReportByDateRange
 };

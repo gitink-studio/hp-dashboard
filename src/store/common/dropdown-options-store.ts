@@ -3,6 +3,15 @@ import { sendGraphqlRequest } from "../../common/utils";
 import { QueryNames } from "../../common/constants";
 import { Queries } from "../../graphql/queries";
 
+const dateRangeOptions = [
+    { name: 'Today', value: '0' },
+    { name: 'Yesterday', value: '1' },
+    { name: 'Last 7d', value: '7' },
+    { name: 'Last 14d', value: '14' },
+    { name: 'Last 30d', value: '30' },
+    { name: 'Custom', value: 'custom' },
+]
+
 type DropdownOptionsAction = {
     fetchStudioOptions: () => Promise<void>;
     fetchPlatformOptions: () => Promise<void>;
@@ -75,4 +84,5 @@ export const useStudioOptions = () => getOptionData('studioOptions', 'fetchStudi
 export const usePlatformsOptions = () => getOptionData('platformOptions', 'fetchPlatformOptions');
 export const useGamePlatformOptions = () => getOptionData('gamePlatformOptions', 'fetchGamePlatformOptions');
 export const useGameOptions = () => getOptionData('gameOptions', 'fetchGameOptions');
+export const useDateRangeOptions = () => dateRangeOptions;
 export const useDropdownOptionsActions = () => useDropdownOptionsStore((state) => state.actions);

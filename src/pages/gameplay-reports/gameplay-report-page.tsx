@@ -1,27 +1,31 @@
 import { Refresh } from "@mui/icons-material"
-import { Box, Divider, Paper, Stack, Typography } from "@mui/material"
+import { Box, Chip, Divider, Paper, Stack, Typography } from "@mui/material"
 import { Button } from "react-admin"
 import { customStyle } from "../../common/styles"
 import { CustomDropdown } from "../../components/dropdown"
-import { CustomSearch } from "../../components/search"
-import { useGameEventReportActions, useGameEventReportData, useGameFilterValue, useGamePlatformFilterValue, useOpenPlayersReport, useSelectedGameId, useStudioFilterValue } from "../../store/gameplay-event-report/gameplay-event-report-store"
+import { useDateRangeFilterValue, useGameEventReportActions, useGameEventReportData, useGameFilterValue, useGamePlatformFilterValue, useOpenPlayersReport, useSelectedGameId, useStudioFilterValue } from "../../store/gameplay-event-report/gameplay-event-report-store"
 import { useEffect, useRef, useState } from "react"
-import { cloneObject, formatTime, sendGraphqlRequest } from "../../common/utils"
+import { cloneObject, convertToUTCBoundary, formatTime, getISODateStringByDate, getISODateStringByDay, sendGraphqlRequest } from "../../common/utils"
 import { QueryNames } from "../../common/constants"
 import { Queries } from "../../graphql/queries"
 import { CustomAccordion } from "../../components/accordion.component"
 import { GameEventReport } from "./gameplay-report"
-import { PlayerReport } from "./player-report"
-import { useDefaultOptions, useGameOptions, useGamePlatformOptions, useStudioOptions } from "../../store/common/dropdown-options-store"
+import { useDateRangeOptions, useDefaultOptions, useStudioOptions } from "../../store/common/dropdown-options-store"
+import { CustomDatePicker } from "../../components/custom-date-picker"
+import { useDateRangeActions, useDateRangeOpenState, useEndDate, useStartDate } from "../../store/common/date-range-store"
 
 export const GameplayReportPage = () => {
     const gameEventReportData = useGameEventReportData();
     const studioOptions = useStudioOptions();
-    const gamePlatformOptions = useGamePlatformOptions();
-    const gameOptions = useGameOptions();
     const studioFilterValue = useStudioFilterValue();
     const gamePlatformFilterValue = useGamePlatformFilterValue();
     const gameFilterValue = useGameFilterValue();
+    const dateRangeFilterValue = useDateRangeFilterValue();
+    const dateRangeOptions = useDateRangeOptions();
+    const dateRangeOpenState = useDateRangeOpenState();
+    const startDate = useStartDate();
+    const endDate = useEndDate();
+    const openState = useDateRangeOpenState();
     const defaultOptions = useDefaultOptions();
     const isFetched = useRef(false);
     const [gamePlatformFilteredOption, setGamePlatformFilteredOption] = useState([]);
@@ -29,11 +33,13 @@ export const GameplayReportPage = () => {
     const [gameEventReportFilteredData, setGameEventReportFilteredData] = useState([{}]);
     const [studioFilterData, setStudioFilterData] = useState<any>();
     const [gamePlatformFilterData, setGamePlatformFilterData] = useState<any>();
+    const { setOpenState } = useDateRangeActions();
 
     const {
         setStudioFilterValue,
         setGamePlatformFilterValue,
         setGameFilterValue,
+        setDateRangeFilterValue,
         setGameEventReportData,
         setCanOpenPlayersReport,
         setSelectedGameId
@@ -110,6 +116,58 @@ export const GameplayReportPage = () => {
         setGameFilterValue(selectedGame);
     }
 
+    const getStartAndEndDate = (selectedDate: string) => {
+        const date: any = {};
+
+        switch (selectedDate) {
+            case '0':
+            case '1':
+                date.startDate = convertToUTCBoundary(getISODateStringByDay(selectedDate));
+                date.endDate = convertToUTCBoundary(getISODateStringByDay(selectedDate), true);
+                console.log(`selected date ${JSON.stringify(date)}`);
+                return date;
+            case '7':
+            case '14':
+            case '30':
+                date.startDate = convertToUTCBoundary(getISODateStringByDay(selectedDate));
+                date.endDate = convertToUTCBoundary(getISODateStringByDay('0'), true);
+                console.log(`selected date ${JSON.stringify(date)}`);
+                return date;
+            case 'custom':
+                date.startDate = convertToUTCBoundary(getISODateStringByDate(startDate));
+                date.endDate = convertToUTCBoundary(getISODateStringByDate(endDate), true);
+                console.log(`selected date ${JSON.stringify(date)}`);
+                return date;
+        }
+    }
+
+    const fetchAndSetGameEventReportByDateRange = async (selectedDate: any) => {
+        const date = getStartAndEndDate(selectedDate);
+        console.log(`Fetching game event report...`);
+        const responseData = await sendGraphqlRequest(QueryNames.GET_GAME_EVENT_REPORT_BY_DATE_RANGE, {
+            query: Queries.GetGameEventReportByDateRange,
+            variables: {
+                startDate: date.startDate,
+                endDate: date.endDate
+            }
+        })
+
+        console.log(`Game event report fetched by date range ! `);
+        setGameEventReportData(responseData.data);
+        setGameEventReportFilteredData(responseData.data);
+    }
+
+    const handleDateRangeFilter = async (selectedDate: any) => {
+        console.log(`Selected date range: ${selectedDate}`);
+        const isCustomDate = selectedDate === 'custom';
+        setOpenState(isCustomDate);
+        setDateRangeFilterValue(selectedDate);
+
+        if (!isCustomDate) {
+            fetchAndSetGameEventReportByDateRange(selectedDate);
+        }
+    }
+
     const handleClearAll = () => {
         setStudioFilterValue('All');
         setGamePlatformFilterValue('All');
@@ -117,20 +175,24 @@ export const GameplayReportPage = () => {
         setGameEventReportFilteredData(gameEventReportData);
         setGamePlatformFilteredOption([]);
         setGameFilteredOption([]);
+        setDateRangeFilterValue(0);
+    }
+
+    const getDate = () => {
+        if (dateRangeFilterValue.toString() === 'custom') {
+            return `Report generated from ${startDate} to ${endDate}`;
+        }
+
+        let date = new Date();
+        date.setDate(new Date().getDate() - dateRangeFilterValue);
+
+        return `Report generated on ${date.toLocaleDateString()}`;
     }
 
     useEffect(() => {
         if (isFetched.current) return;
         isFetched.current = true;
-
-        sendGraphqlRequest(QueryNames.GET_GAME_EVENT_REPORT, {
-            query: Queries.GetGameEventReport,
-            variables: {}
-        }).then((responseData: any) => {
-            // console.log(`Use effect fired!`);
-            setGameEventReportData(responseData.data);
-            setGameEventReportFilteredData(responseData.data);
-        })
+        fetchAndSetGameEventReportByDateRange('0');
     }, []);
 
     return (
@@ -138,9 +200,9 @@ export const GameplayReportPage = () => {
             <Stack gap={3} p={3}>
                 {/* Gameplay Reports Title */}
                 <Stack direction={'row'} justifyContent={'space-between'}>
-                    <Typography variant="h4" gutterBottom>
-                        Gameplay Reports
-                    </Typography>
+                    <Stack>
+                        <Typography variant="h4" >Gameplay Reports</Typography>
+                    </Stack>
                     <Button variant="outlined" startIcon={<Refresh />} label="Refresh" sx={{ height: customStyle.button.height }} />
                 </Stack>
 
@@ -178,8 +240,16 @@ export const GameplayReportPage = () => {
                                             handleChange: (e: any) => { handleGameFilter(e.target.value); }
                                         }}
                                     />
-
-                                    {studioFilterValue !== 'All' && <Button onClick={handleClearAll}>Clear All</Button>}
+                                    <CustomDropdown
+                                        data={{
+                                            label: "Date Range",
+                                            value: dateRangeFilterValue,
+                                            options: dateRangeOptions,
+                                            isDateRange: true,
+                                            handleChange: (e: any) => { handleDateRangeFilter(e.target.value); }
+                                        }}
+                                    />
+                                    {(studioFilterValue !== 'All' || dateRangeFilterValue !== 0) && <Button onClick={handleClearAll}>Clear All</Button>}
                                 </Stack>
                             </Stack>
                         </Stack>
@@ -189,11 +259,14 @@ export const GameplayReportPage = () => {
                 {/* Reports Table */}
                 <Paper variant="outlined">
                     <Stack>
-                        <Typography variant="subtitle2" p={2}>Studio</Typography>
+                        <Stack p={2}>
+                            <Typography variant="subtitle2">Studio</Typography>
+                            <Typography variant="caption">{getDate()}</Typography>
+                        </Stack>
                         <Divider />
                         <Box>
                             {gameEventReportFilteredData?.map((studio: any) => (
-                                <CustomAccordion
+                                (studio?.gamePlatforms && studio?.gamePlatforms.length > 0) && <CustomAccordion
                                     key={studio.id}
                                     data={{
                                         summary: studio.name,
@@ -277,6 +350,9 @@ export const GameplayReportPage = () => {
                             ))}
                         </Box>
                     </Stack>
+                    {dateRangeOpenState && <CustomDatePicker data={{
+                        callback: () => fetchAndSetGameEventReportByDateRange(dateRangeFilterValue)
+                    }} />}
                 </Paper>
             </Stack >
         </>

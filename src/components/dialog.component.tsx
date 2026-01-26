@@ -3,7 +3,7 @@ import { Box, Button, Dialog, Paper, Stack, Typography, useTheme } from "@mui/ma
 
 export const CustomDialog = (props: any) => {
     const theme = useTheme();
-    const { title, component = null, callback } = props.data;
+    const { title, component = null, size: maxWidth = "xl", callback } = props.data;
 
     const handleClose = () => {
         callback();
@@ -11,7 +11,7 @@ export const CustomDialog = (props: any) => {
 
     return (
         <>
-            <Dialog open={true} fullWidth maxWidth="xl" key={title}>
+            <Dialog open={true} fullWidth maxWidth={maxWidth} key={title}>
                 <Paper elevation={0}>
                     <Stack gap={2} display={"flex"}>
                         <Box sx={{

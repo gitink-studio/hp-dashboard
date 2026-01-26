@@ -2,9 +2,9 @@ import { FormControl, InputLabel, MenuItem, Select, SelectProps } from "@mui/mat
 import { customStyle } from "../common/styles";
 
 export const CustomDropdown = (props: any) => {
-    const { label, value, options = [], handleChange } = props.data;
-    const allOption = { id: 'All', name: 'All' }
-    const newOptions = [allOption, ...options]
+    const allOption = { id: 'All', name: 'All' };
+    const { label, value, options = [], isDateRange = false, handleChange } = props.data;
+    const newOptions = isDateRange ? options : [allOption, ...options];
 
     return (
         <FormControl key={label}>
@@ -18,7 +18,7 @@ export const CustomDropdown = (props: any) => {
             >
                 {
                     newOptions.map((option: any) => (
-                        <MenuItem key={option.id} value={option.name}>{option.name}</MenuItem>
+                        <MenuItem key={option.value ? option.name : option.id} value={option.value ? option.value : option.name}>{option.name}</MenuItem>
                     ))
                 }
             </Select>
