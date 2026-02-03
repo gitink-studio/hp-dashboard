@@ -26,6 +26,7 @@ const GET_ALL_GAME_REQUEST_BY_STUDIO_ID = "getAllGameRequestByStudioId";
 const GET_GAME_EVENT_REPORT = "getGameEventReport";
 const GET_PLAYER_EVENT_REPORT = "getPlayerEventReport";
 const GET_GAME_EVENT_REPORT_BY_DATE_RANGE = "getGameEventReportByDateRange";
+const GET_PLAYER_EVENT_REPORT_BY_DATE_RANGE = "getPlayerEventReportByDateRange";
 
 // New Dashboard Query Names
 const DASHBOARD_FILTERS = "dashboardFilters";
@@ -142,6 +143,7 @@ export const QueryNames = {
   GET_GAME_EVENT_REPORT,
   GET_PLAYER_EVENT_REPORT,
   GET_GAME_EVENT_REPORT_BY_DATE_RANGE,
+  GET_PLAYER_EVENT_REPORT_BY_DATE_RANGE,
   // New Dashboard Query Names
   DASHBOARD_FILTERS,
   PORTFOLIO_KPIS,

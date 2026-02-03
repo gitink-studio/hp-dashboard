@@ -862,6 +862,13 @@ const GetGameEventReportByDateRange = gql`
   }
 }`;
 
+const GetPlayerEventReportByDateRange = gql`
+  query GetPlayerEventReportByDateRange($gameId: String, $limit: Int, $lastRecordId: String, $dateRange: AnyInput) {
+    getPlayerEventReportByDateRange(gameId: $gameId, limit: $limit, lastRecordId: $lastRecordId, dateRange: $dateRange) {
+      data
+    }
+}`;
+
 export const Queries = {
   DeviceList,
   Device,
@@ -924,5 +931,6 @@ export const Queries = {
   AlertRules,
   GetAllGameRequests,
   GetAllGameRequestByStudioId,
-  GetGameEventReportByDateRange
+  GetGameEventReportByDateRange,
+  GetPlayerEventReportByDateRange
 };

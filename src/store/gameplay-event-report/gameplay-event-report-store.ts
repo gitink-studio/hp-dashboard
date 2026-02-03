@@ -6,6 +6,8 @@ type GameEventReportAction = {
     setGamePlatformFilterValue: (gamePlatformFilterValue: string) => void;
     setGameFilterValue: (gameFilterValue: string) => void;
     setDateRangeFilterValue: (dateRangeFilterValue: number) => void;
+    setSelectedStartDate: (selectedStartDate: string) => void;
+    setSelectedEndDate: (selectedEndDate: string) => void;
     setCanOpenDetailedReport: (canOpenDetailedReport: boolean) => void;
     setCanOpenPlayersReport: (canOpenPlayersReport: boolean) => void;
     setDetailedGameplayReportData: (detailedGameplayReportData: any) => void;
@@ -19,6 +21,8 @@ type GameEventReportState = {
     gamePlatformFilterValue: string,
     gameFilterValue: string,
     dateRangeFilterValue: number,
+    selectedStartDate: string,
+    selectedEndDate: string,
     gameEventReportData: any;
     canOpenPlayersReport: boolean;
     canOpenDetailedReport: boolean;
@@ -32,6 +36,8 @@ const initialState = {
     gamePlatformFilterValue: "All",
     gameFilterValue: 'All',
     dateRangeFilterValue: 0,
+    selectedStartDate: "",
+    selectedEndDate: "",
     canOpenPlayersReport: false,
     canOpenDetailedReport: false,
     detailedGameplayReportData: [],
@@ -46,6 +52,8 @@ const useGameEventReportStore = create<GameEventReportState>((set) => ({
         setGamePlatformFilterValue: (gamePlatformFilterValue: string) => set({ gamePlatformFilterValue }),
         setGameFilterValue: (gameFilterValue: string) => set({ gameFilterValue }),
         setDateRangeFilterValue: (dateRangeFilterValue: number) => set({ dateRangeFilterValue }),
+        setSelectedStartDate: (selectedStartDate: string) => set({ selectedStartDate }),
+        setSelectedEndDate: (selectedEndDate: string) => set({ selectedEndDate }),
         setCanOpenDetailedReport: (canOpenDetailedReport: boolean) => set({ canOpenDetailedReport }),
         setCanOpenPlayersReport: (canOpenPlayersReport: boolean) => set({ canOpenPlayersReport }),
         setDetailedGameplayReportData: (detailedGameplayReportData: any) => set({ detailedGameplayReportData }),
@@ -59,6 +67,8 @@ export const useStudioFilterValue = () => useGameEventReportStore((state) => sta
 export const useGamePlatformFilterValue = () => useGameEventReportStore((state) => state.gamePlatformFilterValue);
 export const useGameFilterValue = () => useGameEventReportStore((state) => state.gameFilterValue);
 export const useDateRangeFilterValue = () => useGameEventReportStore((state) => state.dateRangeFilterValue);
+export const useSelectedStartDate = () => useGameEventReportStore((state) => state.selectedStartDate);
+export const useSelectedEndDate = () => useGameEventReportStore((state) => state.selectedEndDate);
 export const useDetailedGameplayReportData = () => useGameEventReportStore((state) => state.gameEventReportData);
 export const useOpenDetailedReport = () => useGameEventReportStore((state) => state.canOpenDetailedReport);
 export const useOpenPlayersReport = () => useGameEventReportStore((state) => state.canOpenPlayersReport);

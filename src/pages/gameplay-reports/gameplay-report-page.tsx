@@ -41,6 +41,8 @@ export const GameplayReportPage = () => {
         setGamePlatformFilterValue,
         setGameFilterValue,
         setDateRangeFilterValue,
+        setSelectedStartDate,
+        setSelectedEndDate,
         setGameEventReportData,
         setCanOpenPlayersReport,
         setSelectedGameId
@@ -145,7 +147,8 @@ export const GameplayReportPage = () => {
     const fetchAndSetGameEventReportByDateRange = async (selectedDate: any) => {
         const date = getStartAndEndDate(selectedDate);
         console.log(`Fetching game event report...`);
-
+        setSelectedStartDate(date.startDate);
+        setSelectedEndDate(date.endDate);
         isFetched.current = false;
         const responseData = await sendGraphqlRequest(QueryNames.GET_GAME_EVENT_REPORT_BY_DATE_RANGE, {
             query: Queries.GetGameEventReportByDateRange,

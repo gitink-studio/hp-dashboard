@@ -121,7 +121,10 @@ export const CustomGameplayReportViewer = (props: any) => {
     }
 
     const FPSData = (props: any) => {
-        const { fps, playerId } = props.data;
+        const data = props.data;
+
+        if (!data) return;
+        const { fps, playerId } = data;
 
         return (
             <Card variant="outlined" >
@@ -136,13 +139,16 @@ export const CustomGameplayReportViewer = (props: any) => {
     }
 
     const MemoryUsageData = (props: any) => {
-        const { memoryUsage, playerId } = props.data;
+        const data = props?.data;
+
+        if (!data) return;
+        const { memoryUsage, playerId } = data;
 
         return (
             <Card variant="outlined" >
                 <CardContent>
                     <Stack direction={'row'} gap={4}>
-                        <DisplayData data={{ name: 'Memory Usage', value: memoryUsage }} />
+                        <DisplayData data={{ name: 'Memory Usage', value: memoryUsage ? 0 : memoryUsage }} />
                         {playerId && <DisplayData data={{ name: 'Player Id ', value: playerId }} />}
                     </Stack>
                 </CardContent>

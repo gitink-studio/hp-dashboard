@@ -1,23 +1,28 @@
 import { CustomDialog } from "../../components/dialog.component";
-import { useOpenPlayersReport, useSelectedGameId } from "../../store/gameplay-event-report/gameplay-event-report-store";
+import { useOpenPlayersReport, useSelectedEndDate, useSelectedGameId, useSelectedStartDate } from "../../store/gameplay-event-report/gameplay-event-report-store";
 import { Box, IconButton, Stack, Typography } from "@mui/material";
 import { CustomDatagrid } from "../../components/data-grid.component";
 import { GridColDef } from "@mui/x-data-grid";
 import { ArrowBack, Visibility } from "@mui/icons-material";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatTime, goToPage, sendGraphqlRequest } from "../../common/utils";
 import { Queries } from "../../graphql/queries";
 import { QueryNames } from "../../common/constants";
 import { PlayerDetailedReportViewer } from "../../components/gameplay-report/player-detailed-report-viewer";
 import { CustomSearch } from "../../components/search";
 import { useDataGridPage, useDataGridPageSize } from "../../store/common/data-grid-store";
+import { useLocation } from "react-router";
 
 export const PlayerReport = () => {
+    const location = useLocation();
+    const isFetched = useRef(false);
     const canOpenPlayersReport = useOpenPlayersReport();
     const pageSize = useDataGridPageSize();
     const page = useDataGridPage();
-    const [playerDetails, setPlayerDetails] = useState([]);
     const selectedGameId = useSelectedGameId();
+    const selectedStartDate = useSelectedStartDate();
+    const selectedEndDate = useSelectedEndDate();
+    const [playerDetails, setPlayerDetails] = useState([]);
     const [detailedReportData, setDetailedReportData] = useState<any>();
     const [canOpenDetailedView, setOpenDetailedView] = useState(false);
     const [filterData, setFilterData] = useState();
@@ -26,6 +31,18 @@ export const PlayerReport = () => {
     const handleViewDetails = (params: any) => {
         setDetailedReportData(params.row)
         setOpenDetailedView(true);
+    }
+
+    const getReportGeneratedInfo = (_startDate: string, _endDate: string) => {
+        let reportGeneratedInfo = `Report generated`;
+        let startDate = _startDate.split('T')[0];
+        let endDate = _endDate.split('T')[0];
+        let startDateWithoutTime = new Date(_startDate).toLocaleDateString();
+        if (startDate === endDate) {
+            return reportGeneratedInfo + ` on ${startDateWithoutTime}`
+        }
+
+        return reportGeneratedInfo + ` from ${startDateWithoutTime} to ${new Date(_endDate).toLocaleDateString()}`
     }
 
     const columns: GridColDef[] = [
@@ -69,23 +86,34 @@ export const PlayerReport = () => {
 
     useEffect(() => {
         // Checking the page already contains the data or not
+        if (isFetched.current) return;
+        isFetched.current = true;
+
         if (playerDetails.length > (page + 1) * pageSize) return;
 
+        console.log(`Selected start date: ${selectedStartDate} end date: ${selectedEndDate} selectedGameId: ${selectedGameId} `);
         // Fetching data from backend
-        sendGraphqlRequest(QueryNames.GET_PLAYER_EVENT_REPORT, {
-            query: Queries.GetPlayerEventReport,
+        sendGraphqlRequest(QueryNames.GET_PLAYER_EVENT_REPORT_BY_DATE_RANGE, {
+            query: Queries.GetPlayerEventReportByDateRange,
             variables: {
                 gameId: selectedGameId,
                 limit: pageSize + 1,
-                lastRecordId: lastRecordId
+                lastRecordId: lastRecordId,
+                dateRange: {
+                    data: {
+                        startDate: selectedStartDate,
+                        endDate: selectedEndDate,
+                    },
+                }
             }
         }).then((responseData: any) => {
+            console.log(`Player details: ${JSON.stringify(responseData)}`);
             let playerDetailsList: any = [...playerDetails, ...responseData.data]
             setPlayerDetails(playerDetailsList);
             setFilterData(playerDetailsList);
             setLastRecordId(responseData.data[responseData.data.length - 1].id);
         });
-    }, [page, pageSize]);
+    }, [page, pageSize, location.pathname]);
 
     const handleSearch = (value: string, playerDetails: any) => {
         if (value === "") {
@@ -108,7 +136,10 @@ export const PlayerReport = () => {
                     <IconButton size="small" sx={{ width: 50, height: 50 }} onClick={handleBack}>
                         <ArrowBack />
                     </IconButton>
-                    <Typography variant="h6" p={2}> Player Details  </Typography>
+                    <Stack p={2}>
+                        <Typography variant="h6" > Player Details  </Typography>
+                        <Typography variant="caption" > {getReportGeneratedInfo(selectedStartDate, selectedEndDate)}</Typography>
+                    </Stack>
                 </Stack>
 
                 <CustomSearch data={{ label: 'Search by id', callback: handleSearch, param: playerDetails }} />
