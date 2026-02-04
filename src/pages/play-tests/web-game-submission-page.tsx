@@ -253,7 +253,7 @@ export const WebGameSubmissionPage = () => {
                         variant="text"
                         sx={{ textTransform: "none" }}
                         disabled={canDisable()}
-                        endIcon={status === GameRequestStatus.ACCEPTED && <ArrowCircleRightOutlined />}
+                        endIcon={status === GameRequestStatus.ACCEPTED && !isRolePublisher && <ArrowCircleRightOutlined />}
                         onClick={() => {
                             if (isRolePublisher) {
                                 handleDetailedView(params.row);
