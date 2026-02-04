@@ -3,7 +3,14 @@ import { customStyle } from "../common/styles";
 
 export const CustomDropdown = (props: any) => {
     const allOption = { id: 'All', name: 'All' };
-    const { label, value, options = [], isDateRange = false, handleChange } = props.data;
+    const {
+        label,
+        value,
+        options = [],
+        isDateRange = false,
+        handleChange,
+        handleClick = () => { }
+    } = props.data;
     const newOptions = isDateRange ? options : [allOption, ...options];
 
     return (
@@ -18,7 +25,12 @@ export const CustomDropdown = (props: any) => {
             >
                 {
                     newOptions.map((option: any) => (
-                        <MenuItem key={option.value ? option.name : option.id} value={option.value ? option.value : option.name}>{option.name}</MenuItem>
+                        <MenuItem
+                            key={option.value ? option.name : option.id} value={option.value ? option.value : option.name}
+                            onClick={handleClick}
+                        >
+                            {option.name}
+                        </MenuItem>
                     ))
                 }
             </Select>

@@ -252,6 +252,7 @@ export const GameplayReportPage = () => {
                                             value: dateRangeFilterValue,
                                             options: dateRangeOptions,
                                             isDateRange: true,
+                                            handleClick: (e: any) => { setOpenState(dateRangeFilterValue.toString() === "custom") },
                                             handleChange: (e: any) => { handleDateRangeFilter(e.target.value); }
                                         }}
                                     />
