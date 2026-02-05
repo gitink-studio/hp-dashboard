@@ -3,7 +3,7 @@ import { Box, Button, Dialog, Paper, Stack, Typography, useTheme } from "@mui/ma
 
 export const CustomDialog = (props: any) => {
     const theme = useTheme();
-    const { title, component = null, size: maxWidth = "xl", callback } = props.data;
+    const { title, caption = "", component = null, size: maxWidth = "xl", callback } = props.data;
 
     const handleClose = () => {
         callback();
@@ -26,13 +26,10 @@ export const CustomDialog = (props: any) => {
                             borderBottom: `1px solid ${theme.palette.divider}`
                         }}
                         >
-                            <Typography
-                                variant="h6"
-                                fontWeight="bold"
-                                pl={4}
-                            >
-                                {title}
-                            </Typography>
+                            <Stack pl={4}>
+                                <Typography variant="h6" fontWeight="bold" >{title}</Typography>
+                                {caption !== "" && <Typography variant="caption" >{caption}</Typography>}
+                            </Stack>
                         </Box>
                     </Stack>
                     <Stack overflow={"auto"}>

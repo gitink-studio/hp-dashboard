@@ -27,6 +27,7 @@ export const PlayerReport = () => {
     const [canOpenDetailedView, setOpenDetailedView] = useState(false);
     const [filterData, setFilterData] = useState();
     const [lastRecordId, setLastRecordId] = useState("");
+    const [isFetching, setFetching] = useState(true);
 
     const handleViewDetails = (params: any) => {
         setDetailedReportData(params.row)
@@ -57,8 +58,8 @@ export const PlayerReport = () => {
             flex: 1,
         },
         {
-            field: 'avgSessionTime',
-            headerName: 'Average Session Time',
+            field: 'avgGameplayTime',
+            headerName: 'Average Gameplay Time',
             flex: 1,
             renderCell: (params: any) => formatTime(params.value)
         },
@@ -92,6 +93,7 @@ export const PlayerReport = () => {
         if (playerDetails.length > (page + 1) * pageSize) return;
 
         console.log(`Selected start date: ${selectedStartDate} end date: ${selectedEndDate} selectedGameId: ${selectedGameId} `);
+        setFetching(true);
         // Fetching data from backend
         sendGraphqlRequest(QueryNames.GET_PLAYER_EVENT_REPORT_BY_DATE_RANGE, {
             query: Queries.GetPlayerEventReportByDateRange,
@@ -107,11 +109,13 @@ export const PlayerReport = () => {
                 }
             }
         }).then((responseData: any) => {
-            console.log(`Player details: ${JSON.stringify(responseData)}`);
+            // console.log(`Player details: ${JSON.stringify(responseData)}`);
             let playerDetailsList: any = [...playerDetails, ...responseData.data]
             setPlayerDetails(playerDetailsList);
             setFilterData(playerDetailsList);
             setLastRecordId(responseData.data[responseData.data.length - 1].id);
+            setFetching(false);
+
         });
     }, [page, pageSize, location.pathname]);
 
@@ -149,14 +153,16 @@ export const PlayerReport = () => {
                 data={{
                     rows: filterData,
                     columns: columns,
-                    rowSelection: false
+                    rowSelection: false,
+                    isLoading: isFetching
                 }}
             />
 
             {
                 canOpenDetailedView && (
                     <CustomDialog data={{
-                        title: `${detailedReportData?.name} (${detailedReportData?.id}) detailed gameplay event data`,
+                        title: `${detailedReportData?.name} detailed gameplay event data`,
+                        caption: `Player Id: ${detailedReportData?.playerId}`,
                         component: <PlayerDetailedReportViewer data={{
                             type: "Player Gameplay Data",
                             reportData: detailedReportData,

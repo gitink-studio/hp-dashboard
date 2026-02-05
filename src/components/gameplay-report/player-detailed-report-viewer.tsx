@@ -291,7 +291,7 @@ export const PlayerDetailedReportViewer = (props: any) => {
                 <CardContent>
                     <Stack direction={'row'} gap={4}>
                         <DisplayData data={{ name: 'FPS', value: Math.floor(fps) }} />
-                        {playerId && <DisplayData data={{ name: 'Player Id ', value: playerId }} />}
+                        {/* {playerId && <DisplayData data={{ name: 'Player Id ', value: playerId }} />} */}
                     </Stack>
                 </CardContent>
             </Card>
@@ -306,7 +306,7 @@ export const PlayerDetailedReportViewer = (props: any) => {
                 <CardContent>
                     <Stack direction={'row'} gap={4}>
                         <DisplayData data={{ name: 'Memory Usage', value: Math.floor(memoryUsage) }} />
-                        {playerId && <DisplayData data={{ name: 'Player Id ', value: playerId }} />}
+                        {/* {playerId && <DisplayData data={{ name: 'Player Id ', value: playerId }} />} */}
                     </Stack>
                 </CardContent>
             </Card>

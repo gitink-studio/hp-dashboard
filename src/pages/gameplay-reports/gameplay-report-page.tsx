@@ -305,8 +305,8 @@ export const GameplayReportPage = () => {
                                                                                             value: game.gameEventReport?.playerCount ?? 0
                                                                                         },
                                                                                         {
-                                                                                            name: 'Average Session Time',
-                                                                                            value: formatTime(game?.gameEventReport?.avgSessionTime)
+                                                                                            name: 'Average Gameplay Time',
+                                                                                            value: formatTime(game?.gameEventReport?.avgGameplayTime)
                                                                                         },
                                                                                         {
                                                                                             name: 'Tutorial Completed Players',
