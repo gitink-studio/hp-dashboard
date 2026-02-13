@@ -35,6 +35,7 @@ export const GameplayReportPage = () => {
     const [gamePlatformFilterData, setGamePlatformFilterData] = useState<any>();
     const { setOpenState } = useDateRangeActions();
     const location = useLocation();
+    const todayDateValue = '0';
 
     const {
         setStudioFilterValue,
@@ -182,7 +183,8 @@ export const GameplayReportPage = () => {
         setGameEventReportFilteredData(gameEventReportData);
         setGamePlatformFilteredOption([]);
         setGameFilteredOption([]);
-        setDateRangeFilterValue(0);
+        setDateRangeFilterValue(Number(todayDateValue));
+        fetchAndSetGameEventReportByDateRange(todayDateValue);
     }
 
     const getDate = () => {
@@ -193,7 +195,11 @@ export const GameplayReportPage = () => {
         let date = new Date();
         date.setDate(new Date().getDate() - dateRangeFilterValue);
 
-        return `Report generated on ${date.toLocaleDateString()}`;
+        if (dateRangeFilterValue == 7 || dateRangeFilterValue == 14 || dateRangeFilterValue == 30) {
+            return `Report generated from ${date.toLocaleDateString("en-IN")} to ${new Date().toLocaleDateString("en-IN")}`
+        }
+
+        return `Report generated on ${date.toLocaleDateString("en-IN")}`;
     }
 
     useEffect(() => {
@@ -209,7 +215,7 @@ export const GameplayReportPage = () => {
                     <Stack>
                         <Typography variant="h4" >Gameplay Reports</Typography>
                     </Stack>
-                    <Button variant="outlined" startIcon={<Refresh />} label="Refresh" sx={{ height: customStyle.button.height }} />
+                    {/* <Button variant="outlined" startIcon={<Refresh />} label="Refresh" sx={{ height: customStyle.button.height }} /> */}
                 </Stack>
 
                 {/* Filters  */}
@@ -306,11 +312,11 @@ export const GameplayReportPage = () => {
                                                                                         },
                                                                                         {
                                                                                             name: 'Average Gameplay Time',
-                                                                                            value: formatTime(game?.gameEventReport?.avgGameplayTime)
+                                                                                            value: formatTime(isNaN(game?.gameEventReport?.avgGameplayTime) ? 0 : game?.gameEventReport?.avgGameplayTime)
                                                                                         },
                                                                                         {
                                                                                             name: 'Tutorial Completed Players',
-                                                                                            value: game.gameEventReport?.tutorialCompletedPlayerCount
+                                                                                            value: game?.gameEventReport?.tutorialCompletedPlayerCount ?? 0
                                                                                         },
                                                                                         {
                                                                                             name: 'IAP Purchased',
