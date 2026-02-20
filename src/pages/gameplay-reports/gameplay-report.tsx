@@ -2,17 +2,14 @@ import { Box, Card, CardContent, Stack, Typography } from "@mui/material";
 import { formatTime, isObjectEmpty, removeWhiteSpace } from "../../common/utils";
 import { Button } from "react-admin";
 import { GameplayDetailedReport } from "./gameplay-detailed-report";
-import { useDetailedGameplayReportData, useGameEventReportActions, useOpenDetailedReport, useSelectedGameId } from "../../store/gameplay-event-report/gameplay-event-report-store";
+import { useDetailedGameplayReportData, useGameEventReportActions } from "../../store/gameplay-event-report/gameplay-event-report-store";
 import { useEffect, useState } from "react";
 import { GameplayEventReportType } from "../../common/constants";
 
 export const GameEventReport = (props: any) => {
-    const canOpenDetailedReport = useOpenDetailedReport();
-    const selectedGameId = useSelectedGameId();
-    const { setCanOpenDetailedReport } = useGameEventReportActions();
+    const { setSelectedGameId } = useGameEventReportActions();
     const [reportType, setReportType] = useState('');
-    const [id, setId] = useState("");
-    const [type, setType] = useState("");
+    const [detailedReportState, setDetailedReportState] = useState(false);
     const emptyData = [{ name: 'No data found', value: "" }];
 
     const {
@@ -364,10 +361,9 @@ export const GameEventReport = (props: any) => {
     }
 
     const handleViewFullReports = (type: string) => {
-        setId(gameId);
+        setSelectedGameId(gameId);
         setReportType(type);
-        setCanOpenDetailedReport(true);
-        console.log(`View full button report clicked for ${type} ${reportType} ${gameId} ${id}`);
+        setDetailedReportState(true);
     }
 
     return <>
@@ -413,13 +409,13 @@ export const GameEventReport = (props: any) => {
         </Box >
 
         {
-            canOpenDetailedReport && id !== "" && (
+            detailedReportState && (
                 <GameplayDetailedReport
                     key={gameId}
                     data={{
                         type: reportType,
                         reportData: getDetailedReportData(reportType),
-                        callback: () => setCanOpenDetailedReport(false),
+                        callback: () => setDetailedReportState(false),
                     }} />
             )
         }
