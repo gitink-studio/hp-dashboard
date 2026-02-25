@@ -27,7 +27,8 @@ export const GameplayReportPage = () => {
     const startDate = useStartDate();
     const endDate = useEndDate();
     const defaultOptions = useDefaultOptions();
-    const isFetched = useRef(false);
+    const isUseEffectRan = useRef(false);
+    const isDataFetched = useRef(false);
     const [gamePlatformFilteredOption, setGamePlatformFilteredOption] = useState([]);
     const [gameFilteredOption, setGameFilteredOption] = useState([]);
     const [gameEventReportFilteredData, setGameEventReportFilteredData] = useState([{}]);
@@ -101,7 +102,7 @@ export const GameplayReportPage = () => {
     }
 
     const handleGameFilter = (selectedGame: string) => {
-        console.log(`Selected game - ${selectedGame}`);
+        // console.log(`Selected game - ${selectedGame}`);
 
         if (selectedGame === 'All') {
             setGameFilterValue('All');
@@ -128,7 +129,7 @@ export const GameplayReportPage = () => {
             case '1':
                 date.startDate = convertToUTCBoundary(getISODateStringByDay(selectedDate));
                 date.endDate = convertToUTCBoundary(getISODateStringByDay(selectedDate), true);
-                console.log(`selected date ${JSON.stringify(date)}`);
+                // console.log(`selected date ${JSON.stringify(date)}`);
                 return date;
             case '7':
             case '14':
@@ -147,10 +148,10 @@ export const GameplayReportPage = () => {
 
     const fetchAndSetGameEventReportByDateRange = async (selectedDate: any) => {
         const date = getStartAndEndDate(selectedDate);
-        console.log(`Fetching game event report...`);
+        // console.log(`Fetching game event report...`);
         setSelectedStartDate(date.startDate);
         setSelectedEndDate(date.endDate);
-        isFetched.current = false;
+        isDataFetched.current = false;
         const responseData = await sendGraphqlRequest(QueryNames.GET_GAME_EVENT_REPORT_BY_DATE_RANGE, {
             query: Queries.GetGameEventReportByDateRange,
             variables: {
@@ -162,7 +163,7 @@ export const GameplayReportPage = () => {
         console.log(`Game event report fetched by date range ! `);
         setGameEventReportData(responseData.data);
         setGameEventReportFilteredData(responseData.data);
-        isFetched.current = true;
+        isDataFetched.current = true;
     }
 
     const handleDateRangeFilter = async (selectedDate: any) => {
@@ -176,7 +177,7 @@ export const GameplayReportPage = () => {
         }
     }
 
-    const handleClearAll = () => {
+    const handleClearAll = (isUseEffectCall: boolean = false) => {
         setStudioFilterValue('All');
         setGamePlatformFilterValue('All');
         setGameFilterValue('All');
@@ -184,7 +185,7 @@ export const GameplayReportPage = () => {
         setGamePlatformFilteredOption([]);
         setGameFilteredOption([]);
         setDateRangeFilterValue(Number(todayDateValue));
-        fetchAndSetGameEventReportByDateRange(todayDateValue);
+        if (!isUseEffectCall) fetchAndSetGameEventReportByDateRange(todayDateValue);
     }
 
     const getDate = () => {
@@ -203,8 +204,11 @@ export const GameplayReportPage = () => {
     }
 
     useEffect(() => {
+        if (isUseEffectRan.current) return;
+        console.log(`Use effect called!`);
+        isUseEffectRan.current = true;
         fetchAndSetGameEventReportByDateRange('0');
-        handleClearAll();
+        handleClearAll(true);
     }, [location.pathname]);
 
     return (
@@ -262,14 +266,14 @@ export const GameplayReportPage = () => {
                                             handleChange: (e: any) => { handleDateRangeFilter(e.target.value); }
                                         }}
                                     />
-                                    {(studioFilterValue !== 'All' || dateRangeFilterValue !== 0) && <Button onClick={handleClearAll}>Clear All</Button>}
+                                    {(studioFilterValue !== 'All' || dateRangeFilterValue !== 0) && <Button onClick={() => handleClearAll()}>Clear All</Button>}
                                 </Stack>
                             </Stack>
                         </Stack>
                     </Paper>
                 </Stack>
 
-                {isFetched.current
+                {isDataFetched.current
                     ? <Paper variant="outlined">
                         <Stack>
                             <Stack p={2}>
