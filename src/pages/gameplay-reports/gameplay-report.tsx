@@ -2,16 +2,14 @@ import { Box, Card, CardContent, Stack, Typography } from "@mui/material";
 import { formatTime, isObjectEmpty, removeWhiteSpace } from "../../common/utils";
 import { Button } from "react-admin";
 import { GameplayDetailedReport } from "./gameplay-detailed-report";
-import { useDetailedGameplayReportData, useGameEventReportActions, useOpenDetailedReport, useSelectedGameId } from "../../store/gameplay-event-report/gameplay-event-report-store";
+import { useDetailedGameplayReportData, useGameEventReportActions } from "../../store/gameplay-event-report/gameplay-event-report-store";
 import { useEffect, useState } from "react";
 import { GameplayEventReportType } from "../../common/constants";
 
 export const GameEventReport = (props: any) => {
-    const canOpenDetailedReport = useOpenDetailedReport();
-    const selectedGameId = useSelectedGameId();
-    const { setCanOpenDetailedReport } = useGameEventReportActions();
+    const { setSelectedGameId } = useGameEventReportActions();
     const [reportType, setReportType] = useState('');
-    const [id, setId] = useState("");
+    const [detailedReportState, setDetailedReportState] = useState(false);
     const emptyData = [{ name: 'No data found', value: "" }];
 
     const {
@@ -135,15 +133,15 @@ export const GameEventReport = (props: any) => {
             data: [
                 {
                     name: 'Total Errors',
-                    value: logData?.totalErrorOccurred ?? 0
+                    value: logData?.error[0]?.count ?? 0
                 },
                 {
                     name: 'Total Warnings',
-                    value: logData?.totalWarningOccurred ?? 0
+                    value: logData?.warning[0]?.count ?? 0
                 },
                 {
                     name: 'Total Info Logs',
-                    value: logData?.totalInfoOccurred ?? 0
+                    value: logData?.info[0]?.count ?? 0
                 }
             ]
         },
@@ -313,29 +311,29 @@ export const GameEventReport = (props: any) => {
         fpsData: [
             {
                 name: 'Low FPS Data',
-                data: [fpsData.low]
+                data: [fpsData.low ?? 0]
             },
             {
                 name: 'Average FPS Data',
-                data: [{ fps: fpsData.average }]
+                data: [{ fps: Math.floor(fpsData.average) ?? 0 }]
             },
             {
                 name: 'High FPS Data',
-                data: [fpsData.high]
+                data: [fpsData.high ?? 0]
             },
         ],
         memoryUsageData: [
             {
                 name: 'Low Memory Usage Data',
-                data: [memoryUsageData.low]
+                data: [memoryUsageData.low ?? 0]
             },
             {
                 name: 'Average Memory Usage Data',
-                data: [{ memoryUsage: memoryUsageData.average }]
+                data: [{ memoryUsage: Math.floor(memoryUsageData.average) ?? 0 }]
             },
             {
                 name: 'High Memory Usage Data',
-                data: [memoryUsageData.high]
+                data: [memoryUsageData.high ?? 0]
             },
         ]
     }
@@ -363,10 +361,9 @@ export const GameEventReport = (props: any) => {
     }
 
     const handleViewFullReports = (type: string) => {
-        console.log(`View full button report clicked for ${type} ${gameId}`);
-        setId(gameId);
+        setSelectedGameId(gameId);
         setReportType(type);
-        setCanOpenDetailedReport(true);
+        setDetailedReportState(true);
     }
 
     return <>
@@ -412,12 +409,14 @@ export const GameEventReport = (props: any) => {
         </Box >
 
         {
-            canOpenDetailedReport && id !== "" && (
-                <GameplayDetailedReport data={{
-                    type: reportType,
-                    reportData: getDetailedReportData(reportType),
-                    callback: () => setCanOpenDetailedReport(false),
-                }} />
+            detailedReportState && (
+                <GameplayDetailedReport
+                    key={gameId}
+                    data={{
+                        type: reportType,
+                        reportData: getDetailedReportData(reportType),
+                        callback: () => setDetailedReportState(false),
+                    }} />
             )
         }
     </>

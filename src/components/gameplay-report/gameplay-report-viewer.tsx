@@ -19,7 +19,11 @@ export const CustomGameplayReportViewer = (props: any) => {
 
     const TutorialData = (props: any) => {
         const { step, totalCount, tutorialType } = props.data;
-        const name = `${tutorialType} step ${step}`;
+        let name = `${tutorialType} step ${step}`;
+
+        if (!tutorialType || !step) {
+            name = "Data not found"
+        }
 
         return <DisplayData
             key={name}
@@ -123,15 +127,12 @@ export const CustomGameplayReportViewer = (props: any) => {
     const FPSData = (props: any) => {
         const data = props.data;
 
-        if (!data) return;
-        const { fps, playerId } = data;
-
         return (
             <Card variant="outlined" >
                 <CardContent>
                     <Stack direction={'row'} gap={4}>
-                        <DisplayData data={{ name: 'FPS', value: fps ?? 0 }} />
-                        {playerId && <DisplayData data={{ name: 'Player Id ', value: playerId }} />}
+                        <DisplayData data={{ name: 'FPS', value: isNaN(data?.fps) ? 0 : data?.fps }} />
+                        {data?.playerId && <DisplayData data={{ name: 'Player Id ', value: data?.playerId }} />}
                     </Stack>
                 </CardContent>
             </Card>
@@ -141,15 +142,12 @@ export const CustomGameplayReportViewer = (props: any) => {
     const MemoryUsageData = (props: any) => {
         const data = props?.data;
 
-        if (!data) return;
-        const { memoryUsage, playerId } = data;
-
         return (
             <Card variant="outlined" >
                 <CardContent>
                     <Stack direction={'row'} gap={4}>
-                        <DisplayData data={{ name: 'Memory Usage', value: memoryUsage ?? 0 }} />
-                        {playerId && <DisplayData data={{ name: 'Player Id ', value: playerId }} />}
+                        <DisplayData data={{ name: 'Memory Usage', value: isNaN(data?.memoryUsage) ? 0 : data?.memoryUsage }} />
+                        {data?.playerId && <DisplayData data={{ name: 'Player Id ', value: data?.playerId }} />}
                     </Stack>
                 </CardContent>
             </Card>

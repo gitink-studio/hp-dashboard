@@ -8,7 +8,6 @@ type GameEventReportAction = {
     setDateRangeFilterValue: (dateRangeFilterValue: number) => void;
     setSelectedStartDate: (selectedStartDate: string) => void;
     setSelectedEndDate: (selectedEndDate: string) => void;
-    setCanOpenDetailedReport: (canOpenDetailedReport: boolean) => void;
     setCanOpenPlayersReport: (canOpenPlayersReport: boolean) => void;
     setDetailedGameplayReportData: (detailedGameplayReportData: any) => void;
     setGameEventReportData: (gameEventReportData: any) => void;
@@ -25,7 +24,6 @@ type GameEventReportState = {
     selectedEndDate: string,
     gameEventReportData: any;
     canOpenPlayersReport: boolean;
-    canOpenDetailedReport: boolean;
     detailedGameplayReportData: any;
     actions: GameEventReportAction;
 }
@@ -39,7 +37,6 @@ const initialState = {
     selectedStartDate: "",
     selectedEndDate: "",
     canOpenPlayersReport: false,
-    canOpenDetailedReport: false,
     detailedGameplayReportData: [],
     gameEventReportData: [],
 }
@@ -54,7 +51,6 @@ const useGameEventReportStore = create<GameEventReportState>((set) => ({
         setDateRangeFilterValue: (dateRangeFilterValue: number) => set({ dateRangeFilterValue }),
         setSelectedStartDate: (selectedStartDate: string) => set({ selectedStartDate }),
         setSelectedEndDate: (selectedEndDate: string) => set({ selectedEndDate }),
-        setCanOpenDetailedReport: (canOpenDetailedReport: boolean) => set({ canOpenDetailedReport }),
         setCanOpenPlayersReport: (canOpenPlayersReport: boolean) => set({ canOpenPlayersReport }),
         setDetailedGameplayReportData: (detailedGameplayReportData: any) => set({ detailedGameplayReportData }),
         setGameEventReportData: (gameEventReportData: any) => set({ gameEventReportData }),
@@ -70,7 +66,6 @@ export const useDateRangeFilterValue = () => useGameEventReportStore((state) => 
 export const useSelectedStartDate = () => useGameEventReportStore((state) => state.selectedStartDate);
 export const useSelectedEndDate = () => useGameEventReportStore((state) => state.selectedEndDate);
 export const useDetailedGameplayReportData = () => useGameEventReportStore((state) => state.gameEventReportData);
-export const useOpenDetailedReport = () => useGameEventReportStore((state) => state.canOpenDetailedReport);
 export const useOpenPlayersReport = () => useGameEventReportStore((state) => state.canOpenPlayersReport);
 export const useGameEventReportData = () => useGameEventReportStore((state) => state.gameEventReportData);
 export const useGameEventReportActions = () => useGameEventReportStore((state) => state.actions);
