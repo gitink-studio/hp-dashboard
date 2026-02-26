@@ -9,22 +9,22 @@ export const AdminRoleSetter: React.FC = () => {
   const handleSetRole = () => {
     const oldRole = localStorage.getItem('userRole');
     localStorage.setItem("userRole", selectedRole);
-    
+
     // Dispatch a custom event to notify other components in the same tab
     window.dispatchEvent(new CustomEvent('roleChanged', {
-      detail: { 
+      detail: {
         newRole: selectedRole,
         oldRole: oldRole
       }
     }));
-    
+
     // Also dispatch storage event for cross-tab communication
     window.dispatchEvent(new StorageEvent('storage', {
       key: 'userRole',
       newValue: selectedRole,
       oldValue: oldRole
     }));
-    
+
     setMessage(`Role set to: ${selectedRole}. Notifications will update automatically.`);
   };
 

@@ -394,7 +394,6 @@ export const GameEventReport = (props: any) => {
                                                     <Stack spacing={1} key={eventData.name}>
                                                         <Typography variant="h6">{eventData.value}</Typography>
                                                         <Typography variant="caption">{eventData.name}</Typography>
-
                                                     </Stack>
                                                 )
                                             })

@@ -22,11 +22,11 @@ import { GamesList } from "../../components/dashboard/games-list";
 export const Dashboard = () => {
   // Check user role for access control
   const userRole = localStorage.getItem("userRole");
-  
+
   // Normalize role for case-insensitive comparison
   const normalizedRole = userRole ? userRole.toLowerCase().trim() : '';
   const isDeveloper = normalizedRole === 'developer' || normalizedRole.includes('developer');
-  
+
   // Redirect non-developer users
   if (!isDeveloper) {
     return (

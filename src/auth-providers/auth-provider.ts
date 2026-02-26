@@ -18,14 +18,14 @@ export const authProvider: AuthProvider = {
       // Normalize role name to lowercase for consistent checking
       const roleName = userDetails.role?.name || '';
       const normalizedRole = roleName.toLowerCase().trim();
-      
+
       localStorage.setItem("userName", username);
       localStorage.setItem("userRole", normalizedRole);
       localStorage.setItem("userRoleId", userDetails.roleId || '');
       localStorage.setItem("userId", userDetails.id || '');
       localStorage.setItem("userStudio", userDetails.studio || '');
       localStorage.setItem(STUDIO_ID, userDetails.studioId || '');
-      
+
       console.log("Stored user role (normalized):", normalizedRole);
 
       // Redirect to dashboard router after successful login

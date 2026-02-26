@@ -269,7 +269,7 @@ export const graphqlDataProvider = buildGraphQLProvider({
               let total = isResponseJsonData(res.data)
                 ? res.data[fieldName].data?.total || 0
                 : res.data[fieldName]?.total || 0;
-              
+
               // For array responses, use array length as total if total is 0
               if (Array.isArray(data)) {
                 if (total === 0) {

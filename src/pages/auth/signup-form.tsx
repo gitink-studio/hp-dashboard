@@ -66,7 +66,7 @@ export const SignUpForm = ({
         query: Queries.Roles,
         variables: {}
       });
-      
+
       if (response && Array.isArray(response)) {
         setRoles(response);
       } else {
@@ -88,7 +88,7 @@ export const SignUpForm = ({
         query: Queries.GetStudioList,
         variables: {}
       });
-      
+
       if (response && Array.isArray(response)) {
         setStudios(response);
       } else {
@@ -137,11 +137,11 @@ export const SignUpForm = ({
   const handleSignUp = async (data: any) => {
     let email: any = data.email;
     console.log(data);
-    
+
     if (!data.role) {
       return notify("Please select a role", { type: "error" });
     }
-    
+
     if (!data.studio || !String(data.studio).trim()) {
       return notify("Please enter a studio name", { type: "error" });
     }

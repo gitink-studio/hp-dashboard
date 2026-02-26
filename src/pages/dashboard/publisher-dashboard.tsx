@@ -66,11 +66,11 @@ function TabPanel(props: TabPanelProps) {
 export const PublisherDashboard = () => {
   // Check user role for access control
   const userRole = localStorage.getItem("userRole");
-  
+
   // Normalize role for case-insensitive comparison
   const normalizedRole = userRole ? userRole.toLowerCase().trim() : '';
   const isPublisher = normalizedRole === 'publisher' || normalizedRole.includes('publisher');
-  
+
   // Redirect non-publisher users
   if (!isPublisher) {
     return (

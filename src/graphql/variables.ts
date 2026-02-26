@@ -222,7 +222,7 @@ const GET_APPROVALS = (params: any) => {
 const GET_NOTIFICATIONS = (params: any) => {
   // Get roleName from params filter or from localStorage
   const roleName = params.filter?.roleName || localStorage.getItem('userRole');
-  
+
   // If roleName is not available, return empty object (query will fail gracefully)
   if (!roleName) {
     console.warn('GET_NOTIFICATIONS: roleName not found in params or localStorage');
@@ -230,10 +230,10 @@ const GET_NOTIFICATIONS = (params: any) => {
       roleName: '', // Empty string will cause backend to return empty array
     };
   }
-  
+
   // Normalize role name (case-insensitive)
   const normalizedRoleName = roleName.toLowerCase().trim();
-  
+
   return {
     roleName: normalizedRoleName,
   };

@@ -130,7 +130,7 @@ export const CustomGameplayReportViewer = (props: any) => {
             <Card variant="outlined" >
                 <CardContent>
                     <Stack direction={'row'} gap={4}>
-                        <DisplayData data={{ name: 'FPS', value: fps }} />
+                        <DisplayData data={{ name: 'FPS', value: fps ?? 0 }} />
                         {playerId && <DisplayData data={{ name: 'Player Id ', value: playerId }} />}
                     </Stack>
                 </CardContent>
@@ -148,7 +148,7 @@ export const CustomGameplayReportViewer = (props: any) => {
             <Card variant="outlined" >
                 <CardContent>
                     <Stack direction={'row'} gap={4}>
-                        <DisplayData data={{ name: 'Memory Usage', value: memoryUsage ? 0 : memoryUsage }} />
+                        <DisplayData data={{ name: 'Memory Usage', value: memoryUsage ?? 0 }} />
                         {playerId && <DisplayData data={{ name: 'Player Id ', value: playerId }} />}
                     </Stack>
                 </CardContent>
@@ -218,13 +218,13 @@ export const CustomGameplayReportViewer = (props: any) => {
                                         <Typography variant="subtitle1" textAlign={'left'}>{data.name}</Typography>
                                         <Stack direction={'row'} gap={4} flexWrap="wrap" justifyContent="flex-start" alignItems={'center'}>
                                             {
-                                                data?.data.length === 0 ? <DataNotFound /> :
+                                                (!Array.isArray(data?.data) || data?.data?.length === 0) ? <DataNotFound /> :
 
-                                                    data.data.map((eventData: any) => {
+                                                    data.data.map((eventData: any, index: number) => {
                                                         return (
-                                                            <>
+                                                            <Box key={index}>
                                                                 {getData(data.name, eventData)}
-                                                            </>
+                                                            </Box>
                                                         )
                                                     })
                                             }

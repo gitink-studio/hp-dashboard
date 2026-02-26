@@ -377,13 +377,13 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
 
   const getNotificationIcon = (type: Notification['type']): React.ReactElement => {
     switch (type) {
-      case 'success': 
+      case 'success':
         return <CheckCircle color="success" />;
-      case 'error': 
+      case 'error':
         return <ErrorIcon color="error" />;
-      case 'warning': 
+      case 'warning':
         return <Warning color="warning" />;
-      case 'info': 
+      case 'info':
       default:
         return <Info color="info" />;
     }
