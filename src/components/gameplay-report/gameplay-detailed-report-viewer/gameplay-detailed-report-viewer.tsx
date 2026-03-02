@@ -9,7 +9,7 @@ import { MemoryUsageDetailedReportViewer } from "./memory-usage-detailed-report-
 import { FPSDetailedReportViewer } from "./fps-detailed-report-viewer";
 
 export const GameplayDetailedReportViewer = (props: any) => {
-    const { reportData, displayButton = false, handleButtonClick } = props.data;
+    const { reportData } = props.data;
 
     const DataNotFound = () => <Typography variant="caption">Data not found</Typography>
 

@@ -1,5 +1,13 @@
 import { Box, Button, Card, CardContent, Stack, Typography } from "@mui/material"
 import { formatTime } from "../../common/utils";
+import { TutorialDetailedReportViewer } from "./gameplay-detailed-report-viewer/tutorial-detailed-report-viewer";
+import { LevelDetailedReportViewer } from "./gameplay-detailed-report-viewer/level-detailed-report-viewer";
+import { IAPDetailedReportViewer } from "./gameplay-detailed-report-viewer/iap-detailed-report-viewer";
+import { AdDetailedReportViewer } from "./gameplay-detailed-report-viewer/ad-detailed-report-viewer";
+import { EconomyDetailedReportViewer } from "./gameplay-detailed-report-viewer/economy-detailed-report-viewer";
+import { LogDetailedReportViewer } from "./gameplay-detailed-report-viewer/log-detailed-report-viewer";
+import { FPSDetailedReportViewer } from "./gameplay-detailed-report-viewer/fps-detailed-report-viewer";
+import { MemoryUsageDetailedReportViewer } from "./gameplay-detailed-report-viewer/memory-usage-detailed-report-viewer";
 
 export const PlayerDetailedReportViewer = (props: any) => {
     const { reportData, displayButton = false, handleButtonClick } = props.data;
@@ -320,37 +328,37 @@ export const PlayerDetailedReportViewer = (props: any) => {
             case 'Gameplay Event Data':
                 return <DisplayData data={data} />
             case 'Tutorial Data':
-                return <TutorialData data={data} />
+                return <TutorialDetailedReportViewer data={data} />
             case 'Level Start Data':
             case 'Level Complete Data':
             case 'Level Fail Data':
-                return <LevelData data={data} />
+                return <LevelDetailedReportViewer data={data} />
             case 'IAP Initiated':
             case 'IAP Successful':
             case 'IAP Failed':
             case 'IAP Consumed':
-                return <IAPData data={data} />
+                return <IAPDetailedReportViewer data={data} />
             case 'Ad Started':
             case 'Ad Clicked':
             case 'Ad Skipped':
             case 'Ad Completed':
             case 'Ad Failed':
-                return <AdData data={data} />
+                return <AdDetailedReportViewer data={data} />
             case 'Currency Earned':
             case 'Currency Spent':
-                return <EconomyData data={data} />
+                return <EconomyDetailedReportViewer data={data} />
             case 'Error Data':
             case 'Warning Data':
             case 'Info Data':
-                return <LogData data={data} />
+                return <LogDetailedReportViewer data={data} />
             case 'Low FPS Data':
             case 'Average FPS Data':
             case 'High FPS Data':
-                return <FPSData data={data} />;
+                return <FPSDetailedReportViewer data={data} />;
             case 'Low Memory Usage Data':
             case 'Average Memory Usage Data':
             case 'High Memory Usage Data':
-                return <MemoryUsageData data={data} />;
+                return <MemoryUsageDetailedReportViewer data={data} />;
             default:
                 return <DataNotFound />
         }
@@ -382,7 +390,7 @@ export const PlayerDetailedReportViewer = (props: any) => {
                                                             : (Array.isArray(data?.data) ? data.data : []).map((eventData: any) => {
                                                                 return (
                                                                     <>
-                                                                        {getData(data.name, eventData)}
+                                                                        {getData(data.name, data?.data)}
                                                                     </>
                                                                 )
                                                             })
