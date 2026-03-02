@@ -30,6 +30,7 @@ export const CustomDatagrid = (props: any) => {
                 sx={customStyle.dataGrid}
                 rowSelection={rowSelection}
                 onPaginationModelChange={handlePaginationModelChange}
+                disableColumnResize
             />
         </>
     )

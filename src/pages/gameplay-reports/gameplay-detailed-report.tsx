@@ -1,5 +1,5 @@
 import { CustomDialog } from "../../components/dialog.component";
-import { CustomGameplayReportViewer } from "../../components/gameplay-report/gameplay-report-viewer";
+import { GameplayDetailedReportViewer } from "../../components/gameplay-report/gameplay-detailed-report-viewer/gameplay-detailed-report-viewer";
 
 export const GameplayDetailedReport = (props: any) => {
     const { type, reportData, callback } = props.data;
@@ -9,7 +9,7 @@ export const GameplayDetailedReport = (props: any) => {
             <CustomDialog
                 data={{
                     title: type,
-                    component: <CustomGameplayReportViewer data={{ reportData: reportData }} />,
+                    component: <GameplayDetailedReportViewer data={{ reportData: reportData }} />,
                     callback: callback
                 }}
             />
