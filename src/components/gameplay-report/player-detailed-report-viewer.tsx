@@ -261,7 +261,6 @@ export const PlayerDetailedReportViewer = (props: any) => {
 
                                                     }
                                                 </Stack>
-
                                                 {
                                                     displayButton && (
                                                         <Box display={'flex'} justifyContent={'flex-end'}>

@@ -48,7 +48,7 @@ export const PlayerReport = () => {
 
     const columns: GridColDef[] = [
         {
-            field: 'id',
+            field: 'playerId',
             headerName: 'Id',
             flex: 1,
         },

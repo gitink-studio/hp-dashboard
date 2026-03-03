@@ -3,7 +3,7 @@ import { CustomDatagrid } from "../../data-grid.component"
 
 export const columnProps: Partial<GridColDef> = {
     align: 'center',
-    headerAlign: 'center'
+    headerAlign: 'center',
 }
 
 export const DetailedReportViewer = (props: any) => {
