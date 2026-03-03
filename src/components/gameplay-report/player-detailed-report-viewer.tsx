@@ -188,139 +188,6 @@ export const PlayerDetailedReportViewer = (props: any) => {
         )
     }
 
-    const TutorialData = (props: any) => {
-        const { step, totalCount, tutorialType } = props.data;
-        const name = `${tutorialType} step ${step}`;
-
-        return <DisplayData
-            key={name}
-            data={{
-                name: name,
-                value: totalCount
-            }}
-        />
-    }
-
-    const LevelData = (props: any) => {
-        const { levelName = "", totalCount = 0 } = props.data;
-
-        return <DisplayData data={{
-            name: levelName,
-            value: totalCount
-        }}
-            key={levelName}
-        />
-    }
-
-    const IAPData = (props: any) => {
-        const { price, productId, totalCount, currencyCode } = props.data;
-
-        return (
-            <Card variant="outlined" key={productId}>
-                <CardContent>
-                    <Stack direction={'row'} gap={4}>
-                        <DisplayData data={{ name: 'Product Id', value: productId }} />
-                        <DisplayData data={{ name: 'Price', value: price }} />
-                        <DisplayData data={{ name: 'Currency Code', value: currencyCode }} />
-                        <DisplayData data={{ name: 'Count', value: totalCount }} />
-                    </Stack>
-                </CardContent>
-            </Card>
-        )
-
-    }
-
-    const AdData = (props: any) => {
-        const { adType, duration, adSdkName, failReason, totalCount, adPlacement } = props.data;
-
-        return (
-            <Card variant="outlined" key={adPlacement}>
-                <CardContent>
-                    <Stack direction={'row'} gap={4}>
-                        <DisplayData data={{ name: 'Ad Type', value: adType }} />
-                        <DisplayData data={{ name: 'Ad Placement', value: adPlacement }} />
-                        <DisplayData data={{ name: 'Count', value: totalCount }} />
-                        <DisplayData data={{ name: 'Duration', value: formatTime(duration) }} />
-                        <DisplayData data={{ name: 'Ad Sdk', value: adSdkName }} />
-                        <DisplayData data={{ name: 'Fail Reason', value: failReason === "" ? "none" : failReason }} />
-                    </Stack>
-                </CardContent>
-            </Card>
-        )
-    }
-
-    const EconomyData = (props: any) => {
-        const {
-            itemId = 'None',
-            itemName = "None",
-            amount = 0,
-            reason = 'None',
-            totalCount = 0,
-            currencyType = 'None'
-        } = props.data
-
-        return (
-            <Card variant="outlined" >
-                <CardContent>
-                    <Stack direction={'row'} gap={4}>
-                        <DisplayData data={{ name: 'Count', value: totalCount }} />
-                        <DisplayData data={{ name: 'Item Id', value: itemId }} />
-                        <DisplayData data={{ name: 'Item Name', value: itemName }} />
-                        <DisplayData data={{ name: 'Amount', value: amount }} />
-                        <DisplayData data={{ name: 'Currency Type', value: currencyType }} />
-                        <DisplayData data={{ name: 'Reason', value: reason === "" ? "None" : reason }} />
-                    </Stack>
-                </CardContent>
-            </Card>
-        )
-    }
-
-    const LogData = (props: any) => {
-        const { count, message, playerIdList } = props.data;
-
-        return (
-            <Card variant="outlined" >
-                <CardContent>
-                    <Stack gap={2}>
-                        <DisplayData data={{ name: 'Count', value: count }} />
-                        <DisplayData data={{ name: 'Message ', value: message }} />
-                        <DisplayData data={{ name: 'Players Id ', value: playerIdList?.map((playerId: any) => <>{playerId},<br /> </>) }} />
-                    </Stack>
-                </CardContent>
-            </Card>
-        )
-    }
-
-    const FPSData = (props: any) => {
-        const { fps, playerId } = props.data;
-
-        return (
-            <Card variant="outlined" >
-                <CardContent>
-                    <Stack direction={'row'} gap={4}>
-                        <DisplayData data={{ name: 'FPS', value: Math.floor(fps) }} />
-                        {/* {playerId && <DisplayData data={{ name: 'Player Id ', value: playerId }} />} */}
-                    </Stack>
-                </CardContent>
-            </Card>
-        )
-    }
-
-    const MemoryUsageData = (props: any) => {
-        const { memoryUsage, playerId } = props.data;
-
-        return (
-            <Card variant="outlined" >
-                <CardContent>
-                    <Stack direction={'row'} gap={4}>
-                        <DisplayData data={{ name: 'Memory Usage', value: Math.floor(memoryUsage) }} />
-                        {/* {playerId && <DisplayData data={{ name: 'Player Id ', value: playerId }} />} */}
-                    </Stack>
-                </CardContent>
-            </Card>
-        )
-    }
-
     const getData = (dataType: string, data: any) => {
         switch (dataType) {
             case 'Player Data':
@@ -387,13 +254,11 @@ export const PlayerDetailedReportViewer = (props: any) => {
                                                     {
                                                         (Array.isArray(data?.data) ? data.data : []).length === 0
                                                             ? <DataNotFound />
-                                                            : (Array.isArray(data?.data) ? data.data : []).map((eventData: any) => {
-                                                                return (
-                                                                    <>
-                                                                        {getData(data.name, data?.data)}
-                                                                    </>
-                                                                )
-                                                            })
+                                                            :
+                                                            <Box>
+                                                                {getData(data.name, data?.data)}
+                                                            </Box>
+
                                                     }
                                                 </Stack>
 
