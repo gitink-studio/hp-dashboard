@@ -9,7 +9,6 @@ export const CustomDatagrid = (props: any) => {
     const pageSize = useDataGridPageSize();
     const { setPageSize, setPage } = useDataGridActions();
 
-
     const handlePaginationModelChange = (newModel: any) => {
         setPage(newModel.page);
         setPageSize(newModel.pageSize);

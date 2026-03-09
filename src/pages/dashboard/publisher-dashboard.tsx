@@ -31,7 +31,7 @@ import {
 } from '@mui/icons-material';
 import { useGetList, useNotify } from 'react-admin';
 import { QueryNames, CONTRACT_TYPES, PAYOUT_TYPES, APPROVAL_TYPES } from '../../common/constants';
-import { formatNumber } from '../../common/utils';
+import { formatDecimalNumber } from '../../common/utils';
 import { AdvancedDateFilter } from '../../components/dashboard/advanced-date-filter';
 import { AdvancedExport } from '../../components/dashboard/advanced-export';
 import { NotificationSystem } from '../../components/dashboard/notification-system';
@@ -276,7 +276,7 @@ export const PublisherDashboard = () => {
                       Revenue Share: {contract.revenueShare}%
                     </Typography>
                     <Typography color="textSecondary" variant="body2">
-                      Min Guarantee: ${formatNumber(contract.minimumGuarantee || 0)}
+                      Min Guarantee: ${formatDecimalNumber(contract.minimumGuarantee || 0)}
                     </Typography>
                     <Typography color="textSecondary" variant="body2">
                       Start: {new Date(contract.startDate).toLocaleDateString()}
@@ -306,7 +306,7 @@ export const PublisherDashboard = () => {
                 <Card>
                   <CardContent>
                     <Box display="flex" justifyContent="space-between" alignItems="center">
-                      <Typography variant="h6">${formatNumber(payout.amount)}</Typography>
+                      <Typography variant="h6">${formatDecimalNumber(payout.amount)}</Typography>
                       <Chip
                         label={payout.status}
                         color={getStatusColor(payout.status)}

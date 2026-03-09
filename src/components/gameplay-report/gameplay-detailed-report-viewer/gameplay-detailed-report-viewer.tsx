@@ -87,9 +87,9 @@ export const GameplayDetailedReportViewer = (props: any) => {
                                         <Stack direction={'row'} gap={4} flexWrap="wrap" justifyContent="flex-start" alignItems={'center'}>
                                             {
                                                 (!Array.isArray(data?.data) || data?.data?.length === 0) ? <DataNotFound /> :
-                                                    <Box >
-                                                        {getData(data.name, data?.data)}
-                                                    </Box>
+                                                    <Stack direction={'row'} gap={2}>
+                                                        <Box>{getData(data.name, data)}</Box>
+                                                    </Stack>
                                             }
                                         </Stack>
                                     </Stack>

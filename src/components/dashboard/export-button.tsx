@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
 import { Download, TableChart, Assessment } from '@mui/icons-material';
-import { formatNumber } from '../../common/utils';
+import { formatDecimalNumber } from '../../common/utils';
 
 interface ExportButtonProps {
     filter?: any;
@@ -29,7 +29,7 @@ export const ExportButton: React.FC<ExportButtonProps> = ({ filter, type = 'port
         const headers = Object.keys(data[0]);
         const csvContent = [
             headers.join(','),
-            ...data.map(row => 
+            ...data.map(row =>
                 headers.map(header => {
                     const value = row[header];
                     // Handle nested objects and arrays

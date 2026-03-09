@@ -33,15 +33,13 @@ export const isUserAlreadyExist = async (value: string) => {
   return await FetchData.isDataAlreadyExist("user", "email", value);
 };
 
-export const formatNumber = (_value: number | string): string => {
-  // Handle undefined, null, or invalid values
+export const formatDecimalNumber = (_value: number | string): string => {
   if (_value === undefined || _value === null || _value === '') {
     return '0';
   }
 
   const value = typeof _value === "string" ? parseFloat(_value) : _value;
 
-  // Handle NaN values
   if (isNaN(value)) {
     return '0';
   }

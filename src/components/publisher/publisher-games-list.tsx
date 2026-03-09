@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { formatNumber } from '../../common/utils';
+import { formatDecimalNumber } from '../../common/utils';
 import { ROOT_URL, GRAPHQL_URL } from '../../common/constants';
 
 // Helper function to get game icon based on game name
@@ -27,10 +27,10 @@ const getGameIcon = (gameName: string) => {
   if (name.includes('racing') || name.includes('elite')) return '🏎️';
   return '🎮'; // Default game icon
 };
-import { 
-  Box, 
-  Typography, 
-  IconButton, 
+import {
+  Box,
+  Typography,
+  IconButton,
   Tooltip,
   Table,
   TableBody,
@@ -50,9 +50,9 @@ import {
   Chip,
   CircularProgress
 } from '@mui/material';
-import { 
-  Assessment, 
-  AttachMoney, 
+import {
+  Assessment,
+  AttachMoney,
   Schedule,
   Description,
   Assignment,
@@ -89,31 +89,31 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
 
   // State for managing expanded games (accordion)
   const [expandedGames, setExpandedGames] = useState<Set<string>>(new Set());
-  
+
   // State for managing expanded studios (accordion)
   const [expandedStudios, setExpandedStudios] = useState<Set<string>>(new Set());
-  
+
   // State for revenue by geo and payout summary data
   const [revenueByGeoData, setRevenueByGeoData] = useState<any[]>([]);
   const [payoutSummaryData, setPayoutSummaryData] = useState<any>(null);
   const [loadingStudioData, setLoadingStudioData] = useState(false);
-  
+
   // State for game-specific metrics (live data from Hyper Rabbit SDK)
   const [gameMetrics, setGameMetrics] = useState<{ [gameId: string]: any }>({});
   const [dailyMetrics, setDailyMetrics] = useState<{ [gameId: string]: any[] }>({});
   const [loadingMetrics, setLoadingMetrics] = useState<{ [gameId: string]: boolean }>({});
-  
+
   // Track ongoing fetches to prevent duplicate requests
   const ongoingFetches = useRef<Set<string>>(new Set());
 
   const handleToggleExpanded = async (gameId: string) => {
     const newExpanded = new Set(expandedGames);
     const isExpanding = !newExpanded.has(gameId);
-    
+
     if (isExpanding) {
       newExpanded.add(gameId);
       setExpandedGames(newExpanded);
-      
+
       // Fetch metrics when expanding
       await fetchGameMetrics(gameId);
     } else {
@@ -121,7 +121,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
       setExpandedGames(newExpanded);
     }
   };
-  
+
   // Helper function to get date range from filter
   const getDateRange = () => {
     const now = new Date();
@@ -162,13 +162,13 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
   // Fetch game metrics from backend
   const fetchGameMetrics = async (gameId: string) => {
     console.log('🔵 fetchGameMetrics called for game:', gameId);
-    
+
     // Check if already fetching
     if (ongoingFetches.current.has(gameId)) {
       console.log('⏳ Already fetching for game:', gameId);
       return;
     }
-    
+
     // Only fetch if not already cached
     if (gameMetrics[gameId] && dailyMetrics[gameId]) {
       console.log('✅ Metrics already cached for game:', gameId);
@@ -178,13 +178,13 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
     try {
       ongoingFetches.current.add(gameId);
       setLoadingMetrics(prev => ({ ...prev, [gameId]: true }));
-      
+
       const { startDate, endDate } = getDateRange();
       console.log(`📊 Fetching metrics for game ${gameId} (${startDate} to ${endDate})`);
-      
+
       const metricsResponse = await fetch(`${ROOT_URL}/hyper-rabbit/metrics/${gameId}?startDate=${startDate}&endDate=${endDate}`);
       const dailyResponse = await fetch(`${ROOT_URL}/hyper-rabbit/metrics/daily/${gameId}?startDate=${startDate}&endDate=${endDate}`);
-      
+
       if (metricsResponse.ok) {
         const result = await metricsResponse.json();
         if (result.success && result.data) {
@@ -211,23 +211,23 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
       setLoadingMetrics(prev => ({ ...prev, [gameId]: false }));
     }
   };
-  
+
   // Publisher reports data dynamically generated from backend metrics
   const getPublisherReports = (gameId: string) => {
     const metrics = gameMetrics[gameId] || {};
     const daily = dailyMetrics[gameId] || [];
-    
+
     const formatNumber = (num: number) => {
       if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
       if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
       return num.toString();
     };
-    
+
     const formatDate = (dateStr: string) => {
       const date = new Date(dateStr);
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     };
-    
+
     // Helper function to get heatmap color based on value (0-100 percentage)
     const getHeatmapColor = (value: number, maxValue: number = 100): string => {
       if (value === 0) return '#ffffff'; // White for 0
@@ -238,36 +238,36 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
       const blue = Math.floor(253 - (normalized * 55)); // 253 -> 216
       return `rgb(${red}, ${green}, ${blue})`;
     };
-    
+
     // Helper function to calculate retention for a specific day
     // Uses interpolation between D1, D7, D30 if needed
     const calculateDayRetention = (day: number, d1: number, d7: number, d30: number): number => {
       if (day === 1) return d1;
       if (day === 7) return d7;
       if (day === 30) return d30;
-      
+
       // Interpolate between D1 and D7 for days 2-6
       if (day > 1 && day < 7) {
         const ratio = (day - 1) / 6;
         return d1 - (d1 - d7) * ratio;
       }
-      
+
       // Interpolate between D7 and D30 for days 8-29
       if (day > 7 && day < 30) {
         const ratio = (day - 7) / 23;
         return d7 - (d7 - d30) * ratio;
       }
-      
+
       // For days beyond 30, use D30 (or extrapolate down)
       if (day > 30) {
         const daysPast30 = day - 30;
         // Exponential decay beyond day 30
         return d30 * Math.pow(0.95, daysPast30);
       }
-      
+
       return 0;
     };
-    
+
     // Calculate max retention value for normalization
     const calculateMaxRetention = () => {
       if (daily.length > 0) {
@@ -283,9 +283,9 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         metrics.retentionD30 || 0
       ) || 100;
     };
-    
+
     const maxRetention = calculateMaxRetention();
-    
+
     return [
       {
         id: 'cpi-trends',
@@ -316,10 +316,10 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
             } else if (day.cpi && day.cpi > 0) {
               cpi = day.cpi;
             }
-            
+
             // Spend should be adSpend if available, otherwise calculate from installs * cpi, otherwise 0
             const spend = adSpend > 0 ? adSpend : (installs > 0 && cpi > 0 ? installs * cpi : 0);
-            
+
             return {
               date: formatDate(day.date),
               installs: formatNumber(installs),
@@ -369,7 +369,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
           // Heatmap format: rows are cohorts/dates, columns are days 1-9
           table: (() => {
             let retentionRows: any[] = [];
-            
+
             if (daily.length > 0) {
               retentionRows = daily.map(d => {
                 const installs = d.newUsers || 0;
@@ -378,13 +378,13 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                 const d30 = d.retentionD30 || 0;
                 const dateStr = formatDate(d.date);
                 const dayName = new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' });
-                
+
                 // Create row with date and retention for each day (1-9)
                 const row: any = {
                   cohortDate: `${dayName}, ${dateStr} (${formatNumber(installs)} Users)`,
                   isMean: false
                 };
-                
+
                 // Calculate retention for days 1-9
                 for (let day = 1; day <= 9; day++) {
                   const retention = calculateDayRetention(day, d1, d7, d30);
@@ -394,7 +394,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                     color: getHeatmapColor(retention, maxRetention)
                   };
                 }
-                
+
                 return row;
               });
             } else {
@@ -403,12 +403,12 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
               const d1 = metrics.retentionD1 || 0;
               const d7 = metrics.retentionD7 || 0;
               const d30 = metrics.retentionD30 || 0;
-              
+
               const row: any = {
                 cohortDate: `Overall Period (${formatNumber(totalInstalls)} Users)`,
                 isMean: false
               };
-              
+
               // Calculate retention for days 1-9
               for (let day = 1; day <= 9; day++) {
                 const retention = calculateDayRetention(day, d1, d7, d30);
@@ -418,10 +418,10 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                   color: getHeatmapColor(retention, maxRetention)
                 };
               }
-              
+
               retentionRows = [row];
             }
-            
+
             // Calculate Mean row if we have data
             if (retentionRows.length > 0) {
               const totalUsers = retentionRows.reduce((sum, row) => {
@@ -440,30 +440,30 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                 }
                 return sum;
               }, 0);
-              
+
               const meanRow: any = {
                 cohortDate: `Mean (${formatNumber(totalUsers)} Users)`,
                 isMean: true
               };
-              
+
               // Calculate average retention for each day
               for (let day = 1; day <= 9; day++) {
                 const dayValues = retentionRows.map(row => row[`day${day}`]?.value || 0).filter(v => v > 0);
-                const avgRetention = dayValues.length > 0 
-                  ? dayValues.reduce((sum, val) => sum + val, 0) / dayValues.length 
+                const avgRetention = dayValues.length > 0
+                  ? dayValues.reduce((sum, val) => sum + val, 0) / dayValues.length
                   : 0;
-                
+
                 meanRow[`day${day}`] = {
                   value: avgRetention,
                   display: `${avgRetention.toFixed(2)}%`,
                   color: getHeatmapColor(avgRetention, maxRetention)
                 };
               }
-              
+
               // Add Mean row at the beginning
               retentionRows = [meanRow, ...retentionRows];
             }
-            
+
             return retentionRows;
           })()
         }
@@ -552,16 +552,16 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
       }
     ];
   };
-  
+
   // Handle studio accordion expansion
   const handleToggleStudioExpanded = async (studioId: string) => {
     const newExpanded = new Set(expandedStudios);
     const isExpanding = !newExpanded.has(studioId);
-    
+
     if (isExpanding) {
       newExpanded.add(studioId);
       setExpandedStudios(newExpanded);
-      
+
       // Fetch studio-level data
       setLoadingStudioData(true);
       try {
@@ -596,7 +596,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         if (geoResult.data?.revenueByGeo) {
           setRevenueByGeoData(geoResult.data.revenueByGeo);
         }
-        
+
         // Fetch payout summary
         const payoutResponse = await fetch(GRAPHQL_URL, {
           method: 'POST',
@@ -646,7 +646,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
 
   const [games, setGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Safety timeout to prevent infinite loading
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -656,7 +656,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
 
     return () => clearTimeout(timeout);
   }, []);
-  
+
   const [kpiData] = useState({
     grossRev: 125000,
     netRev: 87500,
@@ -830,7 +830,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
     const loadFilterData = async () => {
       console.log('=== Loading Filter Data with Simple GraphQL Fetches ===');
       setLoadingFilters(true);
-      
+
       try {
         // Fetch all filter data in parallel
         await Promise.all([
@@ -838,9 +838,9 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
           fetchSubPlatforms(),
           fetchStudios()
         ]);
-        
+
         console.log('✅ Filter data (platforms, studios, sub-platforms) loaded');
-        
+
         // Fetch all games initially with empty filters to show everything
         const initialFilters = {
           studio: undefined,
@@ -851,7 +851,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
           dateRange: filters.dateRange,
           currency: filters.currency
         };
-        
+
         try {
           const response = await fetch(GRAPHQL_URL, {
             method: 'POST',
@@ -889,7 +889,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         } catch (error) {
           console.error('Error loading initial games:', error);
         }
-        
+
       } catch (error) {
         console.error('❌ Error loading filter data:', error);
       } finally {
@@ -904,7 +904,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
   const fetchGames = async (currentFilters: typeof filters) => {
     try {
       setLoading(true);
-      
+
       // Convert "All" to undefined for backend
       const cleanedFilters = {
         studio: currentFilters.studio !== 'All' ? currentFilters.studio : undefined,
@@ -915,7 +915,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         dateRange: currentFilters.dateRange,
         currency: currentFilters.currency
       };
-      
+
       const response = await fetch(GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -968,18 +968,18 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
     try {
       setLoadingAvailableGames(true);
       console.log('🎮 Fetching available games with filters:', currentFilters);
-      
+
       // Build filter object for the query
-      const studioId = currentFilters.studio !== 'All' ? 
+      const studioId = currentFilters.studio !== 'All' ?
         studios.find(s => s.name === currentFilters.studio)?.id : undefined;
-      
+
       // If we need a studio filter but studios array is empty, skip this fetch
       if (currentFilters.studio !== 'All' && studios.length === 0) {
         console.log('⚠️ Studios array is empty, skipping fetchAvailableGames');
         setLoadingAvailableGames(false);
         return;
       }
-      
+
       const queryFilters = {
         studio: studioId,
         platform: currentFilters.platform !== 'All' ? currentFilters.platform : undefined,
@@ -988,7 +988,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         dateRange: currentFilters.dateRange,
         currency: currentFilters.currency
       };
-      
+
       console.log('🎯 Studio filter mapping:', {
         studioName: currentFilters.studio,
         studioId: studioId,
@@ -1023,7 +1023,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
           }
         })
       });
-      
+
       const result = await response.json();
       if (result.errors) {
         console.error('Error fetching available games:', result.errors);
@@ -1059,12 +1059,12 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
       studiosLength: studios.length,
       filters
     });
-    
+
     if (!loadingFilters) {
       if (platforms.length > 0 && studios.length > 0) {
         console.log('🔄 Filters changed, fetching games and available games:', filters);
         fetchGames(filters);
-        
+
         // Call fetchAvailableGames with error handling
         fetchAvailableGames(filters).catch(error => {
           console.error('❌ Error in fetchAvailableGames:', error);
@@ -1085,7 +1085,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         ...prev,
         [filterType]: value
       };
-      
+
       // Reset dependent filters with cascading effect
       if (filterType === 'platform') {
         console.log(`🔄 Platform changed to: ${value}, resetting sub-platform and game to 'All'`);
@@ -1101,10 +1101,10 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         console.log(`🔄 Region changed to: ${value}, resetting game to 'All'`);
         newFilters.game = 'All';
       }
-      
+
       console.log(`🎯 New filters after ${filterType} change:`, newFilters);
       console.log(`🎯 About to update filters state with:`, newFilters);
-      
+
       // Call fetchAvailableGames directly with the new filters
       if (filterType === 'studio' || filterType === 'platform' || filterType === 'subPlatform' || filterType === 'region') {
         console.log(`🎯 Calling fetchAvailableGames directly for ${filterType} change`);
@@ -1112,7 +1112,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
           console.error('❌ Error in fetchAvailableGames from handleFilterChange:', error);
         });
       }
-      
+
       return newFilters;
     });
   };
@@ -1120,7 +1120,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
   // Get filtered games based on current filters
   const getFilteredGames = () => {
     console.log(`🎮 getFilteredGames called with allGames: ${allGames.length} games`);
-    
+
     // allGames is already filtered by fetchAvailableGames based on current filters
     // So we can return it directly without additional filtering
     console.log(`🎮 getFilteredGames returning ${allGames.length} games (already filtered by fetchAvailableGames)`);
@@ -1146,12 +1146,12 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
       // Find the Web platform to match platformId
       const webPlatform = platforms.find(p => p.name === 'Web');
       if (webPlatform) {
-        return subPlatforms.filter(subPlatform => 
+        return subPlatforms.filter(subPlatform =>
           subPlatform.platformId === webPlatform.id
         );
       }
     }
-    
+
     // Return empty array for non-Web platforms or when no Web platform found
     return [];
   };
@@ -1160,7 +1160,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
   const filteredGames = getFilteredGames();
   const availableGames = getAvailableGames();
   const availableSubPlatforms = getAvailableSubPlatforms();
-  
+
   // Group games by studio
   const gamesByStudio = filteredGames.reduce((acc, game) => {
     const studioName = game.studio?.name || 'Unknown Studio';
@@ -1183,7 +1183,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
   console.log('Sub-platforms count:', subPlatforms.length);
   console.log('Available sub-platforms count:', availableSubPlatforms.length);
   console.log('Web platform found:', platforms.find(p => p.name === 'Web'));
-  
+
   // Additional debugging for sub-platforms
   if (subPlatforms.length > 0) {
     console.log('Sub-platforms details:');
@@ -1193,7 +1193,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
   } else {
     console.log('⚠️  No sub-platforms loaded from database');
   }
-  
+
   if (availableSubPlatforms.length > 0) {
     console.log('Available sub-platforms details:');
     availableSubPlatforms.forEach((sp, index) => {
@@ -1202,7 +1202,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
   } else {
     console.log('⚠️  No available sub-platforms (check platform filter)');
   }
-  
+
   console.log('========================================');
 
   // Reset game filter if selected game is not available in current games list
@@ -1264,25 +1264,25 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
             <AttachMoney sx={{ mr: 1 }} />
             Publisher KPIs (Last 30 days)
           </Typography>
-          
+
           {/* First Row of KPIs */}
           <Grid container spacing={2} sx={{ mb: 2 }}>
             <Grid item xs={12} sm={6} md={2}>
               <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
                 <Typography variant="caption" color="textSecondary">Gross Rev</Typography>
-                <Typography variant="h6" color="primary">₹{formatNumber(kpiData.grossRev)}</Typography>
+                <Typography variant="h6" color="primary">₹{formatDecimalNumber(kpiData.grossRev)}</Typography>
               </Box>
             </Grid>
             <Grid item xs={12} sm={6} md={2}>
               <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
                 <Typography variant="caption" color="textSecondary">Net Rev</Typography>
-                <Typography variant="h6" color="success.main">₹{formatNumber(kpiData.netRev)}</Typography>
+                <Typography variant="h6" color="success.main">₹{formatDecimalNumber(kpiData.netRev)}</Typography>
               </Box>
             </Grid>
             <Grid item xs={12} sm={6} md={2}>
               <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
                 <Typography variant="caption" color="textSecondary">Payout Due</Typography>
-                <Typography variant="h6" color="warning.main">₹{formatNumber(kpiData.payoutDue)}</Typography>
+                <Typography variant="h6" color="warning.main">₹{formatDecimalNumber(kpiData.payoutDue)}</Typography>
               </Box>
             </Grid>
             <Grid item xs={12} sm={6} md={2}>
@@ -1421,7 +1421,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                   disabled={loadingFilters}
                 >
                   <MenuItem value="All">
-                    Sub Platform [ All ▼ ] 
+                    Sub Platform [ All ▼ ]
                     {loadingFilters ? '(Loading...)' : `(${availableSubPlatforms.length} options)`}
                   </MenuItem>
                   {availableSubPlatforms.map((subPlatform: any) => (
@@ -1567,127 +1567,127 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                 const studioDisplayName = studioName;
                 const studioId = games[0]?.studioId || studioName;
                 const isStudioExpanded = expandedStudios.has(studioId);
-                
+
                 return (
                   <React.Fragment key={`studio-${studioId}-${index}`}>
-                      {/* Studio Header Row - Clickable to expand studio-level data */}
-                      <TableRow 
-                        sx={{ 
-                          backgroundColor: '#f5f5f5',
-                          cursor: 'pointer',
-                          '&:hover': { backgroundColor: '#e8e8e8' }
-                        }}
-                        onClick={() => handleToggleStudioExpanded(studioId)}
-                      >
-                        <TableCell colSpan={filters.platform === 'Web' ? 5 : 7}>
-                          <Box display="flex" alignItems="center">
-                            <IconButton size="small" sx={{ mr: 1 }}>
-                              {isStudioExpanded ? <ExpandLess /> : <ExpandMore />}
-                            </IconButton>
-                            <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                              {studioDisplayName}
-                            </Typography>
-                            <Typography variant="caption" color="textSecondary" sx={{ ml: 2 }}>
-                              {isStudioExpanded ? 'Hide Studio Reports' : 'Show Studio Reports'}
-                            </Typography>
+                    {/* Studio Header Row - Clickable to expand studio-level data */}
+                    <TableRow
+                      sx={{
+                        backgroundColor: '#f5f5f5',
+                        cursor: 'pointer',
+                        '&:hover': { backgroundColor: '#e8e8e8' }
+                      }}
+                      onClick={() => handleToggleStudioExpanded(studioId)}
+                    >
+                      <TableCell colSpan={filters.platform === 'Web' ? 5 : 7}>
+                        <Box display="flex" alignItems="center">
+                          <IconButton size="small" sx={{ mr: 1 }}>
+                            {isStudioExpanded ? <ExpandLess /> : <ExpandMore />}
+                          </IconButton>
+                          <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+                            {studioDisplayName}
+                          </Typography>
+                          <Typography variant="caption" color="textSecondary" sx={{ ml: 2 }}>
+                            {isStudioExpanded ? 'Hide Studio Reports' : 'Show Studio Reports'}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+
+                    {/* Studio-Level Reports Accordion */}
+                    <TableRow>
+                      <TableCell colSpan={filters.platform === 'Web' ? 5 : 7} sx={{ p: 0 }}>
+                        <Collapse in={isStudioExpanded} timeout="auto" unmountOnExit>
+                          <Box sx={{ p: 3, backgroundColor: '#fafafa', borderTop: '1px solid #e0e0e0' }}>
+                            {loadingStudioData ? (
+                              <Typography>Loading studio reports...</Typography>
+                            ) : (
+                              <>
+                                {/* Revenue by Geo Section */}
+                                {revenueByGeoData.length > 0 && (
+                                  <Card sx={{ mb: 2, border: '2px solid #1976d230' }}>
+                                    <CardContent>
+                                      <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', color: '#1976d2' }}>
+                                        🌍 Revenue by Geo - {studioDisplayName}
+                                      </Typography>
+                                      <Table>
+                                        <TableHead>
+                                          <TableRow>
+                                            <TableCell><strong>Country</strong></TableCell>
+                                            <TableCell align="right"><strong>Installs</strong></TableCell>
+                                            <TableCell align="right"><strong>Gross Rev</strong></TableCell>
+                                            <TableCell align="right"><strong>Rev-Share %</strong></TableCell>
+                                            <TableCell align="right"><strong>Net Rev</strong></TableCell>
+                                            <TableCell align="right"><strong>Payout Due</strong></TableCell>
+                                          </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                          {revenueByGeoData.map((row: any) => (
+                                            <TableRow key={row.country}>
+                                              <TableCell>{row.country}</TableCell>
+                                              <TableCell align="right">{formatDecimalNumber(row.installs)}k</TableCell>
+                                              <TableCell align="right">₹{formatDecimalNumber(row.grossRevenue)}</TableCell>
+                                              <TableCell align="right">{row.revenueShare}%</TableCell>
+                                              <TableCell align="right">₹{formatDecimalNumber(row.netRevenue)}</TableCell>
+                                              <TableCell align="right">₹{formatDecimalNumber(row.payoutDue)}</TableCell>
+                                            </TableRow>
+                                          ))}
+                                        </TableBody>
+                                      </Table>
+                                    </CardContent>
+                                  </Card>
+                                )}
+
+                                {/* Payout Summary Section */}
+                                {payoutSummaryData && payoutSummaryData.studios && (
+                                  <Card sx={{ mb: 2, border: '2px solid #2e7d3230' }}>
+                                    <CardContent>
+                                      <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', color: '#2e7d32' }}>
+                                        💰 Payout Summary - {studioDisplayName}
+                                      </Typography>
+                                      <Typography variant="h6" sx={{ mb: 2 }}>
+                                        Total Net: ₹{formatDecimalNumber(payoutSummaryData.totalNet)} |
+                                        Paid: ₹{formatDecimalNumber(payoutSummaryData.totalPaid)} |
+                                        Outstanding: ₹{formatDecimalNumber(payoutSummaryData.totalOutstanding)}
+                                      </Typography>
+                                      <Table>
+                                        <TableHead>
+                                          <TableRow>
+                                            <TableCell><strong>Studio</strong></TableCell>
+                                            <TableCell align="right"><strong>Gross Rev</strong></TableCell>
+                                            <TableCell align="right"><strong>Net Rev</strong></TableCell>
+                                            <TableCell align="right"><strong>Paid</strong></TableCell>
+                                            <TableCell align="right"><strong>Outstanding</strong></TableCell>
+                                          </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                          {payoutSummaryData.studios.map((studio: any) => (
+                                            <TableRow key={studio.studioId}>
+                                              <TableCell>{studio.studioName}</TableCell>
+                                              <TableCell align="right">₹{formatDecimalNumber(studio.grossRevenue)}</TableCell>
+                                              <TableCell align="right">₹{formatDecimalNumber(studio.netRevenue)}</TableCell>
+                                              <TableCell align="right">₹{formatDecimalNumber(studio.paid)}</TableCell>
+                                              <TableCell align="right">₹{formatDecimalNumber(studio.outstanding)}</TableCell>
+                                            </TableRow>
+                                          ))}
+                                        </TableBody>
+                                      </Table>
+                                    </CardContent>
+                                  </Card>
+                                )}
+                              </>
+                            )}
                           </Box>
-                        </TableCell>
-                      </TableRow>
-                      
-                      {/* Studio-Level Reports Accordion */}
-                      <TableRow>
-                        <TableCell colSpan={filters.platform === 'Web' ? 5 : 7} sx={{ p: 0 }}>
-                          <Collapse in={isStudioExpanded} timeout="auto" unmountOnExit>
-                            <Box sx={{ p: 3, backgroundColor: '#fafafa', borderTop: '1px solid #e0e0e0' }}>
-                              {loadingStudioData ? (
-                                <Typography>Loading studio reports...</Typography>
-                              ) : (
-                                <>
-                                  {/* Revenue by Geo Section */}
-                                  {revenueByGeoData.length > 0 && (
-                                    <Card sx={{ mb: 2, border: '2px solid #1976d230' }}>
-                                      <CardContent>
-                                                        <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', color: '#1976d2' }}>
-                                          🌍 Revenue by Geo - {studioDisplayName}
-                                        </Typography>
-                                        <Table>
-                                          <TableHead>
-                                            <TableRow>
-                                              <TableCell><strong>Country</strong></TableCell>
-                                              <TableCell align="right"><strong>Installs</strong></TableCell>
-                                              <TableCell align="right"><strong>Gross Rev</strong></TableCell>
-                                              <TableCell align="right"><strong>Rev-Share %</strong></TableCell>
-                                              <TableCell align="right"><strong>Net Rev</strong></TableCell>
-                                              <TableCell align="right"><strong>Payout Due</strong></TableCell>
-                                            </TableRow>
-                                          </TableHead>
-                                          <TableBody>
-                                            {revenueByGeoData.map((row: any) => (
-                                              <TableRow key={row.country}>
-                                                <TableCell>{row.country}</TableCell>
-                                                <TableCell align="right">{formatNumber(row.installs)}k</TableCell>
-                                                <TableCell align="right">₹{formatNumber(row.grossRevenue)}</TableCell>
-                                                <TableCell align="right">{row.revenueShare}%</TableCell>
-                                                <TableCell align="right">₹{formatNumber(row.netRevenue)}</TableCell>
-                                                <TableCell align="right">₹{formatNumber(row.payoutDue)}</TableCell>
-                                              </TableRow>
-                                            ))}
-                                          </TableBody>
-                                        </Table>
-                                      </CardContent>
-                                    </Card>
-                                  )}
-                                  
-                                  {/* Payout Summary Section */}
-                                  {payoutSummaryData && payoutSummaryData.studios && (
-                                    <Card sx={{ mb: 2, border: '2px solid #2e7d3230' }}>
-                                      <CardContent>
-                                        <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', color: '#2e7d32' }}>
-                                          💰 Payout Summary - {studioDisplayName}
-                                        </Typography>
-                                        <Typography variant="h6" sx={{ mb: 2 }}>
-                                          Total Net: ₹{formatNumber(payoutSummaryData.totalNet)} | 
-                                          Paid: ₹{formatNumber(payoutSummaryData.totalPaid)} | 
-                                          Outstanding: ₹{formatNumber(payoutSummaryData.totalOutstanding)}
-                                        </Typography>
-                                        <Table>
-                                          <TableHead>
-                                            <TableRow>
-                                              <TableCell><strong>Studio</strong></TableCell>
-                                              <TableCell align="right"><strong>Gross Rev</strong></TableCell>
-                                              <TableCell align="right"><strong>Net Rev</strong></TableCell>
-                                              <TableCell align="right"><strong>Paid</strong></TableCell>
-                                              <TableCell align="right"><strong>Outstanding</strong></TableCell>
-                                            </TableRow>
-                                          </TableHead>
-                                          <TableBody>
-                                            {payoutSummaryData.studios.map((studio: any) => (
-                                              <TableRow key={studio.studioId}>
-                                                <TableCell>{studio.studioName}</TableCell>
-                                                <TableCell align="right">₹{formatNumber(studio.grossRevenue)}</TableCell>
-                                                <TableCell align="right">₹{formatNumber(studio.netRevenue)}</TableCell>
-                                                <TableCell align="right">₹{formatNumber(studio.paid)}</TableCell>
-                                                <TableCell align="right">₹{formatNumber(studio.outstanding)}</TableCell>
-                                              </TableRow>
-                                            ))}
-                                          </TableBody>
-                                        </Table>
-                                      </CardContent>
-                                    </Card>
-                                  )}
-                                </>
-                              )}
-                            </Box>
-                          </Collapse>
-                        </TableCell>
-                      </TableRow>
-                    
+                        </Collapse>
+                      </TableCell>
+                    </TableRow>
+
                     {/* Games for this studio */}
                     {games.map((game: any) => (
                       <React.Fragment key={game.id}>
                         {/* Main Game Row */}
-                        <TableRow 
-                          hover 
+                        <TableRow
+                          hover
                           onClick={() => handleToggleExpanded(game.id)}
                           sx={{ cursor: 'pointer', '&:hover': { backgroundColor: '#f5f5f5' } }}
                         >
@@ -1711,22 +1711,22 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                   {game.name}
                                 </Typography>
                                 <Typography variant="caption" color="textSecondary">
-                                  (📊) DAU: {formatNumber(game.dau || 0)}
+                                  (📊) DAU: {formatDecimalNumber(game.dau || 0)}
                                   {filters.platform !== 'Web' && (
-                                    <>  Installs: {formatNumber(game.installs || 0)}k  CPI: ₹{(game.cpi || 0).toFixed(2)}</>
+                                    <>  Installs: {formatDecimalNumber(game.installs || 0)}k  CPI: ₹{(game.cpi || 0).toFixed(2)}</>
                                   )}
                                 </Typography>
                               </Box>
                             </Box>
                           </TableCell>
-                          <TableCell>{formatNumber(game.dau || 0)}</TableCell>
-                          <TableCell>₹{formatNumber(game.revenue || 0)}</TableCell>
-                          <TableCell>₹{formatNumber((game.revenue || 0) * 0.8)}</TableCell>
+                          <TableCell>{formatDecimalNumber(game.dau || 0)}</TableCell>
+                          <TableCell>₹{formatDecimalNumber(game.revenue || 0)}</TableCell>
+                          <TableCell>₹{formatDecimalNumber((game.revenue || 0) * 0.8)}</TableCell>
                           {filters.platform !== 'Web' && (
-                            <TableCell>{formatNumber(game.installs || 0)}</TableCell>
+                            <TableCell>{formatDecimalNumber(game.installs || 0)}</TableCell>
                           )}
                           {filters.platform !== 'Web' && (
-                            <TableCell>₹{formatNumber(game.cpi || 0)}</TableCell>
+                            <TableCell>₹{formatDecimalNumber(game.cpi || 0)}</TableCell>
                           )}
                           <TableCell>
                             <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -1757,7 +1757,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                 <Typography variant="h5" sx={{ mb: 3, color: '#1976d2', fontWeight: 'bold', textAlign: 'center' }}>
                                   📊 Publisher Reports - {game.name}
                                 </Typography>
-                                
+
                                 {/* Loading State */}
                                 {loadingMetrics[game.id] ? (
                                   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 4 }}>
@@ -1767,162 +1767,162 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                 ) : (
                                   /* Reports with Data Tables */
                                   getPublisherReports(game.id).map((report) => (
-                                  <Card key={report.id} sx={{ mb: 3, border: `2px solid ${report.color}30` }}>
-                                    <CardContent sx={{ p: 3 }}>
-                                      {/* Report Header */}
-                                      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
-                                        <Box display="flex" alignItems="center">
-                                          <Box sx={{ color: report.color, mr: 2, fontSize: '1.5rem' }}>
-                                            {report.icon}
-                                          </Box>
-                                          <Box>
-                                            <Typography variant="h6" sx={{ fontWeight: 'bold', color: report.color }}>
-                                              {report.title}
-                                            </Typography>
-                                            <Typography variant="body2" color="textSecondary">
-                                              Type: {report.type}
-                                            </Typography>
-                                          </Box>
-                                        </Box>
-                                        <Chip 
-                                          label="Live Data" 
-                                          size="medium" 
-                                          color="success" 
-                                          variant="outlined"
-                                        />
-                                      </Box>
-
-                                      {/* KPI Summary */}
-                                      <Box sx={{ mb: 3, p: 2, backgroundColor: `${report.color}10`, borderRadius: 1 }}>
-                                        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
-                                          KPI Summary
-                                        </Typography>
-                                        <Box display="flex" gap={3} flexWrap="wrap">
-                                          {Object.entries(report.data.kpi).map(([key, value]) => (
-                                            <Box key={key} textAlign="center">
+                                    <Card key={report.id} sx={{ mb: 3, border: `2px solid ${report.color}30` }}>
+                                      <CardContent sx={{ p: 3 }}>
+                                        {/* Report Header */}
+                                        <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+                                          <Box display="flex" alignItems="center">
+                                            <Box sx={{ color: report.color, mr: 2, fontSize: '1.5rem' }}>
+                                              {report.icon}
+                                            </Box>
+                                            <Box>
                                               <Typography variant="h6" sx={{ fontWeight: 'bold', color: report.color }}>
-                                                {value}
+                                                {report.title}
                                               </Typography>
-                                              <Typography variant="caption" color="textSecondary">
-                                                {key.charAt(0).toUpperCase() + key.slice(1)}
+                                              <Typography variant="body2" color="textSecondary">
+                                                Type: {report.type}
                                               </Typography>
                                             </Box>
-                                          ))}
+                                          </Box>
+                                          <Chip
+                                            label="Live Data"
+                                            size="medium"
+                                            color="success"
+                                            variant="outlined"
+                                          />
                                         </Box>
-                                      </Box>
 
-                                      {/* Data Table */}
-                                      {report.data.table && report.data.table.length > 0 && (
-                                        <Box sx={{ overflowX: 'auto' }}>
-                                          {report.id === 'retention' ? (
-                                            // Heatmap format for retention table
-                                            <Table size="small">
-                                              <TableHead>
-                                                <TableRow sx={{ backgroundColor: `${report.color}20` }}>
-                                                  <TableCell sx={{ fontWeight: 'bold', position: 'sticky', left: 0, backgroundColor: `${report.color}20`, zIndex: 1 }}>
-                                                    Cohort Date
-                                                  </TableCell>
-                                                  {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((day) => (
-                                                    <TableCell key={day} sx={{ fontWeight: 'bold', textAlign: 'center', minWidth: '80px' }}>
-                                                      {day}
+                                        {/* KPI Summary */}
+                                        <Box sx={{ mb: 3, p: 2, backgroundColor: `${report.color}10`, borderRadius: 1 }}>
+                                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                            KPI Summary
+                                          </Typography>
+                                          <Box display="flex" gap={3} flexWrap="wrap">
+                                            {Object.entries(report.data.kpi).map(([key, value]) => (
+                                              <Box key={key} textAlign="center">
+                                                <Typography variant="h6" sx={{ fontWeight: 'bold', color: report.color }}>
+                                                  {value}
+                                                </Typography>
+                                                <Typography variant="caption" color="textSecondary">
+                                                  {key.charAt(0).toUpperCase() + key.slice(1)}
+                                                </Typography>
+                                              </Box>
+                                            ))}
+                                          </Box>
+                                        </Box>
+
+                                        {/* Data Table */}
+                                        {report.data.table && report.data.table.length > 0 && (
+                                          <Box sx={{ overflowX: 'auto' }}>
+                                            {report.id === 'retention' ? (
+                                              // Heatmap format for retention table
+                                              <Table size="small">
+                                                <TableHead>
+                                                  <TableRow sx={{ backgroundColor: `${report.color}20` }}>
+                                                    <TableCell sx={{ fontWeight: 'bold', position: 'sticky', left: 0, backgroundColor: `${report.color}20`, zIndex: 1 }}>
+                                                      Cohort Date
                                                     </TableCell>
-                                                  ))}
-                                                </TableRow>
-                                              </TableHead>
-                                              <TableBody>
-                                                {report.data.table.map((row: any, index: number) => (
-                                                  <TableRow key={index} hover>
-                                                    <TableCell 
-                                                      sx={{ 
-                                                        fontWeight: row.isMean ? 'bold' : 'normal',
-                                                        position: 'sticky',
-                                                        left: 0,
-                                                        backgroundColor: row.isMean ? '#f5f5f5' : '#ffffff',
-                                                        zIndex: 1
-                                                      }}
-                                                    >
-                                                      {row.cohortDate}
-                                                    </TableCell>
-                                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((day) => {
-                                                      const dayData = row[`day${day}`];
-                                                      // Calculate local max for text color
-                                                      const localMax = Math.max(...report.data.table
-                                                        .flatMap((r: any) => 
-                                                          [1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => r[`day${d}`]?.value || 0)
-                                                        )
-                                                      );
-                                                      return (
-                                                        <TableCell 
-                                                          key={day}
-                                                          sx={{
-                                                            textAlign: 'center',
-                                                            backgroundColor: dayData?.color || '#ffffff',
-                                                            color: dayData?.value > localMax * 0.5 ? '#ffffff' : '#000000',
-                                                            fontWeight: 'medium',
-                                                            minWidth: '80px'
-                                                          }}
-                                                        >
-                                                          {dayData?.display || '0.00%'}
-                                                        </TableCell>
-                                                      );
-                                                    })}
-                                                  </TableRow>
-                                                ))}
-                                              </TableBody>
-                                            </Table>
-                                          ) : (
-                                            // Generic table format for other reports
-                                            <Table size="small">
-                                              <TableHead>
-                                                <TableRow sx={{ backgroundColor: `${report.color}20` }}>
-                                                  {Object.keys(report.data.table[0] || {}).map((header) => (
-                                                    <TableCell key={header} sx={{ fontWeight: 'bold' }}>
-                                                      {header.charAt(0).toUpperCase() + header.slice(1)}
-                                                    </TableCell>
-                                                  ))}
-                                                </TableRow>
-                                              </TableHead>
-                                              <TableBody>
-                                                {report.data.table.map((row: any, index: number) => (
-                                                  <TableRow key={index} hover>
-                                                    {Object.values(row).map((cell: any, cellIndex: number) => (
-                                                      <TableCell key={cellIndex}>
-                                                        {typeof cell === 'object' && cell !== null && 'display' in cell ? cell.display : String(cell)}
+                                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((day) => (
+                                                      <TableCell key={day} sx={{ fontWeight: 'bold', textAlign: 'center', minWidth: '80px' }}>
+                                                        {day}
                                                       </TableCell>
                                                     ))}
                                                   </TableRow>
-                                                ))}
-                                              </TableBody>
-                                            </Table>
-                                          )}
-                                        </Box>
-                                      )}
-                                      {(!report.data.table || report.data.table.length === 0) && (
-                                        <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center', p: 3 }}>
-                                          No data available for this period
-                                        </Typography>
-                                      )}
+                                                </TableHead>
+                                                <TableBody>
+                                                  {report.data.table.map((row: any, index: number) => (
+                                                    <TableRow key={index} hover>
+                                                      <TableCell
+                                                        sx={{
+                                                          fontWeight: row.isMean ? 'bold' : 'normal',
+                                                          position: 'sticky',
+                                                          left: 0,
+                                                          backgroundColor: row.isMean ? '#f5f5f5' : '#ffffff',
+                                                          zIndex: 1
+                                                        }}
+                                                      >
+                                                        {row.cohortDate}
+                                                      </TableCell>
+                                                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((day) => {
+                                                        const dayData = row[`day${day}`];
+                                                        // Calculate local max for text color
+                                                        const localMax = Math.max(...report.data.table
+                                                          .flatMap((r: any) =>
+                                                            [1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => r[`day${d}`]?.value || 0)
+                                                          )
+                                                        );
+                                                        return (
+                                                          <TableCell
+                                                            key={day}
+                                                            sx={{
+                                                              textAlign: 'center',
+                                                              backgroundColor: dayData?.color || '#ffffff',
+                                                              color: dayData?.value > localMax * 0.5 ? '#ffffff' : '#000000',
+                                                              fontWeight: 'medium',
+                                                              minWidth: '80px'
+                                                            }}
+                                                          >
+                                                            {dayData?.display || '0.00%'}
+                                                          </TableCell>
+                                                        );
+                                                      })}
+                                                    </TableRow>
+                                                  ))}
+                                                </TableBody>
+                                              </Table>
+                                            ) : (
+                                              // Generic table format for other reports
+                                              <Table size="small">
+                                                <TableHead>
+                                                  <TableRow sx={{ backgroundColor: `${report.color}20` }}>
+                                                    {Object.keys(report.data.table[0] || {}).map((header) => (
+                                                      <TableCell key={header} sx={{ fontWeight: 'bold' }}>
+                                                        {header.charAt(0).toUpperCase() + header.slice(1)}
+                                                      </TableCell>
+                                                    ))}
+                                                  </TableRow>
+                                                </TableHead>
+                                                <TableBody>
+                                                  {report.data.table.map((row: any, index: number) => (
+                                                    <TableRow key={index} hover>
+                                                      {Object.values(row).map((cell: any, cellIndex: number) => (
+                                                        <TableCell key={cellIndex}>
+                                                          {typeof cell === 'object' && cell !== null && 'display' in cell ? cell.display : String(cell)}
+                                                        </TableCell>
+                                                      ))}
+                                                    </TableRow>
+                                                  ))}
+                                                </TableBody>
+                                              </Table>
+                                            )}
+                                          </Box>
+                                        )}
+                                        {(!report.data.table || report.data.table.length === 0) && (
+                                          <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center', p: 3 }}>
+                                            No data available for this period
+                                          </Typography>
+                                        )}
 
-                                      {/* Action Buttons */}
-                                      <Box display="flex" gap={2} mt={3} justifyContent="flex-end">
-                                        <Button
-                                          variant="contained"
-                                          startIcon={<Visibility />}
-                                          sx={{ backgroundColor: report.color }}
-                                          onClick={() => handleReportsNavigation(game.name)}
-                                        >
-                                          Open Full Report
-                                        </Button>
-                                        <Button
-                                          variant="outlined"
-                                          startIcon={<GetApp />}
-                                          sx={{ borderColor: report.color, color: report.color }}
-                                        >
-                                          Export CSV
-                                        </Button>
-                                      </Box>
-                                    </CardContent>
-                                  </Card>
+                                        {/* Action Buttons */}
+                                        <Box display="flex" gap={2} mt={3} justifyContent="flex-end">
+                                          <Button
+                                            variant="contained"
+                                            startIcon={<Visibility />}
+                                            sx={{ backgroundColor: report.color }}
+                                            onClick={() => handleReportsNavigation(game.name)}
+                                          >
+                                            Open Full Report
+                                          </Button>
+                                          <Button
+                                            variant="outlined"
+                                            startIcon={<GetApp />}
+                                            sx={{ borderColor: report.color, color: report.color }}
+                                          >
+                                            Export CSV
+                                          </Button>
+                                        </Box>
+                                      </CardContent>
+                                    </Card>
                                   ))
                                 )}
                               </Box>

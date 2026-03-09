@@ -1,14 +1,14 @@
 import { Typography, Box, Card, CardContent, Grid } from "@mui/material";
-import { formatNumber } from "../../common/utils";
+import { formatDecimalNumber } from "../../common/utils";
 import { DECIMAL_LENGTH, QueryNames } from "../../common/constants";
 import { useGetList } from "react-admin";
 
 export const PortfolioKPIs = (props: any) => {
     // Get current user ID from localStorage
     const userId = localStorage.getItem("userId");
-    
+
     const { data: kpiData, isLoading, error } = useGetList(
-        QueryNames.PORTFOLIO_KPIS, 
+        QueryNames.PORTFOLIO_KPIS,
         {
             filter: {
                 ...props.filter,
@@ -26,7 +26,7 @@ export const PortfolioKPIs = (props: any) => {
 
     // Data provider now always returns array, so get first item
     const kpis = kpiData?.[0] || {};
-    
+
     const defaultKPIs = {
         games: 0,
         installs: 0,
@@ -38,7 +38,7 @@ export const PortfolioKPIs = (props: any) => {
         dau: 0,
         mau: 0
     };
-    
+
     const finalKPIs = { ...defaultKPIs, ...kpis };
 
     // Determine platform type for conditional KPI display
@@ -74,7 +74,7 @@ export const PortfolioKPIs = (props: any) => {
                                     Installs
                                 </Typography>
                                 <Typography variant="h4">
-                                    {formatNumber(finalKPIs.installs)}
+                                    {formatDecimalNumber(finalKPIs.installs)}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary">
                                     Σ installs in range
@@ -93,7 +93,7 @@ export const PortfolioKPIs = (props: any) => {
                                     CPI
                                 </Typography>
                                 <Typography variant="h4">
-                                    ${formatNumber(finalKPIs.cpi)}
+                                    ${formatDecimalNumber(finalKPIs.cpi)}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary">
                                     Ad Spend ÷ Installs
@@ -111,7 +111,7 @@ export const PortfolioKPIs = (props: any) => {
                                 Revenue
                             </Typography>
                             <Typography variant="h4">
-                                ${formatNumber(finalKPIs.revenue)}
+                                ${formatDecimalNumber(finalKPIs.revenue)}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
                                 Ads + IAP
@@ -179,7 +179,7 @@ export const PortfolioKPIs = (props: any) => {
                                 DAU
                             </Typography>
                             <Typography variant="h4">
-                                {formatNumber(finalKPIs.dau)}
+                                {formatDecimalNumber(finalKPIs.dau)}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
                                 Daily Active User average
@@ -196,7 +196,7 @@ export const PortfolioKPIs = (props: any) => {
                                 MAU
                             </Typography>
                             <Typography variant="h4">
-                                {formatNumber(finalKPIs.mau)}
+                                {formatDecimalNumber(finalKPIs.mau)}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
                                 Monthly Active Users

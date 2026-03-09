@@ -37,7 +37,7 @@ import {
 } from '@mui/icons-material';
 import { useGetList, useNotify } from 'react-admin';
 import { QueryNames } from '../../common/constants';
-import { formatNumber } from '../../common/utils';
+import { formatDecimalNumber } from '../../common/utils';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -222,7 +222,7 @@ export const PublisherAnalytics: React.FC<PublisherAnalyticsProps> = ({
                     Gross Revenue
                   </Typography>
                   <Typography variant="h5">
-                    ${formatNumber(kpis.grossRevenue)}
+                    ${formatDecimalNumber(kpis.grossRevenue)}
                   </Typography>
                   <Box display="flex" alignItems="center" mt={1}>
                     {getTrendIcon(trends.grossRevenue)}
@@ -249,7 +249,7 @@ export const PublisherAnalytics: React.FC<PublisherAnalyticsProps> = ({
                     Net Revenue
                   </Typography>
                   <Typography variant="h5">
-                    ${formatNumber(kpis.netRevenue)}
+                    ${formatDecimalNumber(kpis.netRevenue)}
                   </Typography>
                   <Box display="flex" alignItems="center" mt={1}>
                     {getTrendIcon(trends.netRevenue)}
@@ -276,7 +276,7 @@ export const PublisherAnalytics: React.FC<PublisherAnalyticsProps> = ({
                     Payout Due
                   </Typography>
                   <Typography variant="h5">
-                    ${formatNumber(kpis.payoutDue)}
+                    ${formatDecimalNumber(kpis.payoutDue)}
                   </Typography>
                   <Box display="flex" alignItems="center" mt={1}>
                     {getTrendIcon(trends.payoutDue)}
@@ -303,7 +303,7 @@ export const PublisherAnalytics: React.FC<PublisherAnalyticsProps> = ({
                     eCPM
                   </Typography>
                   <Typography variant="h5">
-                    ${formatNumber(kpis.ecpm)}
+                    ${formatDecimalNumber(kpis.ecpm)}
                   </Typography>
                   <Box display="flex" alignItems="center" mt={1}>
                     {getTrendIcon(trends.ecpm)}
@@ -361,7 +361,7 @@ export const PublisherAnalytics: React.FC<PublisherAnalyticsProps> = ({
                     Impressions
                   </Typography>
                   <Typography variant="h5">
-                    {formatNumber(kpis.impressions)}
+                    {formatDecimalNumber(kpis.impressions)}
                   </Typography>
                   <Box display="flex" alignItems="center" mt={1}>
                     {getTrendIcon(trends.impressions)}
@@ -468,7 +468,7 @@ export const PublisherAnalytics: React.FC<PublisherAnalyticsProps> = ({
               </Button>
             </Box>
           </Box>
-          
+
           {viewMode === 'list' ? (
             <TableContainer component={Paper}>
               <Table>
@@ -487,7 +487,7 @@ export const PublisherAnalytics: React.FC<PublisherAnalyticsProps> = ({
                     <TableRow key={contract.id}>
                       <TableCell>{contract.contractType}</TableCell>
                       <TableCell>{contract.revenueShare}%</TableCell>
-                      <TableCell>${formatNumber(contract.minimumGuarantee || 0)}</TableCell>
+                      <TableCell>${formatDecimalNumber(contract.minimumGuarantee || 0)}</TableCell>
                       <TableCell>
                         <Chip
                           label={contract.isActive ? 'Active' : 'Inactive'}
@@ -547,7 +547,7 @@ export const PublisherAnalytics: React.FC<PublisherAnalyticsProps> = ({
               </Button>
             </Box>
           </Box>
-          
+
           {viewMode === 'list' ? (
             <TableContainer component={Paper}>
               <Table>
@@ -564,7 +564,7 @@ export const PublisherAnalytics: React.FC<PublisherAnalyticsProps> = ({
                 <TableBody>
                   {payoutsData?.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((payout: any) => (
                     <TableRow key={payout.id}>
-                      <TableCell>${formatNumber(payout.amount)}</TableCell>
+                      <TableCell>${formatDecimalNumber(payout.amount)}</TableCell>
                       <TableCell>{payout.currency}</TableCell>
                       <TableCell>{payout.payoutType}</TableCell>
                       <TableCell>
@@ -626,7 +626,7 @@ export const PublisherAnalytics: React.FC<PublisherAnalyticsProps> = ({
               </Button>
             </Box>
           </Box>
-          
+
           {viewMode === 'list' ? (
             <TableContainer component={Paper}>
               <Table>

@@ -52,7 +52,7 @@ import {
 } from '@mui/icons-material';
 import { useGetList, useNotify, useCreate, useUpdate, useDelete } from 'react-admin';
 import { QueryNames, CONTRACT_TYPES, PAYOUT_STATUSES, APPROVAL_STATUSES, CREATIVE_STATUSES, TEST_STATUSES } from '../../common/constants';
-import { formatNumber } from '../../common/utils';
+import { formatDecimalNumber } from '../../common/utils';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -201,7 +201,7 @@ export const PublisherManagement: React.FC<PublisherManagementProps> = ({
 
   const renderCreateForm = () => {
     const steps = getCreateSteps();
-    
+
     return (
       <Stepper activeStep={createStep} orientation="vertical">
         {steps.map((label, index) => (
@@ -425,7 +425,7 @@ export const PublisherManagement: React.FC<PublisherManagementProps> = ({
                       Revenue Share: {contract.revenueShare}%
                     </Typography>
                     <Typography color="textSecondary" variant="body2">
-                      Min Guarantee: ${formatNumber(contract.minimumGuarantee || 0)}
+                      Min Guarantee: ${formatDecimalNumber(contract.minimumGuarantee || 0)}
                     </Typography>
                     <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
                       <Typography variant="caption" color="textSecondary">
@@ -468,7 +468,7 @@ export const PublisherManagement: React.FC<PublisherManagementProps> = ({
                 <Card>
                   <CardContent>
                     <Box display="flex" justifyContent="space-between" alignItems="center">
-                      <Typography variant="h6">${formatNumber(payout.amount)}</Typography>
+                      <Typography variant="h6">${formatDecimalNumber(payout.amount)}</Typography>
                       <Chip
                         label={payout.status}
                         color={getStatusColor(payout.status)}

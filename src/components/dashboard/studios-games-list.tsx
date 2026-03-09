@@ -1,11 +1,11 @@
 import React from 'react';
 import { useGetList } from 'react-admin';
 import { QueryNames } from '../../common/constants';
-import { formatNumber } from '../../common/utils';
-import { 
-  Box, 
-  Typography, 
-  IconButton, 
+import { formatDecimalNumber } from '../../common/utils';
+import {
+  Box,
+  Typography,
+  IconButton,
   Tooltip,
   Table,
   TableBody,
@@ -83,9 +83,9 @@ export const StudiosGamesList: React.FC<StudiosGamesListProps> = ({ filter }) =>
             {studiosGamesData.map((item: any) => (
               <TableRow key={`${item.studioId}-${item.gameId}`} hover>
                 <TableCell>
-                  <Chip 
-                    label={item.studio?.name || 'Unknown Studio'} 
-                    size="small" 
+                  <Chip
+                    label={item.studio?.name || 'Unknown Studio'}
+                    size="small"
                     variant="outlined"
                     icon={<Business />}
                   />
@@ -96,13 +96,13 @@ export const StudiosGamesList: React.FC<StudiosGamesListProps> = ({ filter }) =>
                     <Typography variant="body1">{item.game?.name || 'Unknown Game'}</Typography>
                   </Box>
                 </TableCell>
-                <TableCell>{formatNumber(item.dau || 0)}</TableCell>
-                <TableCell>${formatNumber(item.revenue || 0)}</TableCell>
-                <TableCell>{formatNumber(item.installs || 0)}</TableCell>
-                <TableCell>${formatNumber(item.cpi || 0)}</TableCell>
+                <TableCell>{formatDecimalNumber(item.dau || 0)}</TableCell>
+                <TableCell>${formatDecimalNumber(item.revenue || 0)}</TableCell>
+                <TableCell>{formatDecimalNumber(item.installs || 0)}</TableCell>
+                <TableCell>${formatDecimalNumber(item.cpi || 0)}</TableCell>
                 <TableCell>
                   <Tooltip title="View detailed reports">
-                    <IconButton 
+                    <IconButton
                       size="small"
                       onClick={() => console.log('Navigate to reports for:', item.game?.name)}
                     >
