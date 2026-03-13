@@ -86,9 +86,10 @@ const GET_ALL_ADMIN_DASHBOARD_DATA = (params: any) => {
 };
 
 // New Dashboard Variables
-const GET_DASHBOARD_FILTERS = (params: any) => {
+const GET_DASHBOARD_FILTERS = (_params: any) => {
+  const studioId = localStorage.getItem('studioId') || undefined;
   return {
-    testUserId: params.filter?.userId // Pass the user ID from localStorage
+    filters: { studioId }
   };
 };
 
@@ -110,8 +111,10 @@ const GET_PUBLISHER_GAMES_LIST = (params: any) => {
 };
 
 const GET_PORTFOLIO_KPIS = (params: any) => {
+  const studioId = params.filter?.studioId || localStorage.getItem('studioId') || undefined;
   return {
     filters: {
+      studioId,
       platform: params.filter?.platform ?? "All",
       subPlatform: params.filter?.subPlatform ?? "All",
       game: params.filter?.game ?? "All",
@@ -119,13 +122,14 @@ const GET_PORTFOLIO_KPIS = (params: any) => {
       startDate: params.filter?.startDate ?? getDateRange(30),
       endDate: params.filter?.endDate ?? getDateRange(0),
     },
-    testUserId: params.filter?.userId // Pass the user ID from localStorage
   };
 };
 
 const GET_GAMES_LIST = (params: any) => {
+  const studioId = params.filter?.studioId || localStorage.getItem('studioId') || undefined;
   return {
     filters: {
+      studioId,
       platform: params.filter?.platform ?? "All",
       subPlatform: params.filter?.subPlatform ?? "All",
       game: params.filter?.game ?? "All",
@@ -133,7 +137,6 @@ const GET_GAMES_LIST = (params: any) => {
       startDate: params.filter?.startDate ?? getDateRange(30),
       endDate: params.filter?.endDate ?? getDateRange(0),
     },
-    testUserId: params.filter?.userId // Pass the user ID from localStorage
   };
 };
 
@@ -154,9 +157,10 @@ const GET_PUBLISHER_KPIS = (params: any) => {
 };
 
 // Separate Dashboard Variables
-const GET_DEVELOPER_DASHBOARD_DATA = (params: any) => {
+const GET_DEVELOPER_DASHBOARD_DATA = (_params: any) => {
+  const studioId = localStorage.getItem('studioId') || undefined;
   return {
-    testUserId: params.filter?.userId // Pass the user ID from localStorage
+    filters: { studioId }
   };
 };
 

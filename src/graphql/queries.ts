@@ -284,8 +284,8 @@ const GetUserDetails = gql`
 
 // New Dashboard Queries
 const DashboardFilters = gql`
-  query DashboardFilters($testUserId: String) {
-    dashboardFilters(testUserId: $testUserId) {
+  query DashboardFilters($filters: DashboardFiltersInput) {
+    dashboardFilters(filters: $filters) {
       platforms {
         id
         name
@@ -349,8 +349,8 @@ const PublisherDashboardFilters = gql`
 `;
 
 const PortfolioKPIs = gql`
-  query PortfolioKPIs($filters: DashboardFiltersInput!, $testUserId: String) {
-    portfolioKPIs(filters: $filters, testUserId: $testUserId) {
+  query PortfolioKPIs($filters: DashboardFiltersInput!) {
+    portfolioKPIs(filters: $filters) {
       id
       games
       installs
@@ -366,8 +366,8 @@ const PortfolioKPIs = gql`
 `;
 
 const GamesList = gql`
-  query GamesList($filters: DashboardFiltersInput!, $testUserId: String) {
-    gamesList(filters: $filters, testUserId: $testUserId) {
+  query GamesList($filters: DashboardFiltersInput!) {
+    gamesList(filters: $filters) {
       id
       name
       icon
@@ -378,6 +378,8 @@ const GamesList = gql`
     }
   }
 `;
+// Note: GamesList component uses direct fetch, not useGetList, so this query is kept
+// only as a reference. PortfolioKPIs still uses useGetList via the data provider.
 
 // Publisher-specific games list query (no user filtering)
 const PublisherGamesList = gql`
@@ -483,8 +485,8 @@ const StudiosGames = gql`
 
 // Separate Dashboard Queries
 const GetDeveloperDashboardData = gql`
-  query GetDeveloperDashboardData($testUserId: String) {
-    getDeveloperDashboardData(testUserId: $testUserId) {
+  query GetDeveloperDashboardData($filters: DashboardFiltersInput) {
+    getDeveloperDashboardData(filters: $filters) {
       id
       name
       icon

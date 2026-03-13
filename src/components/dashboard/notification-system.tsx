@@ -269,25 +269,30 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
   }, [backendNotifications, localReadState, localDeletedState]);
 
   // Refetch notifications when role changes
+  const refetchRef = React.useRef(refetch);
   useEffect(() => {
-    if (userRole && refetch) {
+    refetchRef.current = refetch;
+  });
+
+  useEffect(() => {
+    if (userRole && refetchRef.current) {
       console.log('🔄 Refetching notifications for role:', userRole);
-      refetch();
+      refetchRef.current();
     }
-  }, [userRole, refetch]);
+  }, [userRole]);
 
   // Refresh notifications periodically
   useEffect(() => {
     if (!userRole) return;
     
     const interval = setInterval(() => {
-      if (refetch) {
-        refetch();
+      if (refetchRef.current) {
+        refetchRef.current();
       }
     }, 30000); // Refresh every 30 seconds
 
     return () => clearInterval(interval);
-  }, [userRole, refetch]);
+  }, [userRole]);
 
   // Debug: Log notifications data and errors
   useEffect(() => {

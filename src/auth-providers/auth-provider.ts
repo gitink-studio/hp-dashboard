@@ -14,6 +14,11 @@ export const authProvider: AuthProvider = {
       let userDetails = await FetchData.getUserDetails(username, password);
       console.log("User details:", userDetails);
 
+      if (!userDetails) {
+        console.error("Failed to retrieve user details after successful login");
+        return Promise.reject(new Error("Unable to retrieve user details. Please try again."));
+      }
+
       // Store user information in localStorage
       // Normalize role name to lowercase for consistent checking
       const roleName = userDetails.role?.name || '';

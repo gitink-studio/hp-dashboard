@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useGetList } from 'react-admin';
-import { QueryNames, ROOT_URL } from '../../common/constants';
+import { GRAPHQL_URL, ROOT_URL } from '../../common/constants';
 import { formatDecimalNumber } from '../../common/utils';
 import {
   Box,
@@ -39,6 +38,7 @@ interface GamesListProps {
 }
 
 export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigation }) => {
+<<<<<<< Updated upstream
   // Get current user ID from localStorage
   const userId = localStorage.getItem("userId");
 
@@ -53,6 +53,70 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
       console.warn('⚠️ Unexpected userId:', userId);
     }
   }, [userId]);
+=======
+  // State for games list fetched from backend
+  const [gamesData, setGamesData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Fetch games list directly (bypasses ra-data-graphql for reliability)
+  useEffect(() => {
+    const fetchGamesList = async () => {
+      // Role-based: developers see their studio's games via studioId in filters
+      const studioId = localStorage.getItem("studioId") || undefined;
+
+      setIsLoading(true);
+      setFetchError(null);
+      try {
+        const response = await fetch(GRAPHQL_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: `
+              query GamesList($filters: DashboardFiltersInput!) {
+                gamesList(filters: $filters) {
+                  id
+                  name
+                  icon
+                  dau
+                  installs
+                  cpi
+                  revenue
+                }
+              }
+            `,
+            variables: {
+              filters: {
+                studioId: studioId,
+                platform: filters.platform ?? 'All',
+                subPlatform: filters.subPlatform ?? 'All',
+                game: filters.game ?? 'All',
+                dateRange: filters.dateRange ?? 'Last 30d',
+              },
+            },
+          }),
+        });
+
+        const result = await response.json();
+        if (result.errors) {
+          console.error('GamesList GraphQL errors:', result.errors);
+          setFetchError(result.errors[0]?.message || 'Failed to load games');
+          setGamesData([]);
+        } else {
+          setGamesData(result.data?.gamesList || []);
+        }
+      } catch (err: any) {
+        console.error('GamesList fetch error:', err);
+        setFetchError(err.message || 'Network error');
+        setGamesData([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchGamesList();
+  }, [filters.platform, filters.subPlatform, filters.game, filters.dateRange]);
+>>>>>>> Stashed changes
 
   // State for managing expanded games (accordion)
   const [expandedGames, setExpandedGames] = useState<Set<string>>(new Set());
@@ -650,15 +714,6 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
     setExpandedGames(newExpanded);
   };
 
-  const { data: gamesData, isLoading, error } = useGetList(
-    QueryNames.GAMES_LIST,
-    {
-      filter: {
-        ...filters,
-        userId: userId // Pass user ID to the query
-      }
-    }
-  );
 
   if (isLoading) {
     return (
@@ -671,13 +726,13 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
     );
   }
 
-  if (error) {
+  if (fetchError) {
     return (
       <Box sx={{ p: 2 }}>
         <Typography variant="h6" gutterBottom>
           Games List
         </Typography>
-        <Typography color="error">Error loading games: {error.message}</Typography>
+        <Typography color="error">Error loading games: {fetchError}</Typography>
       </Box>
     );
   }

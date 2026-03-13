@@ -105,14 +105,14 @@ export const TestsHub: React.FC = () => {
     // Fetch games like developer dashboard
     const fetchGames = async (currentFilters: typeof filters) => {
         try {
-            const userId = localStorage.getItem("userId");
+            const studioId = localStorage.getItem("studioId") || undefined;
             const response = await fetch(GRAPHQL_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     query: `
-            query GamesList($filters: DashboardFiltersInput!, $testUserId: String) {
-              gamesList(filters: $filters, testUserId: $testUserId) {
+            query GamesList($filters: DashboardFiltersInput!) {
+              gamesList(filters: $filters) {
                 id
                 name
                 icon
@@ -125,6 +125,7 @@ export const TestsHub: React.FC = () => {
           `,
                     variables: {
                         filters: {
+                            studioId,
                             platform: currentFilters.platform,
                             subPlatform: currentFilters.subPlatform,
                             game: 'All',
@@ -132,7 +133,6 @@ export const TestsHub: React.FC = () => {
                             startDate: '2024-08-15',
                             endDate: '2024-09-14',
                         },
-                        testUserId: userId,
                     },
                 }),
             });

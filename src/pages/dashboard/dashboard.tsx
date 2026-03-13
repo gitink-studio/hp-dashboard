@@ -1,6 +1,3 @@
-import {
-  useListController,
-} from "react-admin";
 import { QueryNames, GRAPHQL_URL } from "../../common/constants";
 import { Stack, Typography, Box, Grid, FormControl, Select, MenuItem } from "@mui/material";
 import { useState, useEffect } from "react";
@@ -41,7 +38,6 @@ export const Dashboard = () => {
     );
   }
 
-  const listController = useListController({ resource: QueryNames.GAMES_LIST, });
   const customDatePicker = "Custom";
   const getDate = (data: any) => data === "Custom"
     ? data : data === 0
@@ -125,19 +121,18 @@ export const Dashboard = () => {
     fetchPlatforms();
   }, []);
 
-  // Fetch games based on current filters
+  // Fetch games based on current filters (role-based: studioId passed in filters)
   const fetchGames = async (currentFilters: typeof filters) => {
     try {
-      // Get current user ID from localStorage
-      const userId = localStorage.getItem("userId");
-      
+      const studioId = localStorage.getItem("studioId") || undefined;
+
       const response = await fetch(GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: `
-            query GamesList($filters: DashboardFiltersInput!, $testUserId: String) {
-              gamesList(filters: $filters, testUserId: $testUserId) {
+            query GamesList($filters: DashboardFiltersInput!) {
+              gamesList(filters: $filters) {
                 id
                 name
                 icon
@@ -150,14 +145,14 @@ export const Dashboard = () => {
           `,
           variables: {
             filters: {
+              studioId,
               platform: currentFilters.platform,
               subPlatform: currentFilters.subPlatform,
-              game: 'All', // Always fetch all games for the filter options
+              game: 'All',
               dateRange: currentFilters.dateRange,
               startDate: '2024-08-15',
               endDate: '2024-09-14'
             },
-            testUserId: userId // Pass user ID to filter by studio
           }
         })
       });
