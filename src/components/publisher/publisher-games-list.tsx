@@ -28,6 +28,16 @@ const getGameIcon = (gameName: string) => {
   if (name.includes('racing') || name.includes('elite')) return '🏎️';
   return '🎮'; // Default game icon
 };
+
+const getPlatformColor = (platform?: string): 'default' | 'primary' | 'success' | 'warning' => {
+  if (!platform) return 'default';
+  const p = platform.toLowerCase();
+  if (p === 'android') return 'success';
+  if (p === 'ios') return 'primary';
+  if (p === 'web') return 'warning';
+  return 'default';
+};
+
 import {
   Box,
   Typography,
@@ -213,11 +223,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
     const metrics = gameMetrics[gameId] || {};
     const daily = dailyMetrics[gameId] || [];
 
-    const formatNumber = (num: number) => {
-      if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-      if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
-      return num.toString();
-    };
+    const formatNumber = (num: number) => formatDecimalNumber(num);
 
     const formatDate = (dateStr: string) => {
       const date = new Date(dateStr);
@@ -427,17 +433,9 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
             // Calculate Mean row if we have data
             if (retentionRows.length > 0) {
               const totalUsers = retentionRows.reduce((sum, row) => {
-                const match = row.cohortDate.match(/\(([\d.,kmMK]+)\s+Users\)/);
+                const match = row.cohortDate.match(/\(([\d,]+)\s+Users\)/);
                 if (match) {
-                  const userStr = match[1].toUpperCase();
-                  let userCount = 0;
-                  if (userStr.includes('M')) {
-                    userCount = parseFloat(userStr.replace('M', '')) * 1000000;
-                  } else if (userStr.includes('K')) {
-                    userCount = parseFloat(userStr.replace('K', '')) * 1000;
-                  } else {
-                    userCount = parseFloat(userStr.replace(/,/g, '')) || 0;
-                  }
+                  const userCount = parseFloat(match[1].replace(/,/g, '')) || 0;
                   return sum + userCount;
                 }
                 return sum;
@@ -774,42 +772,49 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
   // Simple GraphQL fetch for all games (fallback method)
   const fetchAllGames = async () => {
     try {
+      // Use publisherGamesList (no filters) so DAU comes from DailyMetrics
       const response = await fetch(GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: `
-            query {
-              games {
+            query PublisherGamesList($filters: PublisherFiltersInput!) {
+              publisherGamesList(filters: $filters) {
                 id
                 name
-                additionalGameData
+                icon
+                platform
+                subPlatform
+                dau
+                installs
+                cpi
+                revenue
+                studioId
+                studio {
+                  id
+                  name
+                }
               }
             }
-          `
+          `,
+          variables: {
+            filters: {
+              dateRange: filters.dateRange,
+              currency: filters.currency
+            }
+          }
         })
       });
       const result = await response.json();
       if (result.errors) {
-        console.error('Error fetching all games:', result.errors);
+        console.error('Error fetching all games (fallback):', result.errors);
         setAllGames([]);
       } else {
-        const games = result.data.games || [];
-        // Transform games to match expected structure
-        const transformedGames = games.map((game: any) => ({
-          id: game.id,
-          name: game.name,
-          icon: game.additionalGameData?.icon || '🎮',
-          dau: game.additionalGameData?.dau || 0,
-          installs: game.additionalGameData?.installs || 0,
-          cpi: game.additionalGameData?.cpi || 0,
-          revenue: game.additionalGameData?.revenue || 0,
-          studioId: game.additionalGameData?.studioId || null,
-          studio: game.additionalGameData?.studio || null
-        }));
-        console.log('✅ All games fetched:', transformedGames.length, 'games');
-        console.log(`🎯 Setting allGames state with ${transformedGames.length} games (fallback)`);
-        setAllGames(transformedGames);
+        const games = [...(result.data.publisherGamesList || [])].sort(
+          (a: any, b: any) => (b.dau || 0) - (a.dau || 0)
+        );
+        console.log('✅ All games fetched (fallback):', games.length, 'games');
+        setAllGames(games);
       }
     } catch (error) {
       console.error('Error fetching all games:', error);
@@ -855,6 +860,8 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                     id
                     name
                     icon
+                    platform
+                    subPlatform
                     dau
                     installs
                     cpi
@@ -872,7 +879,9 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
           });
           const result = await response.json();
           if (result.data?.publisherGamesList) {
-            const games = result.data.publisherGamesList;
+            const games = [...result.data.publisherGamesList].sort(
+              (a: any, b: any) => (b.dau || 0) - (a.dau || 0)
+            );
             console.log('✅ Initial games loaded:', games.length);
             setGames(games);
             setAllGames(games);
@@ -918,6 +927,8 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                 id
                 name
                 icon
+                platform
+                subPlatform
                 dau
                 installs
                 cpi
@@ -941,10 +952,12 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         setGames([]);
         setAllGames([]);
       } else {
-        const games = result.data.publisherGamesList || [];
+        const games = [...(result.data.publisherGamesList || [])].sort(
+          (a: any, b: any) => (b.dau || 0) - (a.dau || 0)
+        );
         console.log('✅ Fetched games:', games.length);
         setGames(games);
-        setAllGames(games); // Also update allGames for display
+        setAllGames(games);
       }
     } catch (error) {
       console.error('Error fetching games:', error);
@@ -998,6 +1011,8 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                 id
                 name
                 icon
+                platform
+                subPlatform
                 dau
                 installs
                 cpi
@@ -1023,14 +1038,10 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         // Fallback to simple games query
         await fetchAllGames();
       } else {
-        const games = result.data.publisherGamesList || [];
-        console.log(`✅ Fetched ${games.length} available games:`, {
-          games: games.map((g: any) => g.name),
-          filters: queryFilters,
-          studioFilter: currentFilters.studio,
-          studioId: queryFilters.studio
-        });
-        console.log(`🎯 Setting allGames state with ${games.length} games`);
+        const games = [...(result.data.publisherGamesList || [])].sort(
+          (a: any, b: any) => (b.dau || 0) - (a.dau || 0)
+        );
+        console.log(`✅ Fetched ${games.length} available games`);
         setAllGames(games);
       }
     } catch (error) {
@@ -1518,7 +1529,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                           {revenueByGeoData.map((row: any) => (
                                             <TableRow key={row.country}>
                                               <TableCell>{row.country}</TableCell>
-                                              <TableCell align="right">{formatDecimalNumber(row.installs)}k</TableCell>
+                                              <TableCell align="right">{formatDecimalNumber(row.installs)}</TableCell>
                                               <TableCell align="right">₹{formatDecimalNumber(row.grossRevenue)}</TableCell>
                                               <TableCell align="right">{row.revenueShare}%</TableCell>
                                               <TableCell align="right">₹{formatDecimalNumber(row.netRevenue)}</TableCell>
@@ -1600,13 +1611,33 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                 {getGameIcon(game.name)}
                               </Typography>
                               <Box>
-                                <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                                  {game.name}
-                                </Typography>
+                                <Box display="flex" alignItems="center" gap={0.5} flexWrap="wrap">
+                                  <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                                    {game.name}
+                                  </Typography>
+                                  {game.platform && (
+                                    <Chip
+                                      label={game.platform}
+                                      size="small"
+                                      color={getPlatformColor(game.platform)}
+                                      variant="outlined"
+                                      sx={{ height: 18, fontSize: '0.65rem', lineHeight: 1 }}
+                                    />
+                                  )}
+                                  {game.platform?.toLowerCase() === 'web' && game.subPlatform && (
+                                    <Chip
+                                      label={game.subPlatform}
+                                      size="small"
+                                      color="default"
+                                      variant="filled"
+                                      sx={{ height: 18, fontSize: '0.65rem', lineHeight: 1, backgroundColor: '#e3f2fd', color: '#0d47a1' }}
+                                    />
+                                  )}
+                                </Box>
                                 <Typography variant="caption" color="textSecondary">
                                   (📊) DAU: {formatDecimalNumber(game.dau || 0)}
                                   {filters.platform !== 'Web' && (
-                                    <>  Installs: {formatDecimalNumber(game.installs || 0)}k  CPI: ₹{(game.cpi || 0).toFixed(2)}</>
+                                    <>  Installs: {formatDecimalNumber(game.installs || 0)}  CPI: ₹{(game.cpi || 0).toFixed(2)}</>
                                   )}
                                 </Typography>
                               </Box>

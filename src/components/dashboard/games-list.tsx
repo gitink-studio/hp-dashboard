@@ -62,6 +62,8 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
                   id
                   name
                   icon
+                  platform
+                  subPlatform
                   dau
                   installs
                   cpi
@@ -87,7 +89,10 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
           setFetchError(result.errors[0]?.message || 'Failed to load games');
           setGamesData([]);
         } else {
-          setGamesData(result.data?.gamesList || []);
+          const list = result.data?.gamesList || [];
+          // Sort by DAU descending — highest DAU first
+          list.sort((a: any, b: any) => (b.dau || 0) - (a.dau || 0));
+          setGamesData(list);
         }
       } catch (err: any) {
         console.error('GamesList fetch error:', err);
@@ -148,6 +153,16 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
   // useEffect(() => {
   //   console.log('dailyMetrics state updated:', dailyMetrics);
   // }, [dailyMetrics]);
+
+  // Returns a MUI Chip colour variant for a platform name
+  const getPlatformColor = (platform?: string): 'default' | 'primary' | 'success' | 'warning' => {
+    if (!platform) return 'default';
+    const p = platform.toLowerCase();
+    if (p === 'android') return 'success';
+    if (p === 'ios') return 'primary';
+    if (p === 'web') return 'warning';
+    return 'default';
+  };
 
   // Helper function to get game icon based on game name
   const getGameIcon = (gameName: string) => {
@@ -779,9 +794,29 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
                         {getGameIcon(game.name)}
                       </Typography>
                       <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                          {game.name}
-                        </Typography>
+                        <Box display="flex" alignItems="center" gap={0.5} flexWrap="wrap">
+                          <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                            {game.name}
+                          </Typography>
+                          {game.platform && (
+                            <Chip
+                              label={game.platform}
+                              size="small"
+                              color={getPlatformColor(game.platform)}
+                              variant="outlined"
+                              sx={{ height: 18, fontSize: '0.65rem', lineHeight: 1 }}
+                            />
+                          )}
+                          {game.platform?.toLowerCase() === 'web' && game.subPlatform && (
+                            <Chip
+                              label={game.subPlatform}
+                              size="small"
+                              color="default"
+                              variant="filled"
+                              sx={{ height: 18, fontSize: '0.65rem', lineHeight: 1, backgroundColor: '#e3f2fd', color: '#0d47a1' }}
+                            />
+                          )}
+                        </Box>
                         <Typography variant="caption" color="textSecondary">
                           (📊) DAU: {formatDecimalNumber(game.dau || 0)}
                           {filters.platform !== 'Web' && (
