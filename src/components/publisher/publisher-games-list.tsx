@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { formatDecimalNumber } from '../../common/utils';
 import { ROOT_URL, GRAPHQL_URL } from '../../common/constants';
+import { PublisherKPIs } from '../dashboard/publisher-kpis';
 
 // Helper function to get game icon based on game name
 const getGameIcon = (gameName: string) => {
@@ -53,10 +54,6 @@ import {
 import {
   Assessment,
   AttachMoney,
-  Schedule,
-  Description,
-  Assignment,
-  Notifications,
   HealthAndSafety,
   ExpandMore,
   ExpandLess,
@@ -64,7 +61,6 @@ import {
   Visibility,
   MonetizationOn,
   TrendingUp,
-  Security
 } from '@mui/icons-material';
 
 interface PublisherGamesListProps {
@@ -336,21 +332,27 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         icon: <TrendingUp />,
         color: '#2e7d32',
         data: {
-          kpi: {
-            roasD1: `${(metrics.roasD1 || 0).toFixed(0)}%`,
-            roasD7: `${(metrics.roasD7 || 0).toFixed(0)}%`,
-            roasD30: `${(metrics.roasD30 || 0).toFixed(0)}%`
-          },
-          table: daily.map(day => ({
-            date: formatDate(day.date),
-            spend: `₹${formatNumber(day.spend || 0)}`,
-            revD1: `₹${formatNumber(day.revenueD1 || 0)}`,
-            roas1: `${((day.revenueD1 || 0) / (day.spend || 1) * 100).toFixed(0)}%`,
-            revD7: `₹${formatNumber(day.revenueD7 || 0)}`,
-            roas7: `${((day.revenueD7 || 0) / (day.spend || 1) * 100).toFixed(0)}%`,
-            revD30: `₹${formatNumber(day.revenueD30 || 0)}`,
-            roas30: `${((day.revenueD30 || 0) / (day.spend || 1) * 100).toFixed(0)}%`
-          }))
+          kpi: (() => {
+            const totalAdSpend = daily.reduce((sum, d) => sum + (d.adSpend || 0), 0);
+            const totalRevenue = metrics.totalRevenue || 0;
+            const roas = totalAdSpend > 0 ? (totalRevenue / totalAdSpend) * 100 : 0;
+            return {
+              totalRevenue: `₹${formatNumber(totalRevenue)}`,
+              adSpend: `₹${formatNumber(totalAdSpend)}`,
+              roas: `${roas.toFixed(0)}%`
+            };
+          })(),
+          table: daily.map(day => {
+            const adSpend = day.adSpend || 0;
+            const revenue = day.totalRevenue || 0;
+            const roas = adSpend > 0 ? (revenue / adSpend) * 100 : 0;
+            return {
+              date: formatDate(day.date),
+              adSpend: `₹${formatNumber(adSpend)}`,
+              revenue: `₹${formatNumber(revenue)}`,
+              roas: `${roas.toFixed(0)}%`
+            };
+          })
         }
       },
       {
@@ -496,15 +498,18 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         color: '#d32f2f',
         data: {
           kpi: {
-            sessions: formatNumber(metrics.totalSessions || 0),
-            crashes: formatNumber(metrics.totalCrashes || 0),
-            crashRate: `${(((metrics.totalCrashes || 0) / (metrics.totalSessions || 1)) * 100).toFixed(2)}%`
+            crashRate: `${(metrics.crashRate || 0).toFixed(2)}%`,
+            errors: formatNumber(
+              daily.reduce((sum, d) => sum + (d.errorCount || 0), 0)
+            ),
+            usersAffected: formatNumber(metrics.usersAffectedByErrors || 0)
           },
           table: daily.map(day => ({
             date: formatDate(day.date),
-            sessions: formatNumber(day.sessions || 0),
-            crashes: formatNumber(day.crashes || 0),
-            crashRate: `${(((day.crashes || 0) / (day.sessions || 1)) * 100).toFixed(2)}%`
+            sessions: formatNumber(day.numSessions || 0),
+            errors: formatNumber(day.errorCount || 0),
+            usersAffected: formatNumber(day.usersAffectedByErrors || 0),
+            crashRate: `${(day.crashRate || 0).toFixed(2)}%`
           }))
         }
       },
@@ -657,19 +662,6 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
     return () => clearTimeout(timeout);
   }, []);
 
-  const [kpiData] = useState({
-    grossRev: 125000,
-    netRev: 87500,
-    payoutDue: 25000,
-    ecpm: 2.45,
-    fillRate: 94.2,
-    impressions: 125.5,
-    ivtFraud: 1.2,
-    compliance: 98.5,
-    crashRate: 0.8,
-    retentionD1: 65.4,
-    roasD7: 3.2
-  });
 
   // State for filter data from database
   const [platforms, setPlatforms] = useState<any[]>([]);
@@ -1260,106 +1252,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
       {/* Publisher KPIs Section */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-            <AttachMoney sx={{ mr: 1 }} />
-            Publisher KPIs (Last 30 days)
-          </Typography>
-
-          {/* First Row of KPIs */}
-          <Grid container spacing={2} sx={{ mb: 2 }}>
-            <Grid item xs={12} sm={6} md={2}>
-              <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-                <Typography variant="caption" color="textSecondary">Gross Rev</Typography>
-                <Typography variant="h6" color="primary">₹{formatDecimalNumber(kpiData.grossRev)}</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-                <Typography variant="caption" color="textSecondary">Net Rev</Typography>
-                <Typography variant="h6" color="success.main">₹{formatDecimalNumber(kpiData.netRev)}</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-                <Typography variant="caption" color="textSecondary">Payout Due</Typography>
-                <Typography variant="h6" color="warning.main">₹{formatDecimalNumber(kpiData.payoutDue)}</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-                <Typography variant="caption" color="textSecondary">eCPM</Typography>
-                <Typography variant="h6">₹{kpiData.ecpm.toFixed(2)}</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-                <Typography variant="caption" color="textSecondary">Fill Rate</Typography>
-                <Typography variant="h6" color="success.main">{kpiData.fillRate}%</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-                <Typography variant="caption" color="textSecondary">Impressions</Typography>
-                <Typography variant="h6">{kpiData.impressions}M</Typography>
-              </Box>
-            </Grid>
-          </Grid>
-
-          {/* Second Row of KPIs */}
-          <Grid container spacing={2} sx={{ mb: 2 }}>
-            <Grid item xs={12} sm={6} md={2}>
-              <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-                <Typography variant="caption" color="textSecondary">IVT (Fraud)</Typography>
-                <Typography variant="h6" color="error.main">{kpiData.ivtFraud}%</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-                <Typography variant="caption" color="textSecondary">Compliance</Typography>
-                <Typography variant="h6" color="success.main">{kpiData.compliance}%</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-                <Typography variant="caption" color="textSecondary">Crash Rate</Typography>
-                <Typography variant="h6" color="error.main">{kpiData.crashRate}%</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-                <Typography variant="caption" color="textSecondary">Retention D1</Typography>
-                <Typography variant="h6" color="success.main">{kpiData.retentionD1}%</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-                <Typography variant="caption" color="textSecondary">ROAS D7</Typography>
-                <Typography variant="h6" color="primary">{kpiData.roasD7}%</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              {/* Empty space for alignment */}
-            </Grid>
-          </Grid>
-
-          {/* Action Buttons */}
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            <Button variant="outlined" startIcon={<Schedule />} size="small">
-              Payout Schedule
-            </Button>
-            <Button variant="outlined" startIcon={<Description />} size="small">
-              Invoices
-            </Button>
-            <Button variant="outlined" startIcon={<Assignment />} size="small">
-              Contracts
-            </Button>
-            <Button variant="outlined" startIcon={<Notifications />} size="small">
-              Alerts ▼
-            </Button>
-            <Button variant="outlined" startIcon={<HealthAndSafety />} size="small">
-              Data Health ▼
-            </Button>
-          </Box>
+          <PublisherKPIs filter={filters} />
         </CardContent>
       </Card>
 

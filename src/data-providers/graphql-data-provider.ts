@@ -254,14 +254,9 @@ export const graphqlDataProvider = buildGraphQLProvider({
                 // Data is wrapped in a data property
                 data = data.data;
                 console.log(`✅ Unwrapped data array with ${data.length} items`);
-              } else if (data && typeof data === 'object' && !Array.isArray(data)) {
-                // Data might be an object, try to extract array
-                console.warn(`⚠️ Data is object, not array:`, data);
-                data = [];
               } else {
-                // Ensure data is an array
+                // Single object (e.g. portfolioKPIs) or other type — wrap in array
                 if (!Array.isArray(data)) {
-                  console.warn(`⚠️ Data is not an array, converting:`, typeof data, data);
                   data = data ? [data] : [];
                 }
               }
@@ -302,12 +297,6 @@ export const graphqlDataProvider = buildGraphQLProvider({
               if (!data) {
                 data = [];
                 total = 0;
-              }
-
-              // Handle single object responses (like Portfolio KPIs) by wrapping in array
-              if (data && !Array.isArray(data)) {
-                data = [data];
-                total = 1;
               }
 
               // Debug logging for publisher dashboard filters after processing

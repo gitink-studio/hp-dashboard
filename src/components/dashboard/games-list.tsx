@@ -38,22 +38,6 @@ interface GamesListProps {
 }
 
 export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigation }) => {
-<<<<<<< Updated upstream
-  // Get current user ID from localStorage
-  const userId = localStorage.getItem("userId");
-
-  // Debug: Log userId once on mount
-  useEffect(() => {
-    console.log('🎯 GamesList mounted with userId:', userId);
-  }, [userId]);
-
-  // Prevent duplicate userId warnings
-  useEffect(() => {
-    if (userId !== 'c89f7490-d9e5-47be-828b-8a71244214dc' && userId !== '266f87d7-f2b8-4ed9-8fcb-353df1272471') {
-      console.warn('⚠️ Unexpected userId:', userId);
-    }
-  }, [userId]);
-=======
   // State for games list fetched from backend
   const [gamesData, setGamesData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -116,7 +100,6 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
 
     fetchGamesList();
   }, [filters.platform, filters.subPlatform, filters.game, filters.dateRange]);
->>>>>>> Stashed changes
 
   // State for managing expanded games (accordion)
   const [expandedGames, setExpandedGames] = useState<Set<string>>(new Set());

@@ -44,15 +44,11 @@ export const formatDecimalNumber = (_value: number | string): string => {
     return '0';
   }
 
-  if (Math.abs(value) >= 1.0e9) {
-    return (value / 1.0e9).toFixed(DECIMAL_LENGTH).replace(/\.00$/, "") + "b";
-  } else if (Math.abs(value) >= 1.0e6) {
-    return (value / 1.0e6).toFixed(DECIMAL_LENGTH).replace(/\.00$/, "") + "m";
-  } else if (Math.abs(value) >= 1.0e3) {
-    return (value / 1.0e3).toFixed(DECIMAL_LENGTH).replace(/\.00$/, "") + "k";
-  } else {
-    return value.toFixed(2).replace(/\.00$/, "");
-  }
+  const hasDecimals = value % 1 !== 0;
+  return value.toLocaleString('en-US', {
+    minimumFractionDigits: hasDecimals ? DECIMAL_LENGTH : 0,
+    maximumFractionDigits: DECIMAL_LENGTH,
+  });
 };
 
 export const sendRequest = async (method: string, url: string, data: any) => {
