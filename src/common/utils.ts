@@ -345,3 +345,12 @@ export const isEmptyObject = (object: Record<string, any>): boolean => object &&
 export const removeWhiteSpace = (data: string) => data.replace(/\s+/g, '');
 export const goToPage = (pageUrl: string) => window.location.href = '/#' + pageUrl;
 export const cloneObject = (object: any) => JSON.parse(JSON.stringify(object));
+
+export const setElementId = (data: any) => {
+  return data.map((data: any, index: any) => {
+    return {
+      ...data,
+      id: index + 1
+    }
+  });
+}

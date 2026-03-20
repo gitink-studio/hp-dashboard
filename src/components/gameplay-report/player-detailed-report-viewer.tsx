@@ -178,12 +178,18 @@ export const PlayerDetailedReportViewer = (props: any) => {
     const DataNotFound = () => <Typography variant="caption">Data not found</Typography>
 
     const DisplayData = (props: any) => {
-        const { name, value } = props.data;
+        const { name, data } = props.data;
 
         return (
-            <Stack key={name}>
-                <Typography variant="h6">{value}</Typography>
-                <Typography variant="caption">{name}</Typography>
+            <Stack direction={'row'} gap={4}>
+                {
+                    data?.map((data: any, index: any) => (
+                        <Stack key={index}>
+                            <Typography variant="h6">{data.value}</Typography>
+                            <Typography variant="caption">{data.name}</Typography>
+                        </Stack>
+                    ))
+                }
             </Stack>
         )
     }
@@ -252,22 +258,12 @@ export const PlayerDetailedReportViewer = (props: any) => {
                                                 <Typography variant="subtitle1" textAlign={'left'}>{data.name}</Typography>
                                                 <Stack direction={'row'} gap={4} flexWrap="wrap" justifyContent="flex-start" alignItems={'center'}>
                                                     {
-                                                        (Array.isArray(data?.data) ? data.data : []).length === 0
-                                                            ? <DataNotFound />
-                                                            :
-                                                            <Box>
-                                                                {getData(data.name, data?.data)}
-                                                            </Box>
-
+                                                        (!Array.isArray(data?.data) || data?.data?.length === 0) ? <DataNotFound /> :
+                                                            <Stack direction={'row'} gap={2}>
+                                                                <Box>{getData(data.name, data)}</Box>
+                                                            </Stack>
                                                     }
                                                 </Stack>
-                                                {
-                                                    displayButton && (
-                                                        <Box display={'flex'} justifyContent={'flex-end'}>
-                                                            <Button onClick={() => handleButtonClick}>View Full Report</Button>
-                                                        </Box>
-                                                    )
-                                                }
                                             </Stack>
                                         </CardContent>
                                     </Card>

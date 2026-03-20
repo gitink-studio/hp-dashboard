@@ -1,4 +1,4 @@
-import { Admin, Resource } from "react-admin";
+import { Admin, defaultDarkTheme, defaultLightTheme, Resource } from "react-admin";
 import { DeviceList } from "./pages/devices/device-list";
 import { dataProvider } from "./data-providers/data-provider";
 import { UserList } from "./pages/users/user-list";
@@ -32,6 +32,9 @@ import { SubmitWebGameDetails } from "./pages/submit-web-game/submit-web-game-de
 import { PlayTests } from "./pages/play-tests/play-tests";
 import { GameplayReportPage } from "./pages/gameplay-reports/gameplay-report-page";
 import { PlayerReport } from "./pages/gameplay-reports/player-report";
+import { createTheme } from "@mui/material";
+import { customStyle } from "./common/styles";
+import { light } from "@mui/material/styles/createPalette";
 // import { ResetPasswordPage } from "./pages/auth/reset-password-page";
 
 export const App = () => {
@@ -115,30 +118,31 @@ export const App = () => {
       />
 
       {
-        isDeveloper && (
-          <>
-            {/* SDK Submission */}
-            < Resource
-              name="sdk"
-              list={SDKDetails}
-              options={{ label: "Submit Android Game", hasShow: false }}
-            />
+        // isDeveloper && (
+        //   <>
+        //     < Resource
+        //       name="sdk"
+        //       list={SDKDetails}
+        //       options={{ label: "Submit Android Game", hasShow: false }}
+        //     />
 
-            {/* Web Game Submission */}
-            <Resource
-              name="submit-web-game"
-              list={SubmitWebGameDetails}
-              options={{ label: "Submit Web Game" }}
-            />
-          </>
-        )
+        //     <Resource
+        //       name="submit-web-game"
+        //       list={SubmitWebGameDetails}
+        //       options={{ label: "Submit Web Game" }}
+        //     />
+        //   </>
+        // )
       }
 
       {/* Tests detail routes */}
       <CustomRoutes>
+        <Route path="sdk" element={<SDKDetails />} />
+        <Route path="submit-web-game" element={<SubmitWebGameDetails />} />
         <Route path="tests/developer/:id" element={<DeveloperTestDetail />} />
         <Route path="tests/publisher/:id" element={<PublisherTestDetail />} />
         <Route path="gameplay-reports/player-details" element={<PlayerReport />} />
+
         {/* <Route path="reset-password" element={<ResetPasswordPage />} /> */}
       </CustomRoutes>
 

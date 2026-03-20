@@ -10,16 +10,21 @@ import { FPSDetailedReportViewer } from "./fps-detailed-report-viewer";
 
 export const GameplayDetailedReportViewer = (props: any) => {
     const { reportData } = props.data;
-
     const DataNotFound = () => <Typography variant="caption">Data not found</Typography>
 
     const DisplayData = (props: any) => {
-        const { name, value } = props.data;
-
+        const { name, data } = props.data;
+        // console.log(`Props.data: ${JSON.stringify(props.data)}`);
         return (
-            <Stack key={name}>
-                <Typography variant="h6">{value}</Typography>
-                <Typography variant="caption">{name}</Typography>
+            <Stack direction={'row'} gap={4}>
+                {
+                    data?.map((data: any, index: any) => (
+                        <Stack key={index}>
+                            <Typography variant="h6">{data.value}</Typography>
+                            <Typography variant="caption">{data.name}</Typography>
+                        </Stack>
+                    ))
+                }
             </Stack>
         )
     }

@@ -123,7 +123,6 @@ export const GameplayReportPage = () => {
 
     const getStartAndEndDate = (selectedDate: string) => {
         const date: any = {};
-
         switch (selectedDate) {
             case '0':
             case '1':
@@ -324,7 +323,7 @@ export const GameplayReportPage = () => {
                                                                                         },
                                                                                         {
                                                                                             name: 'IAP Purchased',
-                                                                                            value: game.gameEventReport?.totalIAPCompleted ?? 0
+                                                                                            value: game.gameEventReport?.totalIAPSuccessful ?? 0
                                                                                         },
                                                                                         {
                                                                                             name: 'Ad Watched',

@@ -30,6 +30,7 @@ export const PlayerReport = () => {
     const [isFetching, setFetching] = useState(true);
 
     const handleViewDetails = (params: any) => {
+        // console.log(`Player detailed report: ${JSON.stringify(params.row)}`);
         setDetailedReportData(params.row)
         setOpenDetailedView(true);
     }

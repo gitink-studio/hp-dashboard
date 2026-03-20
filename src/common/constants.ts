@@ -484,3 +484,7 @@ export const GameplayEventReportType = {
   FPS_DATA: 'FPS Data',
   MEMORY_USAGE_DATA: 'Memory Usage Data',
 }
+
+export const MEAN = 'mean';
+export const MEDIAN = 'median';
+export const MODE = 'mode';
