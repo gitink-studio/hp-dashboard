@@ -186,7 +186,7 @@ const getGameplayReportData = (props: any) => {
     const detailedReportData = {
         gameplayData: [
             {
-                name: 'Player Data',
+                name: 'Player Event Data',
                 data: [
                     {
                         name: 'Total Player Count',
@@ -371,38 +371,10 @@ const getGameplayReportData = (props: any) => {
             {
                 name: 'Ad Requested Event Data',
                 data: adData.adRequested,
-                additionalMetrics: [
-                    {
-                        name: 'Average Ad Requested',
-                        value: formatDecimalNumber(additionalMetricsData?.adData?.adRequested?.mean)
-                    },
-                    {
-                        name: 'Ad Requested Median',
-                        value: additionalMetricsData?.adData?.adRequested?.median
-                    },
-                    {
-                        name: 'Highest Ad Requested',
-                        value: additionalMetricsData?.adData?.adRequested?.mode
-                    },
-                ]
             },
             {
                 name: 'Ad Filled Event Data',
                 data: adData.adFilled,
-                additionalMetrics: [
-                    {
-                        name: 'Average Ad Filled',
-                        value: formatDecimalNumber(additionalMetricsData?.adData?.adFilled?.mean)
-                    },
-                    {
-                        name: 'Ad Filled Median',
-                        value: additionalMetricsData?.adData?.adFilled?.median
-                    },
-                    {
-                        name: 'Highest Ad Filled',
-                        value: additionalMetricsData?.adData?.adFilled?.mode
-                    },
-                ]
             },
             {
                 name: 'Ad Started Event Data',

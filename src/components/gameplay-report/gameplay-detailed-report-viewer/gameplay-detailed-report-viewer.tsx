@@ -46,6 +46,8 @@ export const GameplayDetailedReportViewer = (props: any) => {
             case 'IAP Failed Event Data':
             case 'IAP Consumed Event Data':
                 return <IAPDetailedReportViewer data={data} />
+            case 'Ad Requested Event Data':
+            case 'Ad Filled Event Data':
             case 'Ad Started Event Data':
             case 'Ad Clicked Event Data':
             case 'Ad Skipped Event Data':

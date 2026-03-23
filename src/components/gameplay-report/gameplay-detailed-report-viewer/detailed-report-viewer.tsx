@@ -7,7 +7,8 @@ import { setElementId } from "../../../common/utils";
 export const columnProps: Partial<GridColDef> = {
     align: 'center',
     headerAlign: 'center',
-    flex: 1
+    flex: 1,
+    minWidth: 100
 }
 
 export const DetailedReportViewer = (props: any) => {
