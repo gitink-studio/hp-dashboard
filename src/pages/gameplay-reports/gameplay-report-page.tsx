@@ -146,23 +146,27 @@ export const GameplayReportPage = () => {
     }
 
     const fetchAndSetGameEventReportByDateRange = async (selectedDate: any) => {
-        const date = getStartAndEndDate(selectedDate);
-        // console.log(`Fetching game event report...`);
-        setSelectedStartDate(date.startDate);
-        setSelectedEndDate(date.endDate);
-        isDataFetched.current = false;
-        const responseData = await sendGraphqlRequest(QueryNames.GET_GAME_EVENT_REPORT_BY_DATE_RANGE, {
-            query: Queries.GetGameEventReportByDateRange,
-            variables: {
-                startDate: date.startDate,
-                endDate: date.endDate
-            }
-        })
+        try {
+            const date = getStartAndEndDate(selectedDate);
+            // console.log(`Fetching game event report...`);
+            setSelectedStartDate(date.startDate);
+            setSelectedEndDate(date.endDate);
+            isDataFetched.current = false;
+            const responseData = await sendGraphqlRequest(QueryNames.GET_GAME_EVENT_REPORT_BY_DATE_RANGE, {
+                query: Queries.GetGameEventReportByDateRange,
+                variables: {
+                    startDate: date.startDate,
+                    endDate: date.endDate
+                }
+            })
 
-        console.log(`Game event report fetched by date range ! `);
-        setGameEventReportData(responseData.data);
-        setGameEventReportFilteredData(responseData.data);
-        isDataFetched.current = true;
+            // console.log(`Game event report fetched by date range ! ${JSON.stringify(responseData)}`);
+            setGameEventReportData(responseData?.data);
+            setGameEventReportFilteredData(responseData?.data);
+            isDataFetched.current = true;
+        } catch (err) {
+            console.log(err);
+        }
     }
 
     const handleDateRangeFilter = async (selectedDate: any) => {

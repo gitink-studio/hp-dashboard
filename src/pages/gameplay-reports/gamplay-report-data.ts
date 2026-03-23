@@ -18,6 +18,8 @@ const getGameplayReportData = (props: any) => {
         totalIAPFailed = 0,
         totalIAPSuccessful = 0,
         totalIAPConsumed = 0,
+        totalAdRequested = 0,
+        totalAdFilled = 0,
         totalAdStarted = 0,
         totalAdCompleted = 0,
         totalAdSkipped = 0,
@@ -89,6 +91,14 @@ const getGameplayReportData = (props: any) => {
         {
             name: 'Ad Data',
             data: [
+                {
+                    name: 'Ad Requested',
+                    value: totalAdRequested
+                },
+                {
+                    name: 'Ad Filled',
+                    value: totalAdFilled
+                },
                 {
                     name: 'Ad Started',
                     value: totalAdStarted
@@ -211,11 +221,11 @@ const getGameplayReportData = (props: any) => {
                 ]
             },
             {
-                name: 'Tutorial Data',
+                name: 'Tutorial Event Data',
                 data: isObjectEmpty(tutorialData?.stepDetails) ? emptyData : tutorialData.stepDetails
             },
             {
-                name: 'Level Start Data',
+                name: 'Level Start Event Data',
                 data: levelData?.countInfo?.levelStart ?? [],
                 additionalMetrics: [
                     {
@@ -238,7 +248,7 @@ const getGameplayReportData = (props: any) => {
                 ]
             },
             {
-                name: 'Level Complete Data',
+                name: 'Level Complete Event Data',
                 data: levelData?.countInfo?.levelComplete ?? [],
                 additionalMetrics: [
                     {
@@ -256,7 +266,7 @@ const getGameplayReportData = (props: any) => {
                 ]
             },
             {
-                name: 'Level Fail Data',
+                name: 'Level Fail Event Data',
                 data: levelData?.countInfo?.levelFail ?? [],
                 additionalMetrics: [
                     {
@@ -285,7 +295,7 @@ const getGameplayReportData = (props: any) => {
         ],
         iapData: [
             {
-                name: 'IAP Initiated',
+                name: 'IAP Initiated Event Data',
                 data: iapData.iapInitiated,
                 additionalMetrics: [
                     {
@@ -303,7 +313,7 @@ const getGameplayReportData = (props: any) => {
                 ]
             },
             {
-                name: 'IAP Successful',
+                name: 'IAP Successful Event Data',
                 data: iapData.iapSuccessful,
                 additionalMetrics: [
                     {
@@ -321,7 +331,7 @@ const getGameplayReportData = (props: any) => {
                 ]
             },
             {
-                name: 'IAP Failed',
+                name: 'IAP Failed Event Data',
                 data: iapData.iapFailed,
                 additionalMetrics: [
                     {
@@ -339,7 +349,7 @@ const getGameplayReportData = (props: any) => {
                 ]
             },
             {
-                name: 'IAP Consumed',
+                name: 'IAP Consumed Event Data',
                 data: iapData.iapConsumed,
                 additionalMetrics: [
                     {
@@ -359,7 +369,43 @@ const getGameplayReportData = (props: any) => {
         ],
         adData: [
             {
-                name: 'Ad Started',
+                name: 'Ad Requested Event Data',
+                data: adData.adRequested,
+                additionalMetrics: [
+                    {
+                        name: 'Average Ad Requested',
+                        value: formatDecimalNumber(additionalMetricsData?.adData?.adRequested?.mean)
+                    },
+                    {
+                        name: 'Ad Requested Median',
+                        value: additionalMetricsData?.adData?.adRequested?.median
+                    },
+                    {
+                        name: 'Highest Ad Requested',
+                        value: additionalMetricsData?.adData?.adRequested?.mode
+                    },
+                ]
+            },
+            {
+                name: 'Ad Filled Event Data',
+                data: adData.adFilled,
+                additionalMetrics: [
+                    {
+                        name: 'Average Ad Filled',
+                        value: formatDecimalNumber(additionalMetricsData?.adData?.adFilled?.mean)
+                    },
+                    {
+                        name: 'Ad Filled Median',
+                        value: additionalMetricsData?.adData?.adFilled?.median
+                    },
+                    {
+                        name: 'Highest Ad Filled',
+                        value: additionalMetricsData?.adData?.adFilled?.mode
+                    },
+                ]
+            },
+            {
+                name: 'Ad Started Event Data',
                 data: adData.adStarted,
                 additionalMetrics: [
                     {
@@ -377,7 +423,7 @@ const getGameplayReportData = (props: any) => {
                 ]
             },
             {
-                name: 'Ad Clicked',
+                name: 'Ad Clicked Event Data',
                 data: adData.adClicked,
                 additionalMetrics: [
                     {
@@ -395,7 +441,7 @@ const getGameplayReportData = (props: any) => {
                 ]
             },
             {
-                name: 'Ad Skipped',
+                name: 'Ad Skipped Event Data',
                 data: adData.adSkipped,
                 additionalMetrics: [
                     {
@@ -413,7 +459,7 @@ const getGameplayReportData = (props: any) => {
                 ]
             },
             {
-                name: 'Ad Completed',
+                name: 'Ad Completed Event Data',
                 data: adData.adCompleted,
                 additionalMetrics: [
                     {
@@ -431,7 +477,7 @@ const getGameplayReportData = (props: any) => {
                 ]
             },
             {
-                name: 'Ad Failed',
+                name: 'Ad Failed Event Data',
                 data: adData.adFailed,
                 additionalMetrics: [
                     {
@@ -451,7 +497,7 @@ const getGameplayReportData = (props: any) => {
         ],
         economyData: [
             {
-                name: 'Currency Earned',
+                name: 'Currency Earned Event Data',
                 data: economyData.currencyEarned,
                 additionalMetrics: [
                     {
@@ -469,7 +515,7 @@ const getGameplayReportData = (props: any) => {
                 ]
             },
             {
-                name: 'Currency Spent',
+                name: 'Currency Spent Event Data',
                 data: economyData.currencySpent,
                 additionalMetrics: [
                     {
@@ -489,7 +535,7 @@ const getGameplayReportData = (props: any) => {
         ],
         logData: [
             {
-                name: 'Error Data',
+                name: 'Error Event Data',
                 data: logData.error,
                 additionalMetrics: [
                     {
@@ -507,7 +553,7 @@ const getGameplayReportData = (props: any) => {
                 ]
             },
             {
-                name: 'Warning Data',
+                name: 'Warning Event Data',
                 data: logData.warning,
                 additionalMetrics: [
                     {
@@ -525,7 +571,7 @@ const getGameplayReportData = (props: any) => {
                 ]
             },
             {
-                name: 'Info Data',
+                name: 'Info Event Data',
                 data: logData.info,
                 additionalMetrics: [
                     {
@@ -545,29 +591,29 @@ const getGameplayReportData = (props: any) => {
         ],
         fpsData: [
             {
-                name: 'Low FPS Data',
+                name: 'Low FPS Event Data',
                 data: [fpsData.low ?? 0]
             },
             {
-                name: 'Average FPS Data',
+                name: 'Average FPS Event Data',
                 data: [{ fps: Math.floor(fpsData.average) ?? 0 }]
             },
             {
-                name: 'High FPS Data',
+                name: 'High FPS Event Data',
                 data: [fpsData.high ?? 0]
             },
         ],
         memoryUsageData: [
             {
-                name: 'Low Memory Usage Data',
+                name: 'Low Memory Usage Event Data',
                 data: [memoryUsageData.low ?? 0]
             },
             {
-                name: 'Average Memory Usage Data',
+                name: 'Average Memory Usage Event Data',
                 data: [{ memoryUsage: Math.floor(memoryUsageData.average) ?? 0 }]
             },
             {
-                name: 'High Memory Usage Data',
+                name: 'High Memory Usage Event Data',
                 data: [memoryUsageData.high ?? 0]
             },
         ]

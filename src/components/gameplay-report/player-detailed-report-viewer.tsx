@@ -211,6 +211,8 @@ export const PlayerDetailedReportViewer = (props: any) => {
             case 'IAP Failed':
             case 'IAP Consumed':
                 return <IAPDetailedReportViewer data={data} />
+            case 'Ad Requested':
+            case 'Ad Filled':
             case 'Ad Started':
             case 'Ad Clicked':
             case 'Ad Skipped':

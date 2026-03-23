@@ -31,41 +31,41 @@ export const GameplayDetailedReportViewer = (props: any) => {
 
     const getData = (dataType: string, data: any) => {
         switch (dataType) {
-            case 'Player Data':
+            case 'Player Event Data':
             case 'Session Event Data':
             case 'Gameplay Event Data':
                 return <DisplayData data={data} />
-            case 'Tutorial Data':
+            case 'Tutorial Event Data':
                 return <TutorialDetailedReportViewer data={data} />
-            case 'Level Start Data':
-            case 'Level Complete Data':
-            case 'Level Fail Data':
+            case 'Level Start Event Data':
+            case 'Level Complete Event Data':
+            case 'Level Fail Event Data':
                 return <LevelDetailedReportViewer data={data} />
-            case 'IAP Initiated':
-            case 'IAP Successful':
-            case 'IAP Failed':
-            case 'IAP Consumed':
+            case 'IAP Initiated Event Data':
+            case 'IAP Successful Event Data':
+            case 'IAP Failed Event Data':
+            case 'IAP Consumed Event Data':
                 return <IAPDetailedReportViewer data={data} />
-            case 'Ad Started':
-            case 'Ad Clicked':
-            case 'Ad Skipped':
-            case 'Ad Completed':
-            case 'Ad Failed':
+            case 'Ad Started Event Data':
+            case 'Ad Clicked Event Data':
+            case 'Ad Skipped Event Data':
+            case 'Ad Completed Event Data':
+            case 'Ad Failed Event Data':
                 return <AdDetailedReportViewer data={data} />
-            case 'Currency Earned':
-            case 'Currency Spent':
+            case 'Currency Earned Event Data':
+            case 'Currency Spent Event Data':
                 return <EconomyDetailedReportViewer data={data} />
-            case 'Error Data':
-            case 'Warning Data':
-            case 'Info Data':
+            case 'Error Event Data':
+            case 'Warning Event Data':
+            case 'Info Event Data':
                 return <LogDetailedReportViewer data={data} />
-            case 'Low FPS Data':
-            case 'Average FPS Data':
-            case 'High FPS Data':
+            case 'Low FPS Event Data':
+            case 'Average FPS Event Data':
+            case 'High FPS Event Data':
                 return <FPSDetailedReportViewer data={data} />;
-            case 'Low Memory Usage Data':
-            case 'Average Memory Usage Data':
-            case 'High Memory Usage Data':
+            case 'Low Memory Usage Event Data':
+            case 'Average Memory Usage Event Data':
+            case 'High Memory Usage Event Data':
                 return <MemoryUsageDetailedReportViewer data={data} />;
             default:
                 return <DataNotFound />
