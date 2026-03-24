@@ -11,6 +11,13 @@ const getGameplayReportData = (props: any) => {
         avgSessionTime = 0,
         avgGameplayTime = 0,
         tutorialsCompleted = 0,
+        totalSessionStartEventCount = 0,
+        totalSessionStopEventCount = 0,
+        totalGameplayStartEventCount = 0,
+        totalGameplayEndEventCount = 0,
+        totalLevelStartEventCount = 0,
+        totalLevelCompleteEventCount = 0,
+        totalLevelFailEventCount = 0,
         totalSessionTime = 0,
         totalGameplayTime = 0,
         totalReviveUsed = 0,
@@ -198,6 +205,14 @@ const getGameplayReportData = (props: any) => {
                 name: 'Session Event Data',
                 data: [
                     {
+                        name: 'Total Session Start',
+                        value: totalSessionStartEventCount
+                    },
+                    {
+                        name: 'Total Session Stop',
+                        value: totalSessionStopEventCount
+                    },
+                    {
                         name: 'Average Session Time',
                         value: formatTime(avgSessionTime)
                     },
@@ -211,6 +226,14 @@ const getGameplayReportData = (props: any) => {
                 name: 'Gameplay Event Data',
                 data: [
                     {
+                        name: 'Total Gameplay Start',
+                        value: totalGameplayStartEventCount
+                    },
+                    {
+                        name: 'Total Gameplay End',
+                        value: totalGameplayEndEventCount
+                    },
+                    {
                         name: 'Average Gameplay Time',
                         value: formatTime(avgGameplayTime)
                     },
@@ -223,6 +246,23 @@ const getGameplayReportData = (props: any) => {
             {
                 name: 'Tutorial Event Data',
                 data: isObjectEmpty(tutorialData?.stepDetails) ? emptyData : tutorialData.stepDetails
+            },
+            {
+                name: 'Level Event Data',
+                data: [
+                    {
+                        name: 'Total Level Start',
+                        value: totalLevelStartEventCount
+                    },
+                    {
+                        name: 'Total Level Complete',
+                        value: totalLevelCompleteEventCount
+                    },
+                    {
+                        name: 'Total Level Fail',
+                        value: totalLevelFailEventCount
+                    },
+                ]
             },
             {
                 name: 'Level Start Event Data',

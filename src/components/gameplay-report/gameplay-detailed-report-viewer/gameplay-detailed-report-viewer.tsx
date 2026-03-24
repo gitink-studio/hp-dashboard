@@ -34,6 +34,7 @@ export const GameplayDetailedReportViewer = (props: any) => {
             case 'Player Event Data':
             case 'Session Event Data':
             case 'Gameplay Event Data':
+            case 'Level Event Data':
                 return <DisplayData data={data} />
             case 'Tutorial Event Data':
                 return <TutorialDetailedReportViewer data={data} />
