@@ -324,6 +324,23 @@ const getGameplayReportData = (props: any) => {
                 ]
             },
             {
+                name: 'All Level Event Data',
+                data: [
+                    {
+                        name: 'Level Start Event Data',
+                        data: levelData?.countInfo?.levelStart ?? [],
+                    },
+                    {
+                        name: 'Level Complete Event Data',
+                        data: levelData?.countInfo?.levelComplete ?? [],
+                    },
+                    {
+                        name: 'Level Fail Event Data',
+                        data: levelData?.countInfo?.levelFail ?? [],
+                    }
+                ]
+            },
+            {
                 name: 'Revive Used',
                 data: [
                     {
@@ -405,7 +422,28 @@ const getGameplayReportData = (props: any) => {
                         value: additionalMetricsData?.iapData?.iapConsumed?.mode
                     },
                 ]
-            }
+            },
+            {
+                name: 'All IAP Event Data',
+                data: [
+                    {
+                        name: 'IAP Initiated Event Data',
+                        data: iapData.iapInitiated
+                    },
+                    {
+                        name: 'IAP Successful Event Data',
+                        data: iapData.iapSuccessful
+                    },
+                    {
+                        name: 'IAP Consumed Event Data',
+                        data: iapData.iapConsumed
+                    },
+                    {
+                        name: 'IAP Failed Event Data',
+                        data: iapData.iapFailed
+                    }
+                ]
+            },
         ],
         adData: [
             {
@@ -506,6 +544,49 @@ const getGameplayReportData = (props: any) => {
                     },
                 ]
             },
+            {
+                name: 'Ad Requested & Filled Event Data',
+                data: [
+                    {
+                        name: 'Ad Requested Event Data',
+                        data: adData.adRequested
+                    },
+                    {
+                        name: 'Ad Filled Event Data',
+                        data: adData.adFilled
+                    },
+                ]
+            },
+            {
+                name: 'Ad Started, Completed & Failed Event Data',
+                data: [
+                    {
+                        name: 'Ad Started Event Data',
+                        data: adData.adStarted
+                    },
+                    {
+                        name: 'Ad Completed Event Data',
+                        data: adData.adCompleted
+                    },
+                    {
+                        name: 'Ad Failed Event Data',
+                        data: adData.adFailed
+                    },
+                ]
+            },
+            {
+                name: 'Ad Clicked & Skipped Event Data',
+                data: [
+                    {
+                        name: 'Ad Clicked Event Data',
+                        data: adData.adClicked
+                    },
+                    {
+                        name: 'Ad Skipped Event Data',
+                        data: adData.adSkipped
+                    },
+                ]
+            },
         ],
         economyData: [
             {
@@ -541,6 +622,19 @@ const getGameplayReportData = (props: any) => {
                     {
                         name: 'Highest Currency Spent',
                         value: additionalMetricsData?.economyData?.currencySpent?.mode
+                    },
+                ]
+            },
+            {
+                name: 'All Economy Event Data',
+                data: [
+                    {
+                        name: 'Currency Earned Event Data',
+                        data: economyData.currencyEarned
+                    },
+                    {
+                        name: 'Currency Spent Event Data',
+                        data: economyData.currencySpent
                     },
                 ]
             }

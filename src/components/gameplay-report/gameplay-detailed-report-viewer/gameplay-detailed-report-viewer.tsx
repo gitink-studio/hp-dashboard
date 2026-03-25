@@ -7,6 +7,7 @@ import { LogDetailedReportViewer } from "./log-detailed-report-viewer";
 import { TutorialDetailedReportViewer } from "./tutorial-detailed-report-viewer";
 import { MemoryUsageDetailedReportViewer } from "./memory-usage-detailed-report-viewer";
 import { FPSDetailedReportViewer } from "./fps-detailed-report-viewer";
+import { ReportComparisonViewer } from "./report-comparison-viewer";
 
 export const GameplayDetailedReportViewer = (props: any) => {
     const { reportData } = props.data;
@@ -42,11 +43,21 @@ export const GameplayDetailedReportViewer = (props: any) => {
             case 'Level Complete Event Data':
             case 'Level Fail Event Data':
                 return <LevelDetailedReportViewer data={data} />
+            case 'All Level Event Data':
+                return <ReportComparisonViewer data={{
+                    data: data,
+                    reportType: 'Level Report',
+                }} />
             case 'IAP Initiated Event Data':
             case 'IAP Successful Event Data':
             case 'IAP Failed Event Data':
             case 'IAP Consumed Event Data':
                 return <IAPDetailedReportViewer data={data} />
+            case 'All IAP Event Data':
+                return <ReportComparisonViewer data={{
+                    data: data,
+                    reportType: 'IAP Report'
+                }} />
             case 'Ad Requested Event Data':
             case 'Ad Filled Event Data':
             case 'Ad Started Event Data':
@@ -55,9 +66,21 @@ export const GameplayDetailedReportViewer = (props: any) => {
             case 'Ad Completed Event Data':
             case 'Ad Failed Event Data':
                 return <AdDetailedReportViewer data={data} />
+            case 'Ad Requested & Filled Event Data':
+            case 'Ad Started, Completed & Failed Event Data':
+            case 'Ad Clicked & Skipped Event Data':
+                return <ReportComparisonViewer data={{
+                    data: data,
+                    reportType: 'Ad Report'
+                }} />
             case 'Currency Earned Event Data':
             case 'Currency Spent Event Data':
                 return <EconomyDetailedReportViewer data={data} />
+            case 'All Economy Event Data':
+                return <ReportComparisonViewer data={{
+                    data: data,
+                    reportType: 'Economy Report'
+                }} />
             case 'Error Event Data':
             case 'Warning Event Data':
             case 'Info Event Data':
