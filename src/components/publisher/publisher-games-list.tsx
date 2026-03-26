@@ -558,13 +558,21 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
 
   // Handle studio accordion expansion
   const handleToggleStudioExpanded = async (studioId: string) => {
-    const newExpanded = new Set(expandedStudios);
-    const isExpanding = !newExpanded.has(studioId);
+    // Determine expand/collapse based on current state (synchronous click handler)
+    const willExpand = !expandedStudios.has(studioId);
 
-    if (isExpanding) {
-      newExpanded.add(studioId);
-      setExpandedStudios(newExpanded);
+    // Use functional form to avoid stale closure issues during concurrent renders
+    setExpandedStudios(prev => {
+      const updated = new Set(prev);
+      if (updated.has(studioId)) {
+        updated.delete(studioId);
+      } else {
+        updated.add(studioId);
+      }
+      return updated;
+    });
 
+    if (willExpand) {
       // Fetch studio-level data
       setLoadingStudioData(true);
       try {
@@ -641,9 +649,6 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
       } finally {
         setLoadingStudioData(false);
       }
-    } else {
-      newExpanded.delete(studioId);
-      setExpandedStudios(newExpanded);
     }
   };
 
@@ -1469,7 +1474,8 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
             ) : (
               (Object.entries(gamesByStudio) as [string, any[]][]).map(([studioName, games], index) => {
                 const studioDisplayName = studioName;
-                const studioId = games[0]?.studioId || studioName;
+                // Prefer studio UUID for stable keying; fall back to studio name
+                const studioId = games[0]?.studio?.id || games[0]?.studioId || studioName;
                 const isStudioExpanded = expandedStudios.has(studioId);
 
                 return (

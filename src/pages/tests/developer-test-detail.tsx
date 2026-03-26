@@ -36,6 +36,7 @@ import DemographicsChart, { DemographicDatum, GenderSummary } from "../../compon
 import PlacementsChart, { PlacementDatum } from "../../components/dashboard/placements-chart";
 import { TestOverallValues } from "../../components/tests/test-overall-values";
 import { TestHeatmapDetails } from "../../components/tests/test-heatmap-details";
+import { FacebookCampaignSection } from "../../components/tests/facebook-campaign-section";
 
 type VariantRow = {
     name: string;
@@ -353,147 +354,121 @@ export const DeveloperTestDetail: React.FC = () => {
 
                     {chartTab === 0 && (
                         <Box>
-                            <Typography variant="subtitle1" fontWeight="bold">Performance</Typography>
+                            <Typography variant="subtitle1" fontWeight="bold">Game Performance</Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                Installs and CPI trends over time
+                                Daily active users, sessions, revenue and retention during the test window
                             </Typography>
 
                             {performanceData.length > 0 ? (
                                 <Stack spacing={4} sx={{ mb: 4 }}>
-                                    {/* Installs Chart */}
+                                    {/* DAU + New Users */}
                                     <Box>
-                                        <Typography variant="h6" sx={{ mb: 2 }}>Installs</Typography>
-                                        <Box sx={{ height: 350 }}>
+                                        <Typography variant="h6" sx={{ mb: 2 }}>Daily Active Users &amp; New Users</Typography>
+                                        <Box sx={{ height: 300 }}>
                                             <ResponsiveContainer width="100%" height="100%">
-                                                <LineChart
-                                                    data={performanceData}
-                                                    margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                                                >
+                                                <LineChart data={performanceData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
                                                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                                    <XAxis
-                                                        dataKey="date"
-                                                        tick={{ fontSize: 12 }}
-                                                        tickLine={{ stroke: '#666' }}
-                                                        label={{ value: 'Date', position: 'insideBottom', offset: -5 }}
-                                                    />
-                                                    <YAxis
-                                                        tick={{ fontSize: 12 }}
-                                                        tickLine={{ stroke: '#666' }}
-                                                        label={{ value: 'Installs', angle: -90, position: 'insideLeft' }}
-                                                    />
-                                                    <RechartsTooltip
-                                                        formatter={(value: any) => [value.toLocaleString(), 'Installs']}
-                                                        labelFormatter={(label) => `Date: ${label}`}
-                                                        contentStyle={{
-                                                            backgroundColor: '#fff',
-                                                            border: '1px solid #ccc',
-                                                            borderRadius: '8px',
-                                                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                                                        }}
-                                                    />
+                                                    <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                                                    <YAxis tick={{ fontSize: 12 }} />
+                                                    <RechartsTooltip contentStyle={{ borderRadius: 8 }} />
                                                     <Legend />
-                                                    <Line
-                                                        type="monotone"
-                                                        dataKey="installs"
-                                                        stroke="#1976d2"
-                                                        strokeWidth={3}
-                                                        name="Installs"
-                                                        dot={{ fill: '#1976d2', strokeWidth: 2, r: 4 }}
-                                                        activeDot={{ r: 6, stroke: '#1976d2', strokeWidth: 2 }}
-                                                    />
+                                                    <Line type="monotone" dataKey="dau" stroke="#1976d2" strokeWidth={2} name="DAU" dot={{ r: 3 }} />
+                                                    <Line type="monotone" dataKey="newUsers" stroke="#42a5f5" strokeWidth={2} name="New Users" dot={{ r: 3 }} />
                                                 </LineChart>
                                             </ResponsiveContainer>
                                         </Box>
                                     </Box>
 
-                                    {/* CPI Chart */}
+                                    {/* Sessions */}
                                     <Box>
-                                        <Typography variant="h6" sx={{ mb: 2 }}>CPI (Cost Per Install)</Typography>
-                                        <Box sx={{ height: 350 }}>
+                                        <Typography variant="h6" sx={{ mb: 2 }}>Sessions</Typography>
+                                        <Box sx={{ height: 260 }}>
                                             <ResponsiveContainer width="100%" height="100%">
-                                                <LineChart
-                                                    data={performanceData}
-                                                    margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                                                >
+                                                <LineChart data={performanceData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
                                                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                                    <XAxis
-                                                        dataKey="date"
-                                                        tick={{ fontSize: 12 }}
-                                                        tickLine={{ stroke: '#666' }}
-                                                        label={{ value: 'Date', position: 'insideBottom', offset: -5 }}
-                                                    />
-                                                    <YAxis
-                                                        tick={{ fontSize: 12 }}
-                                                        tickLine={{ stroke: '#666' }}
-                                                        tickFormatter={(value) => `$${value.toFixed(2)}`}
-                                                        label={{ value: 'CPI', angle: -90, position: 'insideLeft' }}
-                                                    />
-                                                    <RechartsTooltip
-                                                        formatter={(value: any) => [`$${value.toFixed(2)}`, 'CPI']}
-                                                        labelFormatter={(label) => `Date: ${label}`}
-                                                        contentStyle={{
-                                                            backgroundColor: '#fff',
-                                                            border: '1px solid #ccc',
-                                                            borderRadius: '8px',
-                                                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                                                        }}
-                                                    />
+                                                    <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                                                    <YAxis tick={{ fontSize: 12 }} />
+                                                    <RechartsTooltip contentStyle={{ borderRadius: 8 }} />
                                                     <Legend />
-                                                    <Line
-                                                        type="monotone"
-                                                        dataKey="cpi"
-                                                        stroke="#4caf50"
-                                                        strokeWidth={3}
-                                                        name="CPI"
-                                                        dot={{ fill: '#4caf50', strokeWidth: 2, r: 4 }}
-                                                        activeDot={{ r: 6, stroke: '#4caf50', strokeWidth: 2 }}
-                                                    />
+                                                    <Line type="monotone" dataKey="numSessions" stroke="#7b1fa2" strokeWidth={2} name="Sessions" dot={{ r: 3 }} />
+                                                    <Line type="monotone" dataKey="avgSessionLength" stroke="#ce93d8" strokeWidth={2} name="Avg Session (s)" dot={{ r: 3 }} />
+                                                </LineChart>
+                                            </ResponsiveContainer>
+                                        </Box>
+                                    </Box>
+
+                                    {/* Revenue */}
+                                    <Box>
+                                        <Typography variant="h6" sx={{ mb: 2 }}>Revenue ($)</Typography>
+                                        <Box sx={{ height: 260 }}>
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <LineChart data={performanceData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                                    <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                                                    <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${v.toFixed(0)}`} />
+                                                    <RechartsTooltip formatter={(v: any) => `$${Number(v).toFixed(2)}`} contentStyle={{ borderRadius: 8 }} />
+                                                    <Legend />
+                                                    <Line type="monotone" dataKey="iapRevenue" stroke="#2e7d32" strokeWidth={2} name="IAP Revenue" dot={{ r: 3 }} />
+                                                    <Line type="monotone" dataKey="adRevenue" stroke="#66bb6a" strokeWidth={2} name="Ad Revenue" dot={{ r: 3 }} />
+                                                    <Line type="monotone" dataKey="totalRevenue" stroke="#1b5e20" strokeWidth={2} name="Total Revenue" strokeDasharray="5 3" dot={{ r: 3 }} />
+                                                </LineChart>
+                                            </ResponsiveContainer>
+                                        </Box>
+                                    </Box>
+
+                                    {/* Retention */}
+                                    <Box>
+                                        <Typography variant="h6" sx={{ mb: 2 }}>Retention (%)</Typography>
+                                        <Box sx={{ height: 260 }}>
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <LineChart data={performanceData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                                    <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                                                    <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `${v}%`} />
+                                                    <RechartsTooltip formatter={(v: any) => `${Number(v).toFixed(1)}%`} contentStyle={{ borderRadius: 8 }} />
+                                                    <Legend />
+                                                    <Line type="monotone" dataKey="retentionD1" stroke="#e65100" strokeWidth={2} name="D1 Retention" dot={{ r: 3 }} />
+                                                    <Line type="monotone" dataKey="retentionD7" stroke="#ff8f00" strokeWidth={2} name="D7 Retention" dot={{ r: 3 }} />
                                                 </LineChart>
                                             </ResponsiveContainer>
                                         </Box>
                                     </Box>
                                 </Stack>
                             ) : (
-                                <Box sx={{ mb: 4, height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                                <Box sx={{ mb: 4, height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                                     <Typography variant="body2" color="text.secondary">
-                                        No performance data available
+                                        No performance data available — run the test to populate metrics.
                                     </Typography>
                                 </Box>
                             )}
 
+                            {/* Variant comparison table — game metrics */}
+                            <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>Variant Comparison</Typography>
                             <Table size="small">
                                 <TableHead>
                                     <TableRow>
                                         <TableCell>Variant</TableCell>
-                                        <TableCell>Installs</TableCell>
-                                        <TableCell>Spend</TableCell>
+                                        <TableCell align="right">Avg DAU</TableCell>
+                                        <TableCell align="right">Sessions</TableCell>
+                                        <TableCell align="right">Revenue</TableCell>
+                                        <TableCell align="right">D1 Ret</TableCell>
                                         <TableCell>
-                                            CPI
-                                            <Tooltip title={tooltip.cpi}><IconButton size="small" sx={{ ml: 0.5 }}><InfoOutlinedIcon fontSize="inherit" /></IconButton></Tooltip>
-                                        </TableCell>
-                                        <TableCell>D1 Ret</TableCell>
-                                        <TableCell>
-                                            ROAS D7
-                                            <Tooltip title={tooltip.roas7}><IconButton size="small" sx={{ ml: 0.5 }}><InfoOutlinedIcon fontSize="inherit" /></IconButton></Tooltip>
-                                        </TableCell>
-                                        <TableCell>
-                                            Lift vs Control
+                                            Lift
                                             <Tooltip title={tooltip.lift}><IconButton size="small" sx={{ ml: 0.5 }}><InfoOutlinedIcon fontSize="inherit" /></IconButton></Tooltip>
                                         </TableCell>
                                         <TableCell>p-value</TableCell>
-                                        <TableCell>Signif%</TableCell>
+                                        <TableCell>Signif</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
                                     {variantsData.length > 0 ? (
-                                        variantsData.map((v) => (
+                                        variantsData.map((v: any) => (
                                             <TableRow key={v.name}>
-                                                <TableCell>{v.name}</TableCell>
-                                                <TableCell>{v.installs.toLocaleString()}</TableCell>
-                                                <TableCell>${v.spend.toLocaleString()}</TableCell>
-                                                <TableCell>{v.cpi.toFixed(2)}</TableCell>
-                                                <TableCell>{v.d1}</TableCell>
-                                                <TableCell>{v.roas7}</TableCell>
+                                                <TableCell><strong>{v.name}</strong></TableCell>
+                                                <TableCell align="right">{(v.dau ?? 0).toLocaleString()}</TableCell>
+                                                <TableCell align="right">{(v.sessions ?? 0).toLocaleString()}</TableCell>
+                                                <TableCell align="right">${(v.revenue ?? 0).toFixed(2)}</TableCell>
+                                                <TableCell align="right">{v.d1}</TableCell>
                                                 <TableCell>{v.lift}</TableCell>
                                                 <TableCell>{v.p}</TableCell>
                                                 <TableCell>{v.signif}</TableCell>
@@ -501,10 +476,8 @@ export const DeveloperTestDetail: React.FC = () => {
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={9} align="center">
-                                                <Typography variant="body2" color="text.secondary">
-                                                    No variant data available
-                                                </Typography>
+                                            <TableCell colSpan={8} align="center">
+                                                <Typography variant="body2" color="text.secondary">No variant data</Typography>
                                             </TableCell>
                                         </TableRow>
                                     )}
@@ -557,8 +530,7 @@ export const DeveloperTestDetail: React.FC = () => {
                     <Typography>Facebook Campaign</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
-                    <Typography variant="subtitle1" fontWeight="bold">Facebook Campaign</Typography>
-                    <Typography variant="body2" color="text.secondary">Campaign details will be displayed here.</Typography>
+                    {id && <FacebookCampaignSection testId={id} readonly={false} />}
                 </AccordionDetails>
             </Accordion>
 
