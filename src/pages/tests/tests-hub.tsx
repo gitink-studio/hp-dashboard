@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useAuthenticated } from "react-admin";
 import {
     Box,
     Button,
@@ -44,6 +45,7 @@ type TestRow = {
 };
 
 export const TestsHub: React.FC = () => {
+    useAuthenticated();
     const navigate = useNavigate();
     // Keep UI identical: same two visible selects for Game and Platform
     // Internally mirror developer dashboard filters and cascading behavior
@@ -223,7 +225,8 @@ export const TestsHub: React.FC = () => {
     // Fetch games like developer dashboard
     const fetchGames = async (currentFilters: typeof filters) => {
         try {
-            const studioId = localStorage.getItem("studioId") || undefined;
+            const userRole = (localStorage.getItem("userRole") || "").toLowerCase();
+            const studioId = userRole === "publisher" ? undefined : (localStorage.getItem("studioId") || undefined);
             const response = await fetch(GRAPHQL_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -342,6 +345,8 @@ export const TestsHub: React.FC = () => {
         setGame(value);
         setFilters(prev => ({ ...prev, game: value }));
     };
+
+    if (!localStorage.getItem("userName")) return null;
 
     return (
         <Box p={3} mt={6}>

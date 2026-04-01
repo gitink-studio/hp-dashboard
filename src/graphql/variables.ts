@@ -87,7 +87,8 @@ const GET_ALL_ADMIN_DASHBOARD_DATA = (params: any) => {
 
 // New Dashboard Variables
 const GET_DASHBOARD_FILTERS = (_params: any) => {
-  const studioId = localStorage.getItem('studioId') || undefined;
+  const userRole = localStorage.getItem('userRole') || '';
+  const studioId = userRole === 'publisher' ? undefined : (localStorage.getItem('studioId') || undefined);
   return {
     filters: { studioId }
   };
@@ -111,7 +112,10 @@ const GET_PUBLISHER_GAMES_LIST = (params: any) => {
 };
 
 const GET_PORTFOLIO_KPIS = (params: any) => {
-  const studioId = params.filter?.studioId || localStorage.getItem('studioId') || undefined;
+  const userRole = localStorage.getItem('userRole') || '';
+  const studioId = userRole === 'publisher'
+    ? undefined
+    : (params.filter?.studioId || localStorage.getItem('studioId') || undefined);
   return {
     filters: {
       studioId,
@@ -126,7 +130,10 @@ const GET_PORTFOLIO_KPIS = (params: any) => {
 };
 
 const GET_GAMES_LIST = (params: any) => {
-  const studioId = params.filter?.studioId || localStorage.getItem('studioId') || undefined;
+  const userRole = localStorage.getItem('userRole') || '';
+  const studioId = userRole === 'publisher'
+    ? undefined
+    : (params.filter?.studioId || localStorage.getItem('studioId') || undefined);
   return {
     filters: {
       studioId,
@@ -158,7 +165,8 @@ const GET_PUBLISHER_KPIS = (params: any) => {
 
 // Separate Dashboard Variables
 const GET_DEVELOPER_DASHBOARD_DATA = (_params: any) => {
-  const studioId = localStorage.getItem('studioId') || undefined;
+  const userRole = localStorage.getItem('userRole') || '';
+  const studioId = userRole === 'publisher' ? undefined : (localStorage.getItem('studioId') || undefined);
   return {
     filters: { studioId }
   };

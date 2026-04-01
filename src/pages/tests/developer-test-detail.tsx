@@ -1,4 +1,5 @@
 import React from "react";
+import { useAuthenticated } from "react-admin";
 import {
     Box,
     Typography,
@@ -62,6 +63,7 @@ const tooltip = {
 };
 
 export const DeveloperTestDetail: React.FC = () => {
+    useAuthenticated();
     const { id } = useParams();
     const navigate = useNavigate();
 
@@ -298,6 +300,8 @@ export const DeveloperTestDetail: React.FC = () => {
             playtime: { mean: new Array(9).fill(0), dates: [] },
         };
     }, [chartData]);
+
+    if (!localStorage.getItem("userName")) return null;
 
     if (loading) {
         return (

@@ -29,7 +29,7 @@ import {
   CheckCircle,
   Schedule
 } from '@mui/icons-material';
-import { useGetList, useNotify } from 'react-admin';
+import { useGetList, useNotify, useAuthenticated } from 'react-admin';
 import { QueryNames, CONTRACT_TYPES, PAYOUT_TYPES, APPROVAL_TYPES } from '../../common/constants';
 import { formatDecimalNumber } from '../../common/utils';
 import { AdvancedDateFilter } from '../../components/dashboard/advanced-date-filter';
@@ -64,12 +64,14 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export const PublisherDashboard = () => {
-  // Check user role for access control
+  useAuthenticated();
   const userRole = localStorage.getItem("userRole");
 
   // Normalize role for case-insensitive comparison
   const normalizedRole = userRole ? userRole.toLowerCase().trim() : '';
   const isPublisher = normalizedRole === 'publisher' || normalizedRole.includes('publisher');
+
+  if (!localStorage.getItem("userName")) return null;
 
   // Redirect non-publisher users
   if (!isPublisher) {

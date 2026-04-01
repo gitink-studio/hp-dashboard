@@ -47,6 +47,7 @@ export const SignUpForm = ({
   const [studios, setStudios] = useState<Array<{ id: string; name: string }>>([]);
   const [loadingRoles, setLoadingRoles] = useState(false);
   const [loadingStudios, setLoadingStudios] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<string>("");
 
   const handleClose = () => {
     setState(false);
@@ -136,23 +137,26 @@ export const SignUpForm = ({
 
   const handleSignUp = async (data: any) => {
     let email: any = data.email;
-    console.log(data);
+    const isPublisher = data.role?.toLowerCase() === "publisher";
 
     if (!data.role) {
       return notify("Please select a role", { type: "error" });
     }
 
-    if (!data.studio || !String(data.studio).trim()) {
-      return notify("Please enter a studio name", { type: "error" });
-    }
+    let studioName: string | undefined;
 
-    const selectedStudio = studios.find(
-      (s) => s.name.toLowerCase().trim() === String(data.studio).toLowerCase().trim()
-    );
-    if (!selectedStudio) {
-      return notify("Please enter a valid studio name from the list", { type: "error" });
+    if (!isPublisher) {
+      if (!data.studio || !String(data.studio).trim()) {
+        return notify("Please enter a studio name", { type: "error" });
+      }
+      const selectedStudio = studios.find(
+        (s) => s.name.toLowerCase().trim() === String(data.studio).toLowerCase().trim()
+      );
+      if (!selectedStudio) {
+        return notify("Please enter a valid studio name from the list", { type: "error" });
+      }
+      studioName = selectedStudio.name;
     }
-    const studioName = selectedStudio.name;
 
     if (await isUserAlreadyExist(email)) {
       return notify("User already exist!", { type: "error" });
@@ -160,12 +164,11 @@ export const SignUpForm = ({
 
     createAccount({
       name: data.name,
-      studio: studioName,
+      ...(studioName && { studio: studioName }),
       email: email,
       password: data.password,
       role: data.role,
     });
-    console.log("Signup button clicked");
   };
 
   return (
@@ -203,14 +206,6 @@ export const SignUpForm = ({
                 label="Name"
                 validate={[required(), minLength(3)]}
               />
-              <TextInput
-                source="studio"
-                label="Studio"
-                placeholder={loadingStudios ? "Loading studios..." : "Enter studio name (must match exactly)"}
-                validate={[required(), studioNameValidator(studios)]}
-                disabled={loadingStudios}
-                fullWidth
-              />
               <SelectInput
                 source="role"
                 label="Role"
@@ -218,7 +213,18 @@ export const SignUpForm = ({
                 validate={[required()]}
                 disabled={loadingRoles}
                 emptyText={loadingRoles ? "Loading roles..." : "Select a role"}
+                onChange={(e: any) => setSelectedRole(e.target.value)}
               />
+              {selectedRole.toLowerCase() !== "publisher" && (
+                <TextInput
+                  source="studio"
+                  label="Studio"
+                  placeholder={loadingStudios ? "Loading studios..." : "Enter studio name (must match exactly)"}
+                  validate={[required(), studioNameValidator(studios)]}
+                  disabled={loadingStudios}
+                  fullWidth
+                />
+              )}
               <TextInput
                 source="email"
                 label="Email"

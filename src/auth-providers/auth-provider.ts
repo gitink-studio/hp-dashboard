@@ -42,16 +42,13 @@ export const authProvider: AuthProvider = {
     return Promise.reject();
   },
   logout: () => {
-    // Clear all user data from localStorage
     removeLocalData("userName");
     removeLocalData("userRole");
     removeLocalData("userRoleId");
     removeLocalData("userId");
     removeLocalData("userStudio");
-
-    // Redirect to login page and resolve the promise
-    window.location.href = '/#/login';
-    return Promise.resolve();
+    removeLocalData(STUDIO_ID);
+    return Promise.resolve('/login');
   },
   checkError: ({ status }: { status: number }) => {
     if (status === 401 || status === 403) {
@@ -60,7 +57,8 @@ export const authProvider: AuthProvider = {
       removeLocalData("userRoleId");
       removeLocalData("userId");
       removeLocalData("userStudio");
-      return Promise.reject();
+      removeLocalData(STUDIO_ID);
+      return Promise.reject({ redirectTo: '/login' });
     }
 
     return Promise.resolve();
@@ -70,11 +68,26 @@ export const authProvider: AuthProvider = {
     if (userName) {
       return Promise.resolve();
     }
-    // If no user name, redirect to login page
-    window.location.href = '/#/login';
-    return Promise.reject();
+    return Promise.reject({ redirectTo: '/login' });
   },
-  getPermissions: () => Promise.resolve(),
+  getPermissions: () => {
+    const userRole = localStorage.getItem("userRole") || '';
+    return Promise.resolve(userRole);
+  },
+  getIdentity: () => {
+    const userName = localStorage.getItem("userName");
+    const userRole = localStorage.getItem("userRole") || '';
+    if (!userName) {
+      return Promise.reject(new Error("Not authenticated"));
+    }
+    return Promise.resolve({
+      id: localStorage.getItem("userId") || userName,
+      fullName: localStorage.getItem("userStudio")
+        ? `${userName} (${localStorage.getItem("userStudio")})`
+        : userName,
+      avatar: undefined,
+    });
+  },
 };
 
 function removeLocalData(key: string) {

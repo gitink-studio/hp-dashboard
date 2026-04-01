@@ -1,4 +1,5 @@
 import { useState, ReactNode } from 'react';
+import { useAuthenticated } from 'react-admin';
 import {
     Box,
     Tabs,
@@ -28,6 +29,7 @@ const TabPanel = ({ value, index, children }: TabPanelProps) => {
 }
 
 export const PlayTests = (): JSX.Element => {
+    useAuthenticated();
     const [tabIndex, setTabIndex] = useState<number>(0);
     const { setSelectedGameSubmissionPage } = usePlayTestsActions();
 
@@ -41,6 +43,8 @@ export const PlayTests = (): JSX.Element => {
         setTabIndex(newIndex);
         setSelectedGameSubmissionPage(newIndex === 0 ? GameSubmissionPage.WEB_GAME_SUBMISSION_PAGE : GameSubmissionPage.MOBILE_GAME_SUBMISSION_PAGE)
     };
+
+    if (!localStorage.getItem("userName")) return null;
 
     return (
         <Box p={3}>

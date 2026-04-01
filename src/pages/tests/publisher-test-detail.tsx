@@ -1,4 +1,5 @@
 import React from "react";
+import { useAuthenticated } from "react-admin";
 import {
     Box,
     Typography,
@@ -44,6 +45,7 @@ const tooltip = {
 };
 
 export const PublisherTestDetail: React.FC = () => {
+    useAuthenticated();
     const { id } = useParams();
     const navigate = useNavigate();
 
@@ -288,6 +290,8 @@ export const PublisherTestDetail: React.FC = () => {
         // Implement save report logic
         console.log('Saving report for test:', id);
     };
+
+    if (!localStorage.getItem("userName")) return null;
 
     if (loading) {
         return (

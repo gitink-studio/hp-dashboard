@@ -1,4 +1,5 @@
 import { QueryNames, GRAPHQL_URL } from "../../common/constants";
+import { useAuthenticated } from "react-admin";
 import { Stack, Typography, Box, Grid, FormControl, Select, MenuItem } from "@mui/material";
 import { useState, useEffect } from "react";
 import { PlatformFilter } from "../../components/dashboard/platform-filter";
@@ -17,12 +18,14 @@ import { ReportsHub } from "../../components/reports/reports-hub";
 import { GamesList } from "../../components/dashboard/games-list";
 
 export const Dashboard = () => {
-  // Check user role for access control
+  useAuthenticated();
   const userRole = localStorage.getItem("userRole");
 
   // Normalize role for case-insensitive comparison
   const normalizedRole = userRole ? userRole.toLowerCase().trim() : '';
   const isDeveloper = normalizedRole === 'developer' || normalizedRole.includes('developer');
+
+  if (!localStorage.getItem("userName")) return null;
 
   // Redirect non-developer users
   if (!isDeveloper) {

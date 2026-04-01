@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography, Alert, Button } from '@mui/material';
+import { useAuthenticated } from 'react-admin';
 import { ReportsHub } from '../../components/reports/reports-hub';
 import { DeveloperReports } from '../../components/reports/developer-reports';
 import { PublisherReports } from '../../components/reports/publisher-reports';
@@ -16,6 +17,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
   gameName,
   initialFilters
 }) => {
+  useAuthenticated();
   const rawUserRole = localStorage.getItem("userRole");
   console.log('🔍 Raw user role from localStorage:', rawUserRole);
   console.log('🔍 All localStorage values:', {
@@ -70,6 +72,8 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
     dateRange: urlDateRange || initialFilters?.dateRange || 'Last 30d',
     currency: urlCurrency || 'USD'
   });
+
+  if (!localStorage.getItem("userName")) return null;
 
   // Check user role and redirect if necessary
   if (!userRole) {

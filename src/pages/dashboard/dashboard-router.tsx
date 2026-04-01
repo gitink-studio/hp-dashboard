@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography, CircularProgress } from '@mui/material';
+import { useAuthenticated } from 'react-admin';
 
 export const DashboardRouter: React.FC = () => {
+  useAuthenticated();
   const navigate = useNavigate();
   const userRole = localStorage.getItem("userRole");
 
@@ -36,6 +38,8 @@ export const DashboardRouter: React.FC = () => {
 
     return () => clearTimeout(timer);
   }, [userRole, navigate]);
+
+  if (!localStorage.getItem("userName")) return null;
 
   return (
     <Box 
