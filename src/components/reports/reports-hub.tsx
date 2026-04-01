@@ -37,6 +37,7 @@ import {
 } from '@mui/icons-material';
 import { exportReportData } from '../../common/export-utils';
 import { reportsService } from '../../services/reports.service';
+import { getReportsHubRole } from '../../common/role-utils';
 
 interface ReportItem {
   id: string;
@@ -63,14 +64,15 @@ export const ReportsHub: React.FC<ReportsHubProps> = ({
   onOpenReport,
   onOpenGameAnalyticsImport
 }) => {
-  const userRole = localStorage.getItem("userRole") as 'developer' | 'publisher';
-  
+  const rawRole = localStorage.getItem("userRole");
+  const reportsRole = getReportsHubRole(rawRole);
+
   // Filter state
   const [reportFilters, setReportFilters] = useState({
     platform: filters.platform || 'All',
     subPlatform: filters.subPlatform || 'All',
     game: filters.game || gameName || 'All',
-    studio: userRole === 'publisher' ? 'All' : 'Current Studio',
+    studio: reportsRole === 'publisher' ? 'All' : 'Current Studio',
     region: filters.region || 'All',
     dateRange: filters.dateRange || 'Last 30d',
     currency: filters.currency || 'USD'
@@ -84,7 +86,7 @@ export const ReportsHub: React.FC<ReportsHubProps> = ({
 
   // Generate reports from configuration (fallback)
   const generateReportsFromConfig = useCallback(() => {
-    if (!userRole || (userRole !== 'developer' && userRole !== 'publisher')) {
+    if (!reportsRole) {
       setOpenReports([]);
       setSavedReports([]);
       return;
@@ -98,7 +100,7 @@ export const ReportsHub: React.FC<ReportsHubProps> = ({
     const availableReports = getAvailableReports(
       reportFilters.platform,
       reportFilters.subPlatform,
-      userRole,
+      reportsRole,
       configuration
     );
 
@@ -109,7 +111,7 @@ export const ReportsHub: React.FC<ReportsHubProps> = ({
       lastRun: new Date().toISOString().split('T')[0],
       status: 'Open' as const,
       game: gameName || 'Pickle Ball Clash',
-      studio: userRole === 'publisher' ? 'Studio A' : undefined
+      studio: reportsRole === 'publisher' ? 'Studio A' : undefined
     }));
 
     const mockSavedReports: ReportItem[] = [
@@ -120,7 +122,7 @@ export const ReportsHub: React.FC<ReportsHubProps> = ({
         lastRun: '2024-03-25',
         status: 'Saved',
         game: gameName || 'Pickle Ball Clash',
-        studio: userRole === 'publisher' ? 'Studio A' : undefined
+        studio: reportsRole === 'publisher' ? 'Studio A' : undefined
       },
       {
         id: 'saved-2',
@@ -129,17 +131,17 @@ export const ReportsHub: React.FC<ReportsHubProps> = ({
         lastRun: '2024-03-20',
         status: 'Saved',
         game: gameName || 'Pickle Ball Clash',
-        studio: userRole === 'publisher' ? 'Studio A' : undefined
+        studio: reportsRole === 'publisher' ? 'Studio A' : undefined
       }
     ];
 
     setOpenReports(mockOpenReports);
     setSavedReports(mockSavedReports);
-  }, [userRole, gameName, reportFilters.platform, reportFilters.subPlatform]);
+  }, [reportsRole, gameName, reportFilters.platform, reportFilters.subPlatform]);
 
   // Fetch reports data from backend
   const fetchReportsData = useCallback(async () => {
-    if (!userRole || (userRole !== 'developer' && userRole !== 'publisher')) {
+    if (!reportsRole) {
       setOpenReports([]);
       setSavedReports([]);
       return;
@@ -154,8 +156,8 @@ export const ReportsHub: React.FC<ReportsHubProps> = ({
 
     setLoading(true);
     try {
-      console.log('Fetching reports with filters:', reportFilters, 'userRole:', userRole);
-      const result = await reportsService.getReportsHub(reportFilters, userRole);
+      console.log('Fetching reports with filters:', reportFilters, 'reportsRole:', reportsRole);
+      const result = await reportsService.getReportsHub(reportFilters, reportsRole);
       console.log('Reports API response:', result);
       setOpenReports(result.openReports || []);
       setSavedReports(result.savedReports || []);
@@ -166,7 +168,7 @@ export const ReportsHub: React.FC<ReportsHubProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [userRole, reportFilters]);
+  }, [reportsRole, reportFilters, generateReportsFromConfig]);
 
   useEffect(() => {
     fetchReportsData();
@@ -240,14 +242,14 @@ export const ReportsHub: React.FC<ReportsHubProps> = ({
     (report.game && report.game.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  if (!userRole || (userRole !== 'developer' && userRole !== 'publisher')) {
+  if (!reportsRole) {
     return (
       <Box sx={{ p: 2, textAlign: 'center' }}>
         <Alert severity="error">
           Access Denied: Reports are only available for developer and publisher users.
         </Alert>
         <Typography variant="body2" sx={{ mt: 1 }}>
-          Your role: {userRole || 'Not set'}
+          Your role: {rawRole || 'Not set'}
         </Typography>
       </Box>
     );
@@ -334,7 +336,7 @@ export const ReportsHub: React.FC<ReportsHubProps> = ({
                 </Select>
               </FormControl>
             </Grid>
-            {userRole === 'publisher' && (
+            {reportsRole === 'publisher' && (
               <>
                 <Grid item xs={12} sm={6} md={2}>
                   <FormControl fullWidth size="small">
@@ -388,7 +390,7 @@ export const ReportsHub: React.FC<ReportsHubProps> = ({
                 </Select>
               </FormControl>
             </Grid>
-            {userRole === 'publisher' && (
+            {reportsRole === 'publisher' && (
               <Grid item xs={12} sm={6} md={2}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Currency</InputLabel>
@@ -443,7 +445,7 @@ export const ReportsHub: React.FC<ReportsHubProps> = ({
               <TableHead>
                 <TableRow>
                   <TableCell>Title</TableCell>
-                  {userRole === 'publisher' && <TableCell>Studio</TableCell>}
+                  {reportsRole === 'publisher' && <TableCell>Studio</TableCell>}
                   <TableCell>Game</TableCell>
                   <TableCell>Type</TableCell>
                   <TableCell>Last Run</TableCell>
@@ -459,7 +461,7 @@ export const ReportsHub: React.FC<ReportsHubProps> = ({
                         {report.title}
                       </Typography>
                     </TableCell>
-                    {userRole === 'publisher' && (
+                    {reportsRole === 'publisher' && (
                       <TableCell>{report.studio || '—'}</TableCell>
                     )}
                     <TableCell>{report.game}</TableCell>
@@ -519,7 +521,7 @@ export const ReportsHub: React.FC<ReportsHubProps> = ({
               <TableHead>
                 <TableRow>
                   <TableCell>Title</TableCell>
-                  {userRole === 'publisher' && <TableCell>Studio</TableCell>}
+                  {reportsRole === 'publisher' && <TableCell>Studio</TableCell>}
                   <TableCell>Game</TableCell>
                   <TableCell>Type</TableCell>
                   <TableCell>Last Run</TableCell>
@@ -535,7 +537,7 @@ export const ReportsHub: React.FC<ReportsHubProps> = ({
                         {report.title}
                       </Typography>
                     </TableCell>
-                    {userRole === 'publisher' && (
+                    {reportsRole === 'publisher' && (
                       <TableCell>{report.studio || '—'}</TableCell>
                     )}
                     <TableCell>{report.game}</TableCell>

@@ -21,12 +21,18 @@ import {
   Divider,
 } from "@mui/material";
 import { ExitToApp, AdminPanelSettings, LogoutRounded, LogoutSharp, PeopleOutline, VerifiedUserRounded, Person } from "@mui/icons-material";
+import { isPublisherRole, useUserRole } from "../../common/role-utils";
 
 const CustomAppBar = () => {
   const resources = useResourceDefinitions();
   const userName = localStorage.getItem("userName");
-  const userRole = localStorage.getItem("userRole");
+  const userRole = useUserRole();
   const isAdmin = userRole?.toLowerCase().includes('admin') || userRole?.toLowerCase().includes('administrator');
+
+  const navResourceNames = Object.keys(resources).filter((name) => {
+    if (name === "gameplay-reports") return isPublisherRole(userRole);
+    return true;
+  });
 
   return (
     <AppBar position="fixed">
@@ -35,7 +41,7 @@ const CustomAppBar = () => {
           <Typography variant="subtitle1" fontWeight="bold">Hyper Rabbit</Typography>
 
           <Stack direction={'row'} gap={3}>
-            {Object.keys(resources).map((name) => (
+            {navResourceNames.map((name) => (
               <MenuItemLink
                 key={name}
                 to={`/${name}`}

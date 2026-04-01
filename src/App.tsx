@@ -1,4 +1,3 @@
-import { useSyncExternalStore } from "react";
 import { Admin, defaultDarkTheme, defaultLightTheme, Resource } from "react-admin";
 import { DeviceList } from "./pages/devices/device-list";
 import { dataProvider } from "./data-providers/data-provider";
@@ -9,7 +8,8 @@ import { GamePlatformList } from "./pages/game-platforms/game-platform-list";
 import { GameList } from "./pages/games/game-list";
 import { GamePlatformCreate } from "./pages/game-platforms/game-platform-create";
 import { GameCreate } from "./pages/games/game-create";
-import { QueryNames, APP_AUTH_CHANGED_EVENT } from "./common/constants";
+import { QueryNames } from "./common/constants";
+import { isPublisherRole, useUserRole } from "./common/role-utils";
 import CustomLayout from "./components/layouts/CustomLayout";
 import { authProvider } from "./auth-providers/auth-provider";
 import { LoginPage } from "./pages/auth/login-page";
@@ -29,32 +29,18 @@ import { CustomRoutes } from "react-admin";
 import { SDKDetails } from "./pages/sdk/sdk-details";
 import { SubmitWebGameDetails } from "./pages/submit-web-game/submit-web-game-details";
 import { PlayTests } from "./pages/play-tests/play-tests";
-import { GameplayReportPage } from "./pages/gameplay-reports/gameplay-report-page";
 import { PlayerReport } from "./pages/gameplay-reports/player-report";
+import { PublisherGameplayReportsPage } from "./components/routes/publisher-gameplay-reports-page";
 import { createTheme } from "@mui/material";
 import { customStyle } from "./common/styles";
 import { light } from "@mui/material/styles/createPalette";
 // import { ResetPasswordPage } from "./pages/auth/reset-password-page";
 
-function subscribeRoleRefresh(onStoreChange: () => void) {
-  const run = () => onStoreChange();
-  window.addEventListener("hashchange", run);
-  window.addEventListener(APP_AUTH_CHANGED_EVENT, run);
-  return () => {
-    window.removeEventListener("hashchange", run);
-    window.removeEventListener(APP_AUTH_CHANGED_EVENT, run);
-  };
-}
-
-function readUserRoleSnapshot() {
-  return localStorage.getItem("userRole") ?? "";
-}
-
 export const App = () => {
-  const userRole = useSyncExternalStore(subscribeRoleRefresh, readUserRoleSnapshot, readUserRoleSnapshot);
+  const userRole = useUserRole();
   const lower = userRole.toLowerCase();
   const isAdmin = lower.includes("admin") || lower.includes("administrator");
-  const isPublisher = lower.includes("publisher");
+  const isPublisher = isPublisherRole(userRole);
 
   return (
     <Admin
@@ -105,13 +91,11 @@ export const App = () => {
       />
 
 
-      {
-        isPublisher && <Resource
-          name="gameplay-reports"
-          list={GameplayReportPage}
-          options={{ label: "Gameplay Reports" }}
-        />
-      }
+      <Resource
+        name="gameplay-reports"
+        list={PublisherGameplayReportsPage}
+        options={{ label: "Gameplay Reports" }}
+      />
 
 
       {/* Tests Hub */}
