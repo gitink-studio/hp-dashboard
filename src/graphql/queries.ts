@@ -600,7 +600,7 @@ const Roles = gql`
     roles {
       id
       name
-      permissions
+      description
     }
   }
 `;

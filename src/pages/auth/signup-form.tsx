@@ -214,7 +214,7 @@ export const SignUpForm = ({
               <SelectInput
                 source="role"
                 label="Role"
-                choices={roles.map(role => ({ id: role.name, name: role.name.charAt(0).toUpperCase() + role.name.slice(1) }))}
+                choices={roles.filter(role => role.name.toLowerCase() !== 'admin').map(role => ({ id: role.name, name: role.name.charAt(0).toUpperCase() + role.name.slice(1) }))}
                 validate={[required()]}
                 disabled={loadingRoles}
                 emptyText={loadingRoles ? "Loading roles..." : "Select a role"}
