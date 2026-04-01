@@ -252,6 +252,7 @@ export const TestsHub: React.FC = () => {
                             dateRange: currentFilters.dateRange,
                             startDate: '2024-08-15',
                             endDate: '2024-09-14',
+                            launchedOnly: true,
                         },
                     },
                 }),
