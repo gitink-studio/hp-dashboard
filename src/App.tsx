@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import { Admin, defaultDarkTheme, defaultLightTheme, Resource } from "react-admin";
 import { DeviceList } from "./pages/devices/device-list";
 import { dataProvider } from "./data-providers/data-provider";
@@ -8,14 +9,13 @@ import { GamePlatformList } from "./pages/game-platforms/game-platform-list";
 import { GameList } from "./pages/games/game-list";
 import { GamePlatformCreate } from "./pages/game-platforms/game-platform-create";
 import { GameCreate } from "./pages/games/game-create";
-import { QueryNames } from "./common/constants";
+import { QueryNames, APP_AUTH_CHANGED_EVENT } from "./common/constants";
 import CustomLayout from "./components/layouts/CustomLayout";
 import { authProvider } from "./auth-providers/auth-provider";
 import { LoginPage } from "./pages/auth/login-page";
 import { AdminDashboard } from "./pages/dashboard/admin-dashboard";
 import { Dashboard } from "./pages/dashboard/dashboard";
 import { PublisherDashboard } from "./pages/dashboard/publisher-dashboard";
-import { DashboardRouter } from "./pages/dashboard/dashboard-router";
 import { ReportsPage } from "./pages/reports/reports-page";
 import { ReportConfigurationPage } from "./pages/admin/report-configuration-page";
 import { AdvancedReportConfiguration } from "./pages/admin/advanced-report-configuration";
@@ -36,11 +36,25 @@ import { customStyle } from "./common/styles";
 import { light } from "@mui/material/styles/createPalette";
 // import { ResetPasswordPage } from "./pages/auth/reset-password-page";
 
+function subscribeRoleRefresh(onStoreChange: () => void) {
+  const run = () => onStoreChange();
+  window.addEventListener("hashchange", run);
+  window.addEventListener(APP_AUTH_CHANGED_EVENT, run);
+  return () => {
+    window.removeEventListener("hashchange", run);
+    window.removeEventListener(APP_AUTH_CHANGED_EVENT, run);
+  };
+}
+
+function readUserRoleSnapshot() {
+  return localStorage.getItem("userRole") ?? "";
+}
+
 export const App = () => {
-  const userRole = localStorage.getItem("userRole");
-  const isAdmin = userRole?.toLowerCase().includes('admin') || userRole?.toLowerCase().includes('administrator');
-  const isPublisher = userRole?.toLowerCase().includes('publisher');
-  const isDeveloper = userRole?.toLowerCase().includes('developer');
+  const userRole = useSyncExternalStore(subscribeRoleRefresh, readUserRoleSnapshot, readUserRoleSnapshot);
+  const lower = userRole.toLowerCase();
+  const isAdmin = lower.includes("admin") || lower.includes("administrator");
+  const isPublisher = lower.includes("publisher");
 
   return (
     <Admin
@@ -54,25 +68,22 @@ export const App = () => {
       authProvider={authProvider}
       loginPage={<LoginPage />}
     >
-      {/* Dashboard Router - Redirects to appropriate dashboard */}
-      <Resource
-        name={QueryNames.GET_ALL_DASHBOARD_DATA}
-        list={DashboardRouter}
-        options={{ label: "Dashboard" }}
-      />
-
-      {/* Dashboard Resources - Always available, access controlled by components */}
-      <Resource
-        name={QueryNames.GET_DEVELOPER_DASHBOARD_DATA}
-        list={Dashboard}
-        options={{ label: "Developer Dashboard" }}
-      />
-
-      <Resource
-        name={QueryNames.GET_PUBLISHER_DASHBOARD_DATA}
-        list={PublisherDashboard}
-        options={{ label: "Publisher Dashboard" }}
-      />
+      {/* Single "Dashboard" nav item: publisher vs developer (non-publishers use developer dashboard, incl. admin) */}
+      {isPublisher ? (
+        <Resource
+          key="dashboard-publisher"
+          name={QueryNames.GET_PUBLISHER_DASHBOARD_DATA}
+          list={PublisherDashboard}
+          options={{ label: "Dashboard" }}
+        />
+      ) : (
+        <Resource
+          key="dashboard-developer"
+          name={QueryNames.GET_DEVELOPER_DASHBOARD_DATA}
+          list={Dashboard}
+          options={{ label: "Dashboard" }}
+        />
+      )}
 
       {/* Admin-only resources */}
       {/* <Resource

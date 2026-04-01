@@ -69,7 +69,13 @@ export const SignUpForm = ({
       });
 
       if (response && Array.isArray(response)) {
-        setRoles(response);
+        const byName = new Map<string, { id: string; name: string }>();
+        for (const r of response) {
+          if (!r?.name) continue;
+          const key = String(r.name).toLowerCase().trim();
+          if (!byName.has(key)) byName.set(key, r);
+        }
+        setRoles([...byName.values()]);
       } else {
         console.error('Invalid roles response:', response);
         notify('Failed to load roles', { type: 'error' });

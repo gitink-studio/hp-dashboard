@@ -39,6 +39,9 @@ const getPlatformColor = (platform?: string): 'default' | 'primary' | 'success' 
 };
 
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Box,
   Typography,
   IconButton,
@@ -57,9 +60,10 @@ import {
   Button,
   Card,
   CardContent,
-  Collapse,
   Chip,
-  CircularProgress
+  CircularProgress,
+  Stack,
+  Collapse,
 } from '@mui/material';
 import {
   Assessment,
@@ -99,10 +103,10 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
   // State for managing expanded studios (accordion)
   const [expandedStudios, setExpandedStudios] = useState<Set<string>>(new Set());
 
-  // State for revenue by geo and payout summary data
-  const [revenueByGeoData, setRevenueByGeoData] = useState<any[]>([]);
-  const [payoutSummaryData, setPayoutSummaryData] = useState<any>(null);
-  const [loadingStudioData, setLoadingStudioData] = useState(false);
+  // Per-studio report data (global state caused wrong data when multiple studios)
+  const [studioGeoByKey, setStudioGeoByKey] = useState<Record<string, any[]>>({});
+  const [studioPayoutByKey, setStudioPayoutByKey] = useState<Record<string, any>>({});
+  const [loadingStudioKey, setLoadingStudioKey] = useState<string | null>(null);
 
   // State for game-specific metrics (live data from Hyper Rabbit SDK)
   const [gameMetrics, setGameMetrics] = useState<{ [gameId: string]: any }>({});
@@ -556,101 +560,96 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
     ];
   };
 
-  // Handle studio accordion expansion
-  const handleToggleStudioExpanded = async (studioId: string) => {
-    // Determine expand/collapse based on current state (synchronous click handler)
-    const willExpand = !expandedStudios.has(studioId);
+  const loadStudioReports = async (studioKey: string, studioFilter: string) => {
+    setLoadingStudioKey(studioKey);
+    try {
+      const geoResponse = await fetch(GRAPHQL_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `
+            query RevenueByGeo($filters: PublisherFiltersInput!) {
+              revenueByGeo(filters: $filters) {
+                country
+                installs
+                grossRevenue
+                revenueShare
+                netRevenue
+                payoutDue
+              }
+            }
+          `,
+          variables: {
+            filters: {
+              studio: studioFilter,
+              game: 'All',
+              dateRange: filters.dateRange,
+              currency: filters.currency
+            }
+          }
+        })
+      });
+      const geoResult = await geoResponse.json();
+      const geo = geoResult.data?.revenueByGeo ?? [];
+      setStudioGeoByKey(prev => ({ ...prev, [studioKey]: geo }));
 
-    // Use functional form to avoid stale closure issues during concurrent renders
-    setExpandedStudios(prev => {
-      const updated = new Set(prev);
-      if (updated.has(studioId)) {
-        updated.delete(studioId);
-      } else {
-        updated.add(studioId);
-      }
-      return updated;
-    });
-
-    if (willExpand) {
-      // Fetch studio-level data
-      setLoadingStudioData(true);
-      try {
-        // Fetch revenue by geo
-        const geoResponse = await fetch(GRAPHQL_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            query: `
-              query RevenueByGeo($filters: PublisherFiltersInput!) {
-                revenueByGeo(filters: $filters) {
-                  country
-                  installs
+      const payoutResponse = await fetch(GRAPHQL_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `
+            query PayoutSummary($filters: PublisherFiltersInput!) {
+              payoutSummary(filters: $filters) {
+                totalNet
+                totalPaid
+                totalOutstanding
+                currency
+                studios {
+                  studioId
+                  studioName
                   grossRevenue
-                  revenueShare
                   netRevenue
-                  payoutDue
+                  paid
+                  outstanding
                 }
               }
-            `,
-            variables: {
-              filters: {
-                studio: studioId,
-                game: 'All',
-                dateRange: filters.dateRange,
-                currency: filters.currency
-              }
             }
-          })
-        });
-        const geoResult = await geoResponse.json();
-        if (geoResult.data?.revenueByGeo) {
-          setRevenueByGeoData(geoResult.data.revenueByGeo);
-        }
-
-        // Fetch payout summary
-        const payoutResponse = await fetch(GRAPHQL_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            query: `
-              query PayoutSummary($filters: PublisherFiltersInput!) {
-                payoutSummary(filters: $filters) {
-                  totalNet
-                  totalPaid
-                  totalOutstanding
-                  currency
-                  studios {
-                    studioId
-                    studioName
-                    grossRevenue
-                    netRevenue
-                    paid
-                    outstanding
-                  }
-                }
-              }
-            `,
-            variables: {
-              filters: {
-                studio: studioId,
-                dateRange: filters.dateRange,
-                currency: filters.currency
-              }
+          `,
+          variables: {
+            filters: {
+              studio: studioFilter,
+              dateRange: filters.dateRange,
+              currency: filters.currency
             }
-          })
-        });
-        const payoutResult = await payoutResponse.json();
-        if (payoutResult.data?.payoutSummary) {
-          setPayoutSummaryData(payoutResult.data.payoutSummary);
-        }
-      } catch (error) {
-        console.error('Error fetching studio data:', error);
-      } finally {
-        setLoadingStudioData(false);
-      }
+          }
+        })
+      });
+      const payoutResult = await payoutResponse.json();
+      const payout = payoutResult.data?.payoutSummary ?? null;
+      setStudioPayoutByKey(prev => ({ ...prev, [studioKey]: payout }));
+    } catch (error) {
+      console.error('Error fetching studio data:', error);
+    } finally {
+      setLoadingStudioKey(null);
     }
   };
+
+  /** MUI Accordion passes the target `expanded` state — avoids toggle races with nested <table> rows */
+  const onStudioAccordionChange =
+    (studioKey: string, studioFilter: string) => (_event: React.SyntheticEvent, expanded: boolean) => {
+      setExpandedStudios(prev => {
+        const next = new Set(prev);
+        if (expanded) {
+          next.add(studioKey);
+        } else {
+          next.delete(studioKey);
+        }
+        return next;
+      });
+      if (expanded) {
+        void loadStudioReports(studioKey, studioFilter);
+      }
+    };
 
   const [games, setGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1448,151 +1447,159 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         </Grid>
       </Paper>
 
-      {/* Games List by Studio */}
+      {/* Studio reports: MUI Accordion outside <tbody> — nested rows/divs in one cell broke open/close */}
       <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Studio & Games</TableCell>
-              <TableCell>DAU</TableCell>
-              <TableCell>Gross Revenue</TableCell>
-              <TableCell>Net Revenue</TableCell>
-              {filters.platform !== 'Web' && <TableCell>Installs</TableCell>}
-              {filters.platform !== 'Web' && <TableCell>CPI</TableCell>}
-              <TableCell>Reports</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredGames.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={filters.platform === 'Web' ? 5 : 7} align="center">
-                  <Typography variant="body2" color="textSecondary">
-                    No games found matching the current filters
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              (Object.entries(gamesByStudio) as [string, any[]][]).map(([studioName, games], index) => {
+        {filteredGames.length === 0 ? (
+          <Box sx={{ p: 3, textAlign: 'center' }}>
+            <Typography variant="body2" color="textSecondary">
+              No games found matching the current filters
+            </Typography>
+          </Box>
+        ) : (
+          <>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Studio & Games</TableCell>
+                  <TableCell>DAU</TableCell>
+                  <TableCell>Gross Revenue</TableCell>
+                  <TableCell>Net Revenue</TableCell>
+                  {filters.platform !== 'Web' && <TableCell>Installs</TableCell>}
+                  {filters.platform !== 'Web' && <TableCell>CPI</TableCell>}
+                  <TableCell>Reports</TableCell>
+                </TableRow>
+              </TableHead>
+            </Table>
+            <Stack spacing={2} sx={{ p: 2, pt: 1 }}>
+              {(Object.entries(gamesByStudio) as [string, any[]][]).map(([studioName, games], index) => {
                 const studioDisplayName = studioName;
-                // Prefer studio UUID for stable keying; fall back to studio name
-                const studioId = games[0]?.studio?.id || games[0]?.studioId || studioName;
-                const isStudioExpanded = expandedStudios.has(studioId);
+                const studioKey = games[0]?.studio?.id || games[0]?.studioId || `name:${studioName}`;
+                const studioFilter = games[0]?.studio?.name || studioName;
+                const isStudioExpanded = expandedStudios.has(studioKey);
+                const revenueByGeoData = studioGeoByKey[studioKey] ?? [];
+                const payoutSummaryData = studioPayoutByKey[studioKey];
+                const studioLoading = loadingStudioKey === studioKey;
 
                 return (
-                  <React.Fragment key={`studio-${studioId}-${index}`}>
-                    {/* Studio Header Row - Clickable to expand studio-level data */}
-                    <TableRow
-                      sx={{
-                        backgroundColor: '#f5f5f5',
-                        cursor: 'pointer',
-                        '&:hover': { backgroundColor: '#e8e8e8' }
-                      }}
-                      onClick={() => handleToggleStudioExpanded(studioId)}
+                  <Paper key={`studio-${studioKey}-${index}`} variant="outlined" sx={{ overflow: 'hidden' }}>
+                    <Accordion
+                      expanded={isStudioExpanded}
+                      onChange={onStudioAccordionChange(studioKey, studioFilter)}
+                      disableGutters
+                      elevation={0}
+                      sx={{ '&:before': { display: 'none' } }}
                     >
-                      <TableCell colSpan={filters.platform === 'Web' ? 5 : 7}>
-                        <Box display="flex" alignItems="center">
-                          <IconButton size="small" sx={{ mr: 1 }}>
-                            {isStudioExpanded ? <ExpandLess /> : <ExpandMore />}
-                          </IconButton>
-                          <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                            {studioDisplayName}
-                          </Typography>
-                          <Typography variant="caption" color="textSecondary" sx={{ ml: 2 }}>
-                            {isStudioExpanded ? 'Hide Studio Reports' : 'Show Studio Reports'}
-                          </Typography>
+                      <AccordionSummary
+                        expandIcon={<ExpandMore />}
+                        sx={{
+                          px: 2,
+                          bgcolor: 'grey.100',
+                          '&:hover': { bgcolor: 'grey.200' },
+                        }}
+                      >
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+                          {studioDisplayName}
+                        </Typography>
+                        <Typography variant="caption" color="textSecondary" sx={{ ml: 2 }}>
+                          {isStudioExpanded ? 'Hide studio reports & games' : 'Show studio reports & games'}
+                        </Typography>
+                      </AccordionSummary>
+                      <AccordionDetails sx={{ p: 0, bgcolor: 'grey.50' }}>
+                        <Box sx={{ p: 3 }}>
+                          {studioLoading ? (
+                            <Typography>Loading studio reports...</Typography>
+                          ) : (
+                            <>
+                              {revenueByGeoData.length > 0 && (
+                                <Card sx={{ mb: 2, border: '2px solid #1976d230' }}>
+                                  <CardContent>
+                                    <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', color: '#1976d2' }}>
+                                      🌍 Revenue by Geo - {studioDisplayName}
+                                    </Typography>
+                                    <Table>
+                                      <TableHead>
+                                        <TableRow>
+                                          <TableCell><strong>Country</strong></TableCell>
+                                          <TableCell align="right"><strong>Installs</strong></TableCell>
+                                          <TableCell align="right"><strong>Gross Rev</strong></TableCell>
+                                          <TableCell align="right"><strong>Rev-Share %</strong></TableCell>
+                                          <TableCell align="right"><strong>Net Rev</strong></TableCell>
+                                          <TableCell align="right"><strong>Payout Due</strong></TableCell>
+                                        </TableRow>
+                                      </TableHead>
+                                      <TableBody>
+                                        {revenueByGeoData.map((row: any) => (
+                                          <TableRow key={row.country}>
+                                            <TableCell>{row.country}</TableCell>
+                                            <TableCell align="right">{formatDecimalNumber(row.installs)}</TableCell>
+                                            <TableCell align="right">₹{formatDecimalNumber(row.grossRevenue)}</TableCell>
+                                            <TableCell align="right">{row.revenueShare}%</TableCell>
+                                            <TableCell align="right">₹{formatDecimalNumber(row.netRevenue)}</TableCell>
+                                            <TableCell align="right">₹{formatDecimalNumber(row.payoutDue)}</TableCell>
+                                          </TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  </CardContent>
+                                </Card>
+                              )}
+
+                              {payoutSummaryData && payoutSummaryData.studios && (
+                                <Card sx={{ mb: 2, border: '2px solid #2e7d3230' }}>
+                                  <CardContent>
+                                    <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', color: '#2e7d32' }}>
+                                      💰 Payout Summary - {studioDisplayName}
+                                    </Typography>
+                                    <Typography variant="h6" sx={{ mb: 2 }}>
+                                      Total Net: ₹{formatDecimalNumber(payoutSummaryData.totalNet)} |
+                                      Paid: ₹{formatDecimalNumber(payoutSummaryData.totalPaid)} |
+                                      Outstanding: ₹{formatDecimalNumber(payoutSummaryData.totalOutstanding)}
+                                    </Typography>
+                                    <Table>
+                                      <TableHead>
+                                        <TableRow>
+                                          <TableCell><strong>Studio</strong></TableCell>
+                                          <TableCell align="right"><strong>Gross Rev</strong></TableCell>
+                                          <TableCell align="right"><strong>Net Rev</strong></TableCell>
+                                          <TableCell align="right"><strong>Paid</strong></TableCell>
+                                          <TableCell align="right"><strong>Outstanding</strong></TableCell>
+                                        </TableRow>
+                                      </TableHead>
+                                      <TableBody>
+                                        {payoutSummaryData.studios.map((studio: any) => (
+                                          <TableRow key={studio.studioId}>
+                                            <TableCell>{studio.studioName}</TableCell>
+                                            <TableCell align="right">₹{formatDecimalNumber(studio.grossRevenue)}</TableCell>
+                                            <TableCell align="right">₹{formatDecimalNumber(studio.netRevenue)}</TableCell>
+                                            <TableCell align="right">₹{formatDecimalNumber(studio.paid)}</TableCell>
+                                            <TableCell align="right">₹{formatDecimalNumber(studio.outstanding)}</TableCell>
+                                          </TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  </CardContent>
+                                </Card>
+                              )}
+                            </>
+                          )}
                         </Box>
-                      </TableCell>
-                    </TableRow>
+                      </AccordionDetails>
+                    </Accordion>
 
-                    {/* Studio-Level Reports Accordion */}
-                    <TableRow>
-                      <TableCell colSpan={filters.platform === 'Web' ? 5 : 7} sx={{ p: 0 }}>
-                        <Collapse in={isStudioExpanded} timeout="auto" unmountOnExit>
-                          <Box sx={{ p: 3, backgroundColor: '#fafafa', borderTop: '1px solid #e0e0e0' }}>
-                            {loadingStudioData ? (
-                              <Typography>Loading studio reports...</Typography>
-                            ) : (
-                              <>
-                                {/* Revenue by Geo Section */}
-                                {revenueByGeoData.length > 0 && (
-                                  <Card sx={{ mb: 2, border: '2px solid #1976d230' }}>
-                                    <CardContent>
-                                      <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', color: '#1976d2' }}>
-                                        🌍 Revenue by Geo - {studioDisplayName}
-                                      </Typography>
-                                      <Table>
-                                        <TableHead>
-                                          <TableRow>
-                                            <TableCell><strong>Country</strong></TableCell>
-                                            <TableCell align="right"><strong>Installs</strong></TableCell>
-                                            <TableCell align="right"><strong>Gross Rev</strong></TableCell>
-                                            <TableCell align="right"><strong>Rev-Share %</strong></TableCell>
-                                            <TableCell align="right"><strong>Net Rev</strong></TableCell>
-                                            <TableCell align="right"><strong>Payout Due</strong></TableCell>
-                                          </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                          {revenueByGeoData.map((row: any) => (
-                                            <TableRow key={row.country}>
-                                              <TableCell>{row.country}</TableCell>
-                                              <TableCell align="right">{formatDecimalNumber(row.installs)}</TableCell>
-                                              <TableCell align="right">₹{formatDecimalNumber(row.grossRevenue)}</TableCell>
-                                              <TableCell align="right">{row.revenueShare}%</TableCell>
-                                              <TableCell align="right">₹{formatDecimalNumber(row.netRevenue)}</TableCell>
-                                              <TableCell align="right">₹{formatDecimalNumber(row.payoutDue)}</TableCell>
-                                            </TableRow>
-                                          ))}
-                                        </TableBody>
-                                      </Table>
-                                    </CardContent>
-                                  </Card>
-                                )}
-
-                                {/* Payout Summary Section */}
-                                {payoutSummaryData && payoutSummaryData.studios && (
-                                  <Card sx={{ mb: 2, border: '2px solid #2e7d3230' }}>
-                                    <CardContent>
-                                      <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', color: '#2e7d32' }}>
-                                        💰 Payout Summary - {studioDisplayName}
-                                      </Typography>
-                                      <Typography variant="h6" sx={{ mb: 2 }}>
-                                        Total Net: ₹{formatDecimalNumber(payoutSummaryData.totalNet)} |
-                                        Paid: ₹{formatDecimalNumber(payoutSummaryData.totalPaid)} |
-                                        Outstanding: ₹{formatDecimalNumber(payoutSummaryData.totalOutstanding)}
-                                      </Typography>
-                                      <Table>
-                                        <TableHead>
-                                          <TableRow>
-                                            <TableCell><strong>Studio</strong></TableCell>
-                                            <TableCell align="right"><strong>Gross Rev</strong></TableCell>
-                                            <TableCell align="right"><strong>Net Rev</strong></TableCell>
-                                            <TableCell align="right"><strong>Paid</strong></TableCell>
-                                            <TableCell align="right"><strong>Outstanding</strong></TableCell>
-                                          </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                          {payoutSummaryData.studios.map((studio: any) => (
-                                            <TableRow key={studio.studioId}>
-                                              <TableCell>{studio.studioName}</TableCell>
-                                              <TableCell align="right">₹{formatDecimalNumber(studio.grossRevenue)}</TableCell>
-                                              <TableCell align="right">₹{formatDecimalNumber(studio.netRevenue)}</TableCell>
-                                              <TableCell align="right">₹{formatDecimalNumber(studio.paid)}</TableCell>
-                                              <TableCell align="right">₹{formatDecimalNumber(studio.outstanding)}</TableCell>
-                                            </TableRow>
-                                          ))}
-                                        </TableBody>
-                                      </Table>
-                                    </CardContent>
-                                  </Card>
-                                )}
-                              </>
-                            )}
-                          </Box>
-                        </Collapse>
-                      </TableCell>
-                    </TableRow>
-
-                    {/* Games for this studio */}
+                    <Collapse in={isStudioExpanded} timeout="auto" unmountOnExit>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Studio & Games</TableCell>
+                          <TableCell>DAU</TableCell>
+                          <TableCell>Gross Revenue</TableCell>
+                          <TableCell>Net Revenue</TableCell>
+                          {filters.platform !== 'Web' && <TableCell>Installs</TableCell>}
+                          {filters.platform !== 'Web' && <TableCell>CPI</TableCell>}
+                          <TableCell>Reports</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
                     {games.map((game: any) => (
                       <React.Fragment key={game.id}>
                         {/* Main Game Row */}
@@ -1679,11 +1686,11 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                           </TableCell>
                         </TableRow>
 
-                        {/* Reports Accordion Row */}
+                        {/* Reports row — only when expanded (reliable hide in table layout) */}
+                        {expandedGames.has(game.id) && (
                         <TableRow>
-                          <TableCell colSpan={filters.platform === 'Web' ? 5 : 7} sx={{ p: 0 }}>
-                            <Collapse in={expandedGames.has(game.id)} timeout="auto" unmountOnExit>
-                              <Box sx={{ p: 3, backgroundColor: '#fafafa', borderTop: '1px solid #e0e0e0' }}>
+                          <TableCell colSpan={filters.platform === 'Web' ? 5 : 7} sx={{ p: 0, borderTop: '1px solid #e0e0e0' }}>
+                              <Box sx={{ p: 3, backgroundColor: '#fafafa' }}>
                                 <Typography variant="h5" sx={{ mb: 3, color: '#1976d2', fontWeight: 'bold', textAlign: 'center' }}>
                                   📊 Publisher Reports - {game.name}
                                 </Typography>
@@ -1856,17 +1863,20 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                   ))
                                 )}
                               </Box>
-                            </Collapse>
                           </TableCell>
                         </TableRow>
+                        )}
                       </React.Fragment>
                     ))}
-                  </React.Fragment>
-                )
-              })
-            )}
-          </TableBody>
-        </Table>
+                      </TableBody>
+                    </Table>
+                    </Collapse>
+                  </Paper>
+                );
+              })}
+            </Stack>
+          </>
+        )}
       </TableContainer>
     </Box>
   );

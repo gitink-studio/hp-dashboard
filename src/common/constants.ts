@@ -92,6 +92,8 @@ export const DECIMAL_LENGTH = 2;
 export const MIN_DATE = "2025-07-21";
 export const CREATE_GAME_PLATFORM_URL = "/gamePlatforms/new";
 export const GRAPHQL_CLIENT_OPTION = { uri: ROOT_URL + "/graphql" };
+/** Same-tab: localStorage role updated (login). SPA hash changes do not remount App — listen to re-register Resources. */
+export const APP_AUTH_CHANGED_EVENT = "hyperrabbit-auth-changed";
 export const CREATE_USER_URL = ROOT_URL + "/users/new";
 export const CREATE_GAME_SUBMISSION_DATA_URL = ROOT_URL + "/mobile-game-submission/game-submission/new"
 export const CREATE_TESTING_TERMS_URL = ROOT_URL + "/mobile-game-submission/testing-terms/new"

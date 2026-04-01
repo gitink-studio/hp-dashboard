@@ -1,6 +1,6 @@
 import { AuthProvider } from "react-admin";
 import { FetchData } from "../data-providers/data-provider";
-import { STUDIO_ID } from "../common/constants";
+import { STUDIO_ID, QueryNames, APP_AUTH_CHANGED_EVENT } from "../common/constants";
 
 export const authProvider: AuthProvider = {
   login: async ({ username, password }) => {
@@ -33,8 +33,13 @@ export const authProvider: AuthProvider = {
 
       console.log("Stored user role (normalized):", normalizedRole);
 
-      // Redirect to dashboard router after successful login
-      window.location.href = '/#/getAllDashboardData';
+      // SPA hash-only navigation does not remount <App />; notify so Resources re-register from localStorage.
+      window.dispatchEvent(new Event(APP_AUTH_CHANGED_EVENT));
+
+      // Match App.tsx: one dashboard route per role (resource name = path segment)
+      const dashboardPath =
+        normalizedRole.includes('publisher') ? QueryNames.GET_PUBLISHER_DASHBOARD_DATA : QueryNames.GET_DEVELOPER_DASHBOARD_DATA;
+      window.location.href = `/#/${dashboardPath}`;
 
       return Promise.resolve();
     }
@@ -48,6 +53,7 @@ export const authProvider: AuthProvider = {
     removeLocalData("userId");
     removeLocalData("userStudio");
     removeLocalData(STUDIO_ID);
+    window.dispatchEvent(new Event(APP_AUTH_CHANGED_EVENT));
     return Promise.resolve('/login');
   },
   checkError: ({ status }: { status: number }) => {
@@ -58,6 +64,7 @@ export const authProvider: AuthProvider = {
       removeLocalData("userId");
       removeLocalData("userStudio");
       removeLocalData(STUDIO_ID);
+      window.dispatchEvent(new Event(APP_AUTH_CHANGED_EVENT));
       return Promise.reject({ redirectTo: '/login' });
     }
 

@@ -1,7 +1,8 @@
 import { QueryNames, GRAPHQL_URL } from "../../common/constants";
 import { useAuthenticated } from "react-admin";
-import { Stack, Typography, Box, Grid, FormControl, Select, MenuItem } from "@mui/material";
+import { Stack, Typography, Box, Grid, FormControl, Select, MenuItem, CircularProgress } from "@mui/material";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { PlatformFilter } from "../../components/dashboard/platform-filter";
 import { SubPlatformFilter } from "../../components/dashboard/sub-platform-filter";
 import { GamesFilter } from "../../components/dashboard/games-filter";
@@ -19,24 +20,25 @@ import { GamesList } from "../../components/dashboard/games-list";
 
 export const Dashboard = () => {
   useAuthenticated();
+  const navigate = useNavigate();
   const userRole = localStorage.getItem("userRole");
 
-  // Normalize role for case-insensitive comparison
   const normalizedRole = userRole ? userRole.toLowerCase().trim() : '';
-  const isDeveloper = normalizedRole === 'developer' || normalizedRole.includes('developer');
+  const isPublisher = normalizedRole.includes('publisher');
 
   if (!localStorage.getItem("userName")) return null;
 
-  // Redirect non-developer users
-  if (!isDeveloper) {
+  // Publishers belong on the publisher dashboard (e.g. wrong URL or stale route after login)
+  useEffect(() => {
+    if (isPublisher) {
+      navigate(`/${QueryNames.GET_PUBLISHER_DASHBOARD_DATA}`, { replace: true });
+    }
+  }, [isPublisher, navigate]);
+
+  if (isPublisher) {
     return (
-      <Box sx={{ p: 2, textAlign: 'center' }}>
-        <Typography variant="h6" color="error">
-          Access Denied: This dashboard is only available for developer users.
-        </Typography>
-        <Typography variant="body2" sx={{ mt: 1 }}>
-          Your role: {userRole || 'Not set'}
-        </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 240 }}>
+        <CircularProgress />
       </Box>
     );
   }

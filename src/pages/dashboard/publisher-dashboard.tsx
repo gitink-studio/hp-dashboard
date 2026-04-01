@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -32,8 +33,6 @@ import {
 import { useGetList, useNotify, useAuthenticated } from 'react-admin';
 import { QueryNames, CONTRACT_TYPES, PAYOUT_TYPES, APPROVAL_TYPES } from '../../common/constants';
 import { formatDecimalNumber } from '../../common/utils';
-import { AdvancedDateFilter } from '../../components/dashboard/advanced-date-filter';
-import { AdvancedExport } from '../../components/dashboard/advanced-export';
 import { NotificationSystem } from '../../components/dashboard/notification-system';
 import { PublisherGamesList } from '../../components/publisher/publisher-games-list';
 
@@ -65,33 +64,31 @@ function TabPanel(props: TabPanelProps) {
 
 export const PublisherDashboard = () => {
   useAuthenticated();
+  const navigate = useNavigate();
   const userRole = localStorage.getItem("userRole");
 
-  // Normalize role for case-insensitive comparison
   const normalizedRole = userRole ? userRole.toLowerCase().trim() : '';
-  const isPublisher = normalizedRole === 'publisher' || normalizedRole.includes('publisher');
+  const isPublisher = normalizedRole.includes('publisher');
 
   if (!localStorage.getItem("userName")) return null;
 
-  // Redirect non-publisher users
+  useEffect(() => {
+    if (!isPublisher) {
+      navigate(`/${QueryNames.GET_DEVELOPER_DASHBOARD_DATA}`, { replace: true });
+    }
+  }, [isPublisher, navigate]);
+
   if (!isPublisher) {
     return (
-      <Box sx={{ p: 2, textAlign: 'center' }}>
-        <Typography variant="h6" color="error">
-          Access Denied: This dashboard is only available for publisher users.
-        </Typography>
-        <Typography variant="body2" sx={{ mt: 1 }}>
-          Your role: {userRole || 'Not set'}
-        </Typography>
-        <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
-          Normalized role: {normalizedRole || 'empty'}
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 240 }}>
+        <Typography variant="body2" color="text.secondary">
+          Redirecting…
         </Typography>
       </Box>
     );
   }
 
   const [activeTab, setActiveTab] = useState(0);
-  const [filter] = useState({});
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createType, setCreateType] = useState('');
   const notify = useNotify();
@@ -173,15 +170,9 @@ export const PublisherDashboard = () => {
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" component="h1">
-          Publisher Dashboard
+          Dashboard
         </Typography>
         <Box display="flex" gap={2}>
-          <AdvancedDateFilter
-            source="dateRange"
-            label="Date Range"
-            alwaysOn
-          />
-          <AdvancedExport filter={filter} type="publisher" />
           <NotificationSystem />
         </Box>
       </Box>
