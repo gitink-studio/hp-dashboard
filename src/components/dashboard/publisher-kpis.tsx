@@ -1,5 +1,6 @@
 import { Typography, Box, Grid, CircularProgress, Button } from "@mui/material";
 import { formatDecimalNumber } from "../../common/utils";
+import { formatPublisherMoney, formatPublisherMoneyFixed } from "../../common/currency-utils";
 import { DECIMAL_LENGTH, GRAPHQL_URL } from "../../common/constants";
 import { useState, useEffect } from "react";
 import { AttachMoney, Schedule, Description, Assignment, Notifications, HealthAndSafety } from "@mui/icons-material";
@@ -37,7 +38,6 @@ interface PublisherKPIsProps {
         studio?: string;
         platform?: string;
         subPlatform?: string;
-        region?: string;
         game?: string;
         dateRange?: string;
         currency?: string;
@@ -80,10 +80,9 @@ export const PublisherKPIs = ({ filter }: PublisherKPIsProps) => {
                                 studio: filter?.studio !== 'All' ? filter?.studio : undefined,
                                 platform: filter?.platform ?? 'All',
                                 subPlatform: filter?.subPlatform ?? 'All',
-                                region: filter?.region !== 'All' ? filter?.region : undefined,
                                 game: filter?.game ?? 'All',
                                 dateRange: filter?.dateRange ?? 'Last 30d',
-                                currency: filter?.currency ?? 'USD',
+                                currency: filter?.currency ?? 'INR',
                             },
                         },
                     }),
@@ -108,7 +107,9 @@ export const PublisherKPIs = ({ filter }: PublisherKPIsProps) => {
         };
 
         fetchKPIs();
-    }, [filter?.studio, filter?.platform, filter?.subPlatform, filter?.region, filter?.game, filter?.dateRange, filter?.currency]);
+    }, [filter?.studio, filter?.platform, filter?.subPlatform, filter?.game, filter?.dateRange, filter?.currency]);
+
+    const displayCurrency = filter?.currency ?? 'INR';
 
     if (isLoading) {
         return (
@@ -139,25 +140,25 @@ export const PublisherKPIs = ({ filter }: PublisherKPIsProps) => {
                 <Grid item xs={12} sm={6} md={2}>
                     <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
                         <Typography variant="caption" color="textSecondary">Gross Rev</Typography>
-                        <Typography variant="h6" color="primary">₹{formatDecimalNumber(kpis.grossRevenue)}</Typography>
+                        <Typography variant="h6" color="primary">{formatPublisherMoney(kpis.grossRevenue, displayCurrency)}</Typography>
                     </Box>
                 </Grid>
                 <Grid item xs={12} sm={6} md={2}>
                     <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
                         <Typography variant="caption" color="textSecondary">Net Rev</Typography>
-                        <Typography variant="h6" color="success.main">₹{formatDecimalNumber(kpis.netRevenue)}</Typography>
+                        <Typography variant="h6" color="success.main">{formatPublisherMoney(kpis.netRevenue, displayCurrency)}</Typography>
                     </Box>
                 </Grid>
                 <Grid item xs={12} sm={6} md={2}>
                     <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
                         <Typography variant="caption" color="textSecondary">Payout Due</Typography>
-                        <Typography variant="h6" color="warning.main">₹{formatDecimalNumber(kpis.payoutDue)}</Typography>
+                        <Typography variant="h6" color="warning.main">{formatPublisherMoney(kpis.payoutDue, displayCurrency)}</Typography>
                     </Box>
                 </Grid>
                 <Grid item xs={12} sm={6} md={2}>
                     <Box sx={{ textAlign: 'center', p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
                         <Typography variant="caption" color="textSecondary">eCPM</Typography>
-                        <Typography variant="h6">₹{kpis.ecpm.toFixed(DECIMAL_LENGTH)}</Typography>
+                        <Typography variant="h6">{formatPublisherMoneyFixed(kpis.ecpm, displayCurrency, DECIMAL_LENGTH)}</Typography>
                     </Box>
                 </Grid>
                 <Grid item xs={12} sm={6} md={2}>

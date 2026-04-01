@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useAuthenticated } from "react-admin";
 import {
     Box,
@@ -16,7 +16,6 @@ import {
     TableRow,
     TableCell,
     TableBody,
-    Stack,
     Dialog,
     DialogTitle,
     DialogContent,
@@ -26,49 +25,171 @@ import {
     Alert,
     Grid,
     Tooltip,
+    Paper,
 } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import { FilterList } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { AdvancedDateFilter } from "../../components/dashboard/advanced-date-filter";
 import { GRAPHQL_URL, ROOT_URL } from "../../common/constants";
+import { isPublisherRole } from "../../common/role-utils";
 
 type TestRow = {
     id: string;
+    gameId: string;
     title: string;
     type: "CPI" | "Feature" | "Monetize";
     variants: number;
     startDate: string;
+    rawStartDate: string;
     status: "Testing" | "Completed";
     primaryMetric: string;
     gameName: string;
     gamePlatform: string;
 };
 
+/** Inclusive bounds for filtering tests by start date (same presets as developer dashboard). */
+function getDateRangeBounds(dateRange: string): { start: Date; end: Date } | null {
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+    const start = new Date();
+
+    switch (dateRange) {
+        case "Today":
+            start.setHours(0, 0, 0, 0);
+            return { start, end };
+        case "Yesterday": {
+            start.setDate(start.getDate() - 1);
+            start.setHours(0, 0, 0, 0);
+            const yEnd = new Date(start);
+            yEnd.setHours(23, 59, 59, 999);
+            return { start, yEnd };
+        }
+        case "Last 7d":
+        case "7d":
+            start.setDate(start.getDate() - 7);
+            start.setHours(0, 0, 0, 0);
+            return { start, end };
+        case "Last 14d":
+        case "14d":
+            start.setDate(start.getDate() - 14);
+            start.setHours(0, 0, 0, 0);
+            return { start, end };
+        case "Last 30d":
+        case "30d":
+            start.setDate(start.getDate() - 30);
+            start.setHours(0, 0, 0, 0);
+            return { start, end };
+        case "Last 90d":
+            start.setDate(start.getDate() - 90);
+            start.setHours(0, 0, 0, 0);
+            return { start, end };
+        case "Custom":
+        default:
+            return null;
+    }
+}
+
+const normalizeGameNameKey = (name: string | undefined) => (name || "").trim().toLowerCase();
+
+/** Same disambiguation as `PublisherGamesList` game dropdown. */
+function getPublisherGameFilterOptions(gamesList: any[]): { game: any; label: string }[] {
+    const byId = new Map<string, any>();
+    for (const g of gamesList || []) {
+        if (g?.id != null && g.id !== "" && !byId.has(g.id)) {
+            byId.set(g.id, g);
+        }
+    }
+    const unique = Array.from(byId.values());
+    const nameCounts = new Map<string, number>();
+    for (const g of unique) {
+        const k = normalizeGameNameKey(g.name);
+        nameCounts.set(k, (nameCounts.get(k) || 0) + 1);
+    }
+    return unique.map((g) => {
+        const ambiguousName = (nameCounts.get(normalizeGameNameKey(g.name)) || 0) > 1;
+        const base = g.name || "Untitled";
+        if (!ambiguousName) {
+            return { game: g, label: base };
+        }
+        const plat = g.platform || "Unknown";
+        const sub =
+            g.subPlatform && String(g.platform || "").toLowerCase() === "web"
+                ? ` · ${g.subPlatform}`
+                : "";
+        return { game: g, label: `${base} (${plat}${sub})` };
+    });
+}
+
+/** Developer game filter: when platform is "All", label every row with platform and Web sub-platform. */
+function getDeveloperGameFilterOptions(
+    gamesList: any[],
+    platformFilterIsAll: boolean,
+): { game: any; label: string }[] {
+    const byId = new Map<string, any>();
+    for (const g of gamesList || []) {
+        if (g?.id != null && g.id !== "" && !byId.has(g.id)) {
+            byId.set(g.id, g);
+        }
+    }
+    const unique = Array.from(byId.values());
+    return unique.map((g) => {
+        const base = g.name || "Untitled";
+        if (!platformFilterIsAll) {
+            return { game: g, label: base };
+        }
+        const plat = g.platform || "—";
+        const sub =
+            g.subPlatform && String(g.platform || "").toLowerCase() === "web"
+                ? ` · ${g.subPlatform}`
+                : "";
+        return { game: g, label: `${base} (${plat}${sub})` };
+    });
+}
+
 export const TestsHub: React.FC = () => {
     useAuthenticated();
     const navigate = useNavigate();
-    // Keep UI identical: same two visible selects for Game and Platform
-    // Internally mirror developer dashboard filters and cascading behavior
+    // Same shape and behavior as developer dashboard (`dashboard.tsx`) filter bar
     const [filters, setFilters] = useState({
         platform: "All",
         subPlatform: "All",
         game: "All",
-        dateRange: "Last 30d",
+        dateRange: "Last 90d",
     });
 
     const [platforms, setPlatforms] = useState<any[]>([]);
+    const [subPlatforms, setSubPlatforms] = useState<any[]>([]);
     const [games, setGames] = useState<any[]>([]);
-    const [loading, setLoading] = useState<boolean>(false);
-    const [tests, setTests] = useState<TestRow[]>([]);
+    const [platformsLoading, setPlatformsLoading] = useState(true);
+    const [testsLoading, setTestsLoading] = useState(false);
+    /** Raw rows from GET /tests (studio/gameId/type/status only). Platform/subPlatform/game scope applied in `displayTests`. */
+    const [apiTests, setApiTests] = useState<TestRow[]>([]);
+    /** True until the first `gamesList` response for the current role (avoids empty `games` hiding all rows). */
+    const [devGamesLoading, setDevGamesLoading] = useState(true);
     const [fetchError, setFetchError] = useState<string | null>(null);
-
-    // Map internal platform selection to the UI's platform label when needed
-    const [platform, setPlatform] = useState("All");
-    const [game, setGame] = useState("All");
     const [testStatus, setTestStatus] = React.useState("All");
     const [testType, setTestType] = React.useState("All");
 
-    const userRole = (localStorage.getItem("userRole") || "developer").toLowerCase();
+    /** Publisher filters; `studioId` `"All"` = every studio (default). */
+    const [publisherFilters, setPublisherFilters] = useState({
+        studioId: "All",
+        platform: "All",
+        subPlatform: "All",
+        game: "All",
+        dateRange: "30d",
+    });
+    const [studios, setStudios] = useState<any[]>([]);
+    const [publisherStudiosLoading, setPublisherStudiosLoading] = useState(false);
+    /** Start true so we do not apply an empty `games` list before the first publisher fetch. */
+    const [loadingPublisherGames, setLoadingPublisherGames] = useState(true);
+
+    const rawUserRole = localStorage.getItem("userRole") || "";
+    const lowerRole = rawUserRole.toLowerCase().trim();
+    const publisherUser = isPublisherRole(rawUserRole);
+    const adminUser =
+        lowerRole.includes("admin") || lowerRole.includes("administrator");
+    /** Developers (and similar) see only their studio; publishers and admins see all. */
+    const scopeTestsToStudio = !publisherUser && !adminUser;
 
     // ── New Test dialog ──────────────────────────────────────────────────────
     const [newTestOpen, setNewTestOpen] = useState(false);
@@ -157,7 +278,7 @@ export const TestsHub: React.FC = () => {
             setNewTestOpen(false);
             setForm(emptyForm);
             // Navigate to the new test detail page directly
-            const base = userRole === "publisher" ? "/tests/publisher" : "/tests/developer";
+            const base = publisherUser ? "/tests/publisher" : "/tests/developer";
             navigate(`${base}/${created.id}`);
         } catch (err: any) {
             setSubmitError(err.message || "Failed to create test. Please try again.");
@@ -176,14 +297,13 @@ export const TestsHub: React.FC = () => {
     // ────────────────────────────────────────────────────────────────────────
 
     const handleOpenDetail = (row: TestRow) => {
-        const base = userRole === "publisher" ? "/tests/publisher" : "/tests/developer";
+        const base = publisherUser ? "/tests/publisher" : "/tests/developer";
         navigate(`${base}/${row.id}`);
     };
 
-    // Fetch platforms and sub-platforms (same query as developer dashboard)
+    // Fetch platforms and sub-platforms (same query + fallbacks as developer dashboard)
     useEffect(() => {
         const fetchPlatforms = async () => {
-            setLoading(true);
             try {
                 const response = await fetch(GRAPHQL_URL, {
                     method: 'POST',
@@ -201,32 +321,85 @@ export const TestsHub: React.FC = () => {
                 if (result.errors) {
                     console.error('Error fetching platforms:', result.errors);
                     setPlatforms([
-                        { id: 'All', name: 'All' },
-                        { id: 'apple', name: 'App Store (Apple)' },
-                        { id: 'android', name: 'Play Store (Android)' },
+                        { id: '2', name: 'App Store (Apple)' },
+                        { id: '3', name: 'Play Store (Android)' },
+                        { id: '4', name: 'Web' },
                     ]);
+                    setSubPlatforms([]);
                 } else {
-                    setPlatforms([{ id: 'All', name: 'All' }, ...(result.data.platforms || [])]);
+                    setPlatforms(result.data.platforms || []);
+                    setSubPlatforms(result.data.gamePlatforms || []);
                 }
             } catch (error) {
                 console.error('Error fetching platforms:', error);
                 setPlatforms([
-                    { id: 'All', name: 'All' },
-                    { id: 'apple', name: 'App Store (Apple)' },
-                    { id: 'android', name: 'Play Store (Android)' },
+                    { id: '2', name: 'App Store (Apple)' },
+                    { id: '3', name: 'Play Store (Android)' },
+                    { id: '4', name: 'Web' },
                 ]);
+                setSubPlatforms([]);
             } finally {
-                setLoading(false);
+                setPlatformsLoading(false);
             }
         };
         fetchPlatforms();
     }, []);
 
+    // Studios list for publisher role (same query as publisher dashboard games tab)
+    useEffect(() => {
+        if (!publisherUser) {
+            setStudios([]);
+            return;
+        }
+        let cancelled = false;
+        setPublisherStudiosLoading(true);
+        (async () => {
+            try {
+                const response = await fetch(GRAPHQL_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        query: `
+            query {
+              studios {
+                id
+                name
+                description
+                contactEmail
+                country
+                isActive
+              }
+            }
+          `,
+                    }),
+                });
+                const result = await response.json();
+                if (!cancelled) {
+                    if (result.errors) {
+                        console.error("Error fetching studios:", result.errors);
+                        setStudios([]);
+                    } else {
+                        setStudios(result.data?.studios || []);
+                    }
+                }
+            } catch (e) {
+                console.error("Error fetching studios:", e);
+                if (!cancelled) setStudios([]);
+            } finally {
+                if (!cancelled) setPublisherStudiosLoading(false);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [publisherUser]);
+
     // Fetch games like developer dashboard
     const fetchGames = async (currentFilters: typeof filters) => {
+        setDevGamesLoading(true);
         try {
-            const userRole = (localStorage.getItem("userRole") || "").toLowerCase();
-            const studioId = userRole === "publisher" ? undefined : (localStorage.getItem("studioId") || undefined);
+            const role = localStorage.getItem("userRole") || "";
+            const studioId = isPublisherRole(role) ? undefined : (localStorage.getItem("studioId") || undefined);
             const response = await fetch(GRAPHQL_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -255,6 +428,7 @@ export const TestsHub: React.FC = () => {
                             dateRange: currentFilters.dateRange,
                             startDate: '2024-08-15',
                             endDate: '2024-09-14',
+                            // Launched games only (for test creation); aligns with dashboard game pickers
                             launchedOnly: true,
                         },
                     },
@@ -270,46 +444,192 @@ export const TestsHub: React.FC = () => {
         } catch (error) {
             console.error('Error fetching games:', error);
             setGames([]);
+        } finally {
+            setDevGamesLoading(false);
         }
     };
 
-    // Fetch games when platform or subPlatform changes
-    useEffect(() => {
-        if (platforms.length > 0) {
-            fetchGames(filters);
+    const fetchPublisherGames = async (pf: typeof publisherFilters) => {
+        setLoadingPublisherGames(true);
+        try {
+            const studioScoped =
+                pf.studioId && pf.studioId !== "All" ? pf.studioId : undefined;
+            const queryFilters = {
+                studio: studioScoped,
+                platform: pf.platform !== "All" ? pf.platform : undefined,
+                subPlatform: pf.subPlatform !== "All" ? pf.subPlatform : undefined,
+                dateRange: pf.dateRange,
+                currency: "INR",
+            };
+            const response = await fetch(GRAPHQL_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    query: `
+            query PublisherGamesList($filters: PublisherFiltersInput!) {
+              publisherGamesList(filters: $filters) {
+                id
+                name
+                icon
+                platform
+                subPlatform
+                dau
+                installs
+                cpi
+                revenue
+                studioId
+                studio { id name }
+              }
+            }
+          `,
+                    variables: { filters: queryFilters },
+                }),
+            });
+            const result = await response.json();
+            if (result.errors) {
+                console.error("Error fetching publisher games:", result.errors);
+                setGames([]);
+            } else {
+                const list = [...(result.data?.publisherGamesList || [])].sort(
+                    (a: any, b: any) => (b.dau || 0) - (a.dau || 0),
+                );
+                setGames(list);
+            }
+        } catch (error) {
+            console.error("Error fetching publisher games:", error);
+            setGames([]);
+        } finally {
+            setLoadingPublisherGames(false);
         }
-    }, [filters.platform, filters.subPlatform, platforms.length]);
+    };
+
+    const handlePublisherFilterChange = (
+        filterType: keyof typeof publisherFilters,
+        value: string,
+    ) => {
+        setPublisherFilters((prev) => {
+            const next = { ...prev, [filterType]: value };
+            if (filterType === "platform") {
+                next.subPlatform = "All";
+                next.game = "All";
+            } else if (filterType === "studioId") {
+                next.game = "All";
+            } else if (filterType === "subPlatform") {
+                next.game = "All";
+            }
+            return next;
+        });
+    };
+
+    const handleFilterChange = (filterType: keyof typeof filters, value: string) => {
+        setFilters((prev) => {
+            const next = { ...prev, [filterType]: value };
+            if (filterType === "platform") {
+                next.subPlatform = "All";
+                next.game = "All";
+            }
+            return next;
+        });
+    };
+
+    // Reset game if it is no longer in the list (developer)
+    useEffect(() => {
+        if (publisherUser) return;
+        if (filters.game !== "All" && games.length > 0) {
+            const exists = games.some((g) => g.id === filters.game);
+            if (!exists) {
+                setFilters((prev) => ({ ...prev, game: "All" }));
+            }
+        }
+    }, [publisherUser, games, filters.game]);
+
+    // Reset game if it is no longer in the list (publisher)
+    useEffect(() => {
+        if (!publisherUser) return;
+        if (publisherFilters.game !== "All" && games.length > 0) {
+            const exists = games.some((g) => g.id === publisherFilters.game);
+            if (!exists) {
+                setPublisherFilters((prev) => ({ ...prev, game: "All" }));
+            }
+        }
+    }, [publisherUser, games, publisherFilters.game]);
+
+    // Fetch games when platform or subPlatform changes (developer dashboard parity)
+    useEffect(() => {
+        if (publisherUser || platforms.length === 0) return;
+        fetchGames(filters);
+    }, [publisherUser, filters.platform, filters.subPlatform, platforms.length]);
+
+    // Publisher: scoped games via `publisherGamesList` (same as publisher dashboard)
+    useEffect(() => {
+        if (!publisherUser || platforms.length === 0) return;
+        fetchPublisherGames(publisherFilters);
+    }, [
+        publisherUser,
+        platforms.length,
+        publisherFilters.studioId,
+        publisherFilters.platform,
+        publisherFilters.subPlatform,
+        publisherFilters.dateRange,
+    ]);
 
     // Fetch tests from backend
     useEffect(() => {
         const fetchTests = async () => {
-            setLoading(true);
+            setTestsLoading(true);
             try {
                 const queryParams = new URLSearchParams();
-                if (game !== "All") {
-                    queryParams.append('gameId', game);
-                }
-                if (testType !== "All") {
-                    queryParams.append('type', testType);
-                }
-                if (testStatus !== "All") {
-                    queryParams.append('status', testStatus);
+
+                if (publisherUser) {
+                    const sid = publisherFilters.studioId.trim();
+                    if (sid && sid !== "All") {
+                        queryParams.append("studioId", sid);
+                    }
+                    if (publisherFilters.game !== "All") {
+                        queryParams.append("gameId", publisherFilters.game);
+                    }
+                } else {
+                    if (scopeTestsToStudio) {
+                        const sid = (localStorage.getItem("studioId") || "").trim();
+                        if (!sid) {
+                            setApiTests([]);
+                            setFetchError(null);
+                            setTestsLoading(false);
+                            return;
+                        }
+                        queryParams.append("studioId", sid);
+                    }
+                    // When game is "All", load all tests for the studio; narrow by platform/subPlatform via `games` + displayTests.
+                    if (filters.game !== "All") {
+                        queryParams.append("gameId", filters.game);
+                    }
                 }
 
-                const response = await fetch(`${ROOT_URL}/tests?${queryParams}`, { mode: 'cors' });
+                if (testType !== "All") {
+                    queryParams.append("type", testType);
+                }
+                if (testStatus !== "All") {
+                    queryParams.append("status", testStatus);
+                }
+
+                const response = await fetch(`${ROOT_URL}/tests?${queryParams}`, { mode: "cors" });
                 if (!response.ok) {
                     throw new Error(`Failed to fetch tests (${response.status})`);
                 }
 
                 const data = await response.json();
-                
-                // Transform backend data to frontend format
+
                 const transformedTests: TestRow[] = data.map((test: any) => ({
                     id: test.id,
+                    gameId: test.gameId || test.game?.id || "",
                     title: test.title,
                     type: test.type as "CPI" | "Feature" | "Monetize",
                     variants: test.variants || 1,
-                    startDate: new Date(test.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
+                    rawStartDate: test.startDate,
+                    startDate: new Date(test.startDate).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "short",
+                    }),
                     status: test.status as "Testing" | "Completed",
                     primaryMetric: test.primaryMetric || "CPI",
                     gameName: test.game?.name || "—",
@@ -317,87 +637,395 @@ export const TestsHub: React.FC = () => {
                 }));
 
                 setFetchError(null);
-                setTests(transformedTests);
+                setApiTests(transformedTests);
             } catch (error: any) {
-                console.error('Error fetching tests:', error);
-                const isCors = error instanceof TypeError && error.message.toLowerCase().includes('fetch');
-                setFetchError(isCors
-                    ? 'Could not reach the server. This may be a network or CORS issue — please try again.'
-                    : (error.message || 'Failed to load tests.')
+                console.error("Error fetching tests:", error);
+                const isCors =
+                    error instanceof TypeError && error.message.toLowerCase().includes("fetch");
+                setFetchError(
+                    isCors
+                        ? "Could not reach the server. This may be a network or CORS issue — please try again."
+                        : error.message || "Failed to load tests.",
                 );
-                setTests([]);
+                setApiTests([]);
             } finally {
-                setLoading(false);
+                setTestsLoading(false);
             }
         };
 
         fetchTests();
-    }, [game, testType, testStatus]);
+    }, [
+        publisherUser,
+        publisherFilters.studioId,
+        publisherFilters.game,
+        filters.game,
+        testType,
+        testStatus,
+        scopeTestsToStudio,
+    ]);
 
-    // Handle UI changes while syncing internal filters
-    const onPlatformChange = (value: string) => {
-        setPlatform(value);
-        setFilters(prev => ({ ...prev, platform: value, subPlatform: 'All', game: 'All' }));
-        setGame('All');
-    };
+    const gamesLoadingForScope = publisherUser ? loadingPublisherGames : devGamesLoading;
 
-    const onGameChange = (value: string) => {
-        setGame(value);
-        setFilters(prev => ({ ...prev, game: value }));
-    };
+    /** Hide the tests table until API tests and scoped game list (and base filter data) are ready. */
+    const testsTablePending =
+        testsLoading ||
+        gamesLoadingForScope ||
+        platformsLoading ||
+        (publisherUser && publisherStudiosLoading);
+
+    const displayTests = useMemo(() => {
+        const dateKey = publisherUser ? publisherFilters.dateRange : filters.dateRange;
+        const bounds = getDateRangeBounds(dateKey);
+        let rows = apiTests;
+        if (bounds) {
+            rows = rows.filter((r) => {
+                const sd = new Date(r.rawStartDate);
+                return sd >= bounds.start && sd <= bounds.end;
+            });
+        }
+        const gamePick = publisherUser ? publisherFilters.game : filters.game;
+        if (gamePick !== "All") {
+            return rows.filter((r) => r.gameId === gamePick);
+        }
+        if (gamesLoadingForScope) {
+            return rows;
+        }
+        if (games.length === 0) {
+            return [];
+        }
+        const allowed = new Set(games.map((g) => g.id));
+        return rows.filter((r) => r.gameId && allowed.has(r.gameId));
+    }, [
+        apiTests,
+        games,
+        gamesLoadingForScope,
+        publisherUser,
+        publisherFilters.game,
+        publisherFilters.dateRange,
+        filters.game,
+        filters.dateRange,
+    ]);
+
+    const publisherAvailableSubPlatforms = useMemo(() => {
+        if (publisherFilters.platform !== "Web") return [];
+        const webPlatform = platforms.find((p) => p.name === "Web");
+        if (!webPlatform) return [];
+        return subPlatforms.filter((sp) => sp.platformId === webPlatform.id);
+    }, [publisherFilters.platform, platforms, subPlatforms]);
+
+    const publisherGameOptions = useMemo(() => getPublisherGameFilterOptions(games), [games]);
+
+    const developerGameOptions = useMemo(
+        () => getDeveloperGameFilterOptions(games, filters.platform === "All"),
+        [games, filters.platform],
+    );
+
+    const newTestAllowed = publisherUser
+        ? publisherFilters.platform !== "Web"
+        : filters.platform !== "Web";
 
     if (!localStorage.getItem("userName")) return null;
 
     return (
         <Box p={3} mt={6}>
             <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Tests Hub – {userRole === "publisher" ? "Publisher" : "Developer"}
+                Tests Hub – {publisherUser ? "Publisher" : "Developer"}
             </Typography>
 
-            <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="center">
-                <FormControl size="small" sx={{ minWidth: 220 }}>
-                    <InputLabel>Game</InputLabel>
-                    <Select label="Game" value={game} onChange={(e: SelectChangeEvent) => onGameChange(e.target.value)}>
-                        <MenuItem value="All">All</MenuItem>
-                        {games.map((g: any) => (
-                            <MenuItem key={g.id} value={g.id}>{g.name}</MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
+            {/* Publisher: same filter pattern as publisher dashboard games (`PublisherGamesList`) */}
+            {publisherUser ? (
+                <Paper sx={{ p: 2, mb: 2 }}>
+                    {publisherStudiosLoading && (
+                        <Box sx={{ mb: 2, textAlign: "center" }}>
+                            <Typography variant="body2" color="text.secondary">
+                                Loading studios…
+                            </Typography>
+                        </Box>
+                    )}
+                    <Grid container spacing={2} alignItems="center" sx={{ mb: 1 }}>
+                        <Grid item xs={12} sm={6} md={2}>
+                            <FormControl fullWidth size="small">
+                                <Select
+                                    value={publisherFilters.studioId}
+                                    displayEmpty
+                                    disabled={publisherStudiosLoading}
+                                    onChange={(e) =>
+                                        handlePublisherFilterChange("studioId", e.target.value)
+                                    }
+                                >
+                                    <MenuItem value="All">
+                                        All Studio
+                                        {publisherStudiosLoading
+                                            ? " (Loading…)"
+                                            : studios.length
+                                              ? ` (${studios.length})`
+                                              : ""}
+                                    </MenuItem>
+                                    {studios.map((s: any) => (
+                                        <MenuItem key={s.id} value={s.id}>
+                                            {s.name}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={2}>
+                            <FormControl fullWidth size="small">
+                                <Select
+                                    value={publisherFilters.platform}
+                                    displayEmpty
+                                    disabled={platformsLoading}
+                                    onChange={(e) =>
+                                        handlePublisherFilterChange("platform", e.target.value)
+                                    }
+                                >
+                                    <MenuItem value="All">Platform [ All ▼ ]</MenuItem>
+                                    {platforms.map((p: any) => (
+                                        <MenuItem key={p.id} value={p.name}>
+                                            {p.name}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        {publisherFilters.platform === "Web" && (
+                            <Grid item xs={12} sm={6} md={2}>
+                                <FormControl fullWidth size="small">
+                                    <Select
+                                        value={publisherFilters.subPlatform}
+                                        displayEmpty
+                                        disabled={platformsLoading}
+                                        onChange={(e) =>
+                                            handlePublisherFilterChange("subPlatform", e.target.value)
+                                        }
+                                    >
+                                        <MenuItem value="All">
+                                            Sub Platform [ All ▼ ] (
+                                            {publisherAvailableSubPlatforms.length} options)
+                                        </MenuItem>
+                                        {publisherAvailableSubPlatforms.map((sp: any) => (
+                                            <MenuItem key={sp.id} value={sp.name}>
+                                                {sp.name}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                        )}
+                        <Grid item xs={12} sm={6} md={2}>
+                            <FormControl fullWidth size="small">
+                                <Select
+                                    value={publisherFilters.game}
+                                    displayEmpty
+                                    disabled={loadingPublisherGames}
+                                    onChange={(e) =>
+                                        handlePublisherFilterChange("game", e.target.value)
+                                    }
+                                >
+                                    <MenuItem value="All">
+                                        Game [ All ▼ ]{" "}
+                                        {loadingPublisherGames
+                                            ? "(Loading…)"
+                                            : `(${publisherGameOptions.length} games)`}
+                                    </MenuItem>
+                                    {publisherGameOptions.map(({ game: g, label }) => (
+                                        <MenuItem key={g.id} value={g.id}>
+                                            {label}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={2}>
+                            <FormControl fullWidth size="small">
+                                <Select
+                                    value={publisherFilters.dateRange}
+                                    displayEmpty
+                                    onChange={(e) =>
+                                        handlePublisherFilterChange("dateRange", e.target.value)
+                                    }
+                                >
+                                    <MenuItem value="30d">Date [ 30d ▼ ]</MenuItem>
+                                    <MenuItem value="Today">Today</MenuItem>
+                                    <MenuItem value="Yesterday">Yesterday</MenuItem>
+                                    <MenuItem value="7d">Last 7d</MenuItem>
+                                    <MenuItem value="14d">Last 14d</MenuItem>
+                                    <MenuItem value="30d">Last 30d</MenuItem>
+                                    <MenuItem value="Custom">Custom</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                    </Grid>
+                    <Grid container spacing={2} alignItems="center">
+                        <Grid item xs={12} sm={6} md={2}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel id="tests-pub-status-label">Test Status</InputLabel>
+                                <Select
+                                    labelId="tests-pub-status-label"
+                                    label="Test Status"
+                                    value={testStatus}
+                                    onChange={(e: SelectChangeEvent) => setTestStatus(e.target.value)}
+                                >
+                                    <MenuItem value="All">All</MenuItem>
+                                    <MenuItem value="Testing">Testing</MenuItem>
+                                    <MenuItem value="Completed">Completed</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={2}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel id="tests-pub-type-label">Test Type</InputLabel>
+                                <Select
+                                    labelId="tests-pub-type-label"
+                                    label="Test Type"
+                                    value={testType}
+                                    onChange={(e: SelectChangeEvent) => setTestType(e.target.value)}
+                                >
+                                    <MenuItem value="All">All</MenuItem>
+                                    <MenuItem value="CPI">CPI</MenuItem>
+                                    <MenuItem value="Feature">Feature</MenuItem>
+                                    <MenuItem value="Monetize">Monetize</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                    </Grid>
+                </Paper>
+            ) : (
+                <Box sx={{ mb: 2, p: 2 }}>
+                    <Grid container spacing={2} alignItems="center">
+                        <Grid item>
+                            <FilterList color="primary" />
+                        </Grid>
 
-                <FormControl size="small" sx={{ minWidth: 220 }}>
-                    <InputLabel>Platform</InputLabel>
-                    <Select label="Platform" value={platform} onChange={(e: SelectChangeEvent) => onPlatformChange(e.target.value)}>
-                        {platforms.map((p: any) => (
-                            <MenuItem key={p.id} value={p.name || p.id}>{p.name}</MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
+                        <Grid item>
+                            <FormControl size="small" sx={{ minWidth: 120 }}>
+                                <Select
+                                    value={filters.platform}
+                                    displayEmpty
+                                    onChange={(e) => handleFilterChange("platform", e.target.value)}
+                                    sx={{ "& .MuiSelect-select": { py: 0.5 } }}
+                                    disabled={platformsLoading}
+                                >
+                                    <MenuItem value="All">Platform [ All ▼ ]</MenuItem>
+                                    {platforms.map((p) => (
+                                        <MenuItem key={p.id} value={p.name}>
+                                            {p.name}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid>
 
-                {/* Date Range: match Publisher Dashboard advanced date filter */}
-                <Box sx={{ minWidth: 240 }}>
-                    <AdvancedDateFilter source="dateRange" label="Date Range" alwaysOn hideQuickButtons />
+                        {filters.platform === "Web" && (
+                            <Grid item>
+                                <FormControl size="small" sx={{ minWidth: 140 }}>
+                                    <Select
+                                        value={filters.subPlatform}
+                                        displayEmpty
+                                        onChange={(e) =>
+                                            handleFilterChange("subPlatform", e.target.value)
+                                        }
+                                        sx={{ "& .MuiSelect-select": { py: 0.5 } }}
+                                        disabled={platformsLoading}
+                                    >
+                                        {[
+                                            <MenuItem key="all" value="All">
+                                                All Sub Platform
+                                            </MenuItem>,
+                                            ...subPlatforms
+                                                .filter((sp) => {
+                                                    const webPlatform = platforms.find(
+                                                        (x) => x.name === "Web",
+                                                    );
+                                                    return webPlatform && sp.platformId === webPlatform.id;
+                                                })
+                                                .map((sp) => (
+                                                    <MenuItem key={sp.id} value={sp.name}>
+                                                        {sp.name}
+                                                    </MenuItem>
+                                                )),
+                                        ]}
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                        )}
+
+                        <Grid item>
+                            <FormControl
+                                size="small"
+                                sx={{ minWidth: filters.platform === "All" ? 280 : 120 }}
+                            >
+                                <Select
+                                    value={filters.game}
+                                    displayEmpty
+                                    onChange={(e) => handleFilterChange("game", e.target.value)}
+                                    sx={{ "& .MuiSelect-select": { py: 0.5 } }}
+                                    disabled={platformsLoading}
+                                >
+                                    <MenuItem value="All">Game [ All ▼ ]</MenuItem>
+                                    {developerGameOptions.map(({ game: g, label }) => (
+                                        <MenuItem key={g.id} value={g.id}>
+                                            {label}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+
+                        <Grid item>
+                            <FormControl size="small" sx={{ minWidth: 100 }}>
+                                <Select
+                                    value={filters.dateRange}
+                                    displayEmpty
+                                    onChange={(e) => handleFilterChange("dateRange", e.target.value)}
+                                    sx={{ "& .MuiSelect-select": { py: 0.5 } }}
+                                >
+                                    <MenuItem value="Last 90d">Date [ 90d ▼ ]</MenuItem>
+                                    <MenuItem value="Last 30d">30d</MenuItem>
+                                    <MenuItem value="Last 14d">14d</MenuItem>
+                                    <MenuItem value="Last 7d">7d</MenuItem>
+                                    <MenuItem value="Yesterday">Yesterday</MenuItem>
+                                    <MenuItem value="Today">Today</MenuItem>
+                                    <MenuItem value="Custom">Custom</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+
+                        <Grid item>
+                            <FormControl size="small" sx={{ minWidth: 160 }}>
+                                <InputLabel id="tests-hub-status-label">Test Status</InputLabel>
+                                <Select
+                                    labelId="tests-hub-status-label"
+                                    label="Test Status"
+                                    value={testStatus}
+                                    onChange={(e: SelectChangeEvent) => setTestStatus(e.target.value)}
+                                >
+                                    <MenuItem value="All">All</MenuItem>
+                                    <MenuItem value="Testing">Testing</MenuItem>
+                                    <MenuItem value="Completed">Completed</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+
+                        <Grid item>
+                            <FormControl size="small" sx={{ minWidth: 140 }}>
+                                <InputLabel id="tests-hub-type-label">Test Type</InputLabel>
+                                <Select
+                                    labelId="tests-hub-type-label"
+                                    label="Test Type"
+                                    value={testType}
+                                    onChange={(e: SelectChangeEvent) => setTestType(e.target.value)}
+                                >
+                                    <MenuItem value="All">All</MenuItem>
+                                    <MenuItem value="CPI">CPI</MenuItem>
+                                    <MenuItem value="Feature">Feature</MenuItem>
+                                    <MenuItem value="Monetize">Monetize</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                    </Grid>
                 </Box>
-
-                <FormControl size="small" sx={{ minWidth: 160 }}>
-                    <InputLabel>Test Status</InputLabel>
-                    <Select label="Test Status" value={testStatus} onChange={(e: SelectChangeEvent) => setTestStatus(e.target.value)}>
-                        <MenuItem value="All">All</MenuItem>
-                        <MenuItem value="Testing">Testing</MenuItem>
-                        <MenuItem value="Completed">Completed</MenuItem>
-                    </Select>
-                </FormControl>
-
-                <FormControl size="small" sx={{ minWidth: 140 }}>
-                    <InputLabel>Test Type</InputLabel>
-                    <Select label="Test Type" value={testType} onChange={(e: SelectChangeEvent) => setTestType(e.target.value)}>
-                        <MenuItem value="All">All</MenuItem>
-                        <MenuItem value="CPI">CPI</MenuItem>
-                        <MenuItem value="Feature">Feature</MenuItem>
-                        <MenuItem value="Monetize">Monetize</MenuItem>
-                    </Select>
-                </FormControl>
-            </Stack>
+            )}
 
             <Divider sx={{ my: 3 }} />
 
@@ -411,64 +1039,79 @@ export const TestsHub: React.FC = () => {
                 </Alert>
             )}
 
-            <Table size="small">
-                <TableHead>
-                    <TableRow>
-                        <TableCell>Title</TableCell>
-                        <TableCell>Game</TableCell>
-                        <TableCell>Type</TableCell>
-                        <TableCell>Variants</TableCell>
-                        <TableCell>Start Date</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell>Primary Metric</TableCell>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {loading ? (
+            {testsTablePending ? (
+                <Box
+                    sx={{
+                        py: 6,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 2,
+                        minHeight: 200,
+                    }}
+                >
+                    <CircularProgress size={40} />
+                    <Typography variant="body2" color="text.secondary">
+                        Updating tests for the current filters…
+                    </Typography>
+                </Box>
+            ) : (
+                <Table size="small">
+                    <TableHead>
                         <TableRow>
-                            <TableCell colSpan={7} align="center">Loading tests...</TableCell>
+                            <TableCell>Title</TableCell>
+                            <TableCell>Game</TableCell>
+                            <TableCell>Type</TableCell>
+                            <TableCell>Variants</TableCell>
+                            <TableCell>Start Date</TableCell>
+                            <TableCell>Status</TableCell>
+                            <TableCell>Primary Metric</TableCell>
                         </TableRow>
-                    ) : tests.length === 0 ? (
-                        <TableRow>
-                            <TableCell colSpan={7} align="center">No tests found</TableCell>
-                        </TableRow>
-                    ) : (
-                        tests.map((row) => (
-                            <TableRow key={row.id} hover sx={{ cursor: "pointer" }} onClick={() => handleOpenDetail(row)}>
-                                <TableCell sx={{ color: "primary.main", textDecoration: "underline" }}>{row.title}</TableCell>
-                                <TableCell>
-                                    <Typography variant="body2" fontWeight={500} noWrap>{row.gameName}</Typography>
-                                    {row.gamePlatform !== "—" && (
-                                        <Chip
-                                            label={row.gamePlatform}
-                                            size="small"
-                                            variant="outlined"
-                                            sx={{ mt: 0.25, height: 16, fontSize: 10, borderRadius: 1 }}
-                                        />
-                                    )}
-                                </TableCell>
-                                <TableCell>{row.type}</TableCell>
-                                <TableCell>{row.variants}</TableCell>
-                                <TableCell>{row.startDate}</TableCell>
-                                <TableCell>
-                                    <Chip
-                                        size="small"
-                                        label={row.status}
-                                        color={
-                                            row.status === "Testing" ? "warning" :
-                                            row.status === "Completed" ? "primary" :
-                                            "default"
-                                        }
-                                    />
-                                </TableCell>
-                                <TableCell>{row.primaryMetric}</TableCell>
+                    </TableHead>
+                    <TableBody>
+                        {displayTests.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={7} align="center">No tests found</TableCell>
                             </TableRow>
-                        ))
-                    )}
-                </TableBody>
-            </Table>
+                        ) : (
+                            displayTests.map((row) => (
+                                <TableRow key={row.id} hover sx={{ cursor: "pointer" }} onClick={() => handleOpenDetail(row)}>
+                                    <TableCell sx={{ color: "primary.main", textDecoration: "underline" }}>{row.title}</TableCell>
+                                    <TableCell>
+                                        <Typography variant="body2" fontWeight={500} noWrap>{row.gameName}</Typography>
+                                        {row.gamePlatform !== "—" && (
+                                            <Chip
+                                                label={row.gamePlatform}
+                                                size="small"
+                                                variant="outlined"
+                                                sx={{ mt: 0.25, height: 16, fontSize: 10, borderRadius: 1 }}
+                                            />
+                                        )}
+                                    </TableCell>
+                                    <TableCell>{row.type}</TableCell>
+                                    <TableCell>{row.variants}</TableCell>
+                                    <TableCell>{row.startDate}</TableCell>
+                                    <TableCell>
+                                        <Chip
+                                            size="small"
+                                            label={row.status}
+                                            color={
+                                                row.status === "Testing" ? "warning" :
+                                                row.status === "Completed" ? "primary" :
+                                                "default"
+                                            }
+                                        />
+                                    </TableCell>
+                                    <TableCell>{row.primaryMetric}</TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            )}
 
-            {platform !== "Web" && (
+            {newTestAllowed && (
                 <Box mt={2}>
                     <Button
                         variant="contained"

@@ -9,10 +9,6 @@ import { GamesFilter } from "../../components/dashboard/games-filter";
 import { DateFilter } from "../../components/dashboard/date-filter";
 import { AdvancedDateFilter } from "../../components/dashboard/advanced-date-filter";
 import { PortfolioKPIs } from "../../components/dashboard/portfolio-kpis";
-import { ExportButton } from "../../components/dashboard/export-button";
-import { AdvancedExport } from "../../components/dashboard/advanced-export";
-import { SavedViewsManager } from "../../components/dashboard/saved-views-manager";
-import { RealTimeUpdates } from "../../components/dashboard/real-time-updates";
 import { NotificationSystem } from "../../components/dashboard/notification-system";
 import { FilterList } from "@mui/icons-material";
 import { ReportsHub } from "../../components/reports/reports-hub";
@@ -319,13 +315,6 @@ export const Dashboard = () => {
           {/* Action Buttons */}
           <Grid item sx={{ ml: 'auto' }}>
             <Box display="flex" gap={1}>
-              <RealTimeUpdates onDataUpdate={(data) => console.log('Data updated:', data)} />
-              <SavedViewsManager 
-                currentFilters={filters}
-                onLoadView={(filters) => console.log('Load view:', filters)}
-                onSaveView={(name, filters) => console.log('Save view:', name, filters)}
-              />
-              <AdvancedExport filter={filters} type="portfolio" />
               <NotificationSystem onNotificationClick={(notification) => console.log('Notification clicked:', notification)} />
             </Box>
           </Grid>

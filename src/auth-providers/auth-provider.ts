@@ -1,6 +1,7 @@
 import { AuthProvider } from "react-admin";
 import { FetchData } from "../data-providers/data-provider";
 import { STUDIO_ID, QueryNames, APP_AUTH_CHANGED_EVENT } from "../common/constants";
+import { isAllowedAppRole } from "../common/role-utils";
 
 export const authProvider: AuthProvider = {
   login: async ({ username, password }) => {
@@ -72,10 +73,11 @@ export const authProvider: AuthProvider = {
   },
   checkAuth: () => {
     const userName = localStorage.getItem("userName");
-    if (userName) {
-      return Promise.resolve();
+    const userRole = localStorage.getItem("userRole") || "";
+    if (!userName?.trim() || !isAllowedAppRole(userRole)) {
+      return Promise.reject({ redirectTo: "/login" });
     }
-    return Promise.reject({ redirectTo: '/login' });
+    return Promise.resolve();
   },
   getPermissions: () => {
     const userRole = localStorage.getItem("userRole") || '';

@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { formatDecimalNumber } from '../../common/utils';
+import { formatPublisherMoney, formatPublisherMoneyFixed } from '../../common/currency-utils';
 import { ROOT_URL, GRAPHQL_URL } from '../../common/constants';
 import { PublisherKPIs } from '../dashboard/publisher-kpis';
 
@@ -36,6 +37,37 @@ const getPlatformColor = (platform?: string): 'default' | 'primary' | 'success' 
   if (p === 'ios') return 'primary';
   if (p === 'web') return 'warning';
   return 'default';
+};
+
+const normalizeGameNameKey = (name: string | undefined) => (name || '').trim().toLowerCase();
+
+/** One row per game id; same display name on different platforms gets a disambiguated label. */
+const getPublisherGameFilterOptions = (games: any[]): { game: any; label: string }[] => {
+  const byId = new Map<string, any>();
+  for (const g of games || []) {
+    if (g?.id != null && g.id !== '' && !byId.has(g.id)) {
+      byId.set(g.id, g);
+    }
+  }
+  const unique = Array.from(byId.values());
+  const nameCounts = new Map<string, number>();
+  for (const g of unique) {
+    const k = normalizeGameNameKey(g.name);
+    nameCounts.set(k, (nameCounts.get(k) || 0) + 1);
+  }
+  return unique.map((g) => {
+    const ambiguousName = (nameCounts.get(normalizeGameNameKey(g.name)) || 0) > 1;
+    const base = g.name || 'Untitled';
+    if (!ambiguousName) {
+      return { game: g, label: base };
+    }
+    const plat = g.platform || 'Unknown';
+    const sub =
+      g.subPlatform && String(g.platform || '').toLowerCase() === 'web'
+        ? ` · ${g.subPlatform}`
+        : '';
+    return { game: g, label: `${base} (${plat}${sub})` };
+  });
 };
 
 import {
@@ -91,10 +123,9 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
     studio: "All",
     platform: "All",
     subPlatform: "All",
-    region: "All",
     game: "All",
     dateRange: "30d",
-    currency: "USD"
+    currency: "INR"
   });
 
   // State for managing expanded games (accordion)
@@ -228,6 +259,9 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
     const daily = dailyMetrics[gameId] || [];
 
     const formatNumber = (num: number) => formatDecimalNumber(num);
+    const cur = filters.currency;
+    const money = (n: number) => formatPublisherMoney(Number(n) || 0, cur);
+    const moneyF = (n: number, digits = 2) => formatPublisherMoneyFixed(Number(n) || 0, cur, digits);
 
     const formatDate = (dateStr: string) => {
       const date = new Date(dateStr);
@@ -303,12 +337,12 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
           kpi: {
             // Calculate totals from daily data
             installs: formatNumber(daily.reduce((sum, day) => sum + (day.newUsers || 0), 0)),
-            spend: `₹${formatNumber(daily.reduce((sum, day) => sum + (day.adSpend || 0), 0))}`,
+            spend: money(daily.reduce((sum, day) => sum + (day.adSpend || 0), 0)),
             cpi: (() => {
               const totalInstalls = daily.reduce((sum, day) => sum + (day.newUsers || 0), 0);
               const totalSpend = daily.reduce((sum, day) => sum + (day.adSpend || 0), 0);
               const avgCpi = totalInstalls > 0 ? totalSpend / totalInstalls : 0;
-              return `₹${avgCpi.toFixed(2)}`;
+              return moneyF(avgCpi, 2);
             })()
           },
           table: daily.map(day => {
@@ -329,8 +363,8 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
             return {
               date: formatDate(day.date),
               installs: formatNumber(installs),
-              spend: `₹${formatNumber(spend)}`,
-              cpi: `₹${cpi.toFixed(2)}`
+              spend: money(spend),
+              cpi: moneyF(cpi, 2)
             };
           })
         }
@@ -347,8 +381,8 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
             const totalRevenue = metrics.totalRevenue || 0;
             const roas = totalAdSpend > 0 ? (totalRevenue / totalAdSpend) * 100 : 0;
             return {
-              totalRevenue: `₹${formatNumber(totalRevenue)}`,
-              adSpend: `₹${formatNumber(totalAdSpend)}`,
+              totalRevenue: money(totalRevenue),
+              adSpend: money(totalAdSpend),
               roas: `${roas.toFixed(0)}%`
             };
           })(),
@@ -358,8 +392,8 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
             const roas = adSpend > 0 ? (revenue / adSpend) * 100 : 0;
             return {
               date: formatDate(day.date),
-              adSpend: `₹${formatNumber(adSpend)}`,
-              revenue: `₹${formatNumber(revenue)}`,
+              adSpend: money(adSpend),
+              revenue: money(revenue),
               roas: `${roas.toFixed(0)}%`
             };
           })
@@ -480,15 +514,15 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         color: '#9c27b0',
         data: {
           kpi: {
-            gross: `₹${formatNumber(metrics.totalRevenue || 0)}`,
-            iap: `₹${formatNumber(metrics.iapRevenue || 0)}`,
-            ads: `₹${formatNumber(metrics.adRevenue || 0)}`
+            gross: money(metrics.totalRevenue || 0),
+            iap: money(metrics.iapRevenue || 0),
+            ads: money(metrics.adRevenue || 0)
           },
           table: daily.map(day => ({
             date: formatDate(day.date),
-            gross: formatNumber(day.totalRevenue || 0),
-            iap: formatNumber(day.iapRevenue || 0),
-            ads: formatNumber(day.adRevenue || 0)
+            gross: money(day.totalRevenue || 0),
+            iap: money(day.iapRevenue || 0),
+            ads: money(day.adRevenue || 0)
           }))
         }
       },
@@ -523,17 +557,17 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         color: '#1976d2',
         data: {
           kpi: {
-            gross: `₹${formatNumber(metrics.totalRevenue || 0)}`,
-            net: `₹${formatNumber((metrics.totalRevenue || 0) * 0.7)}`,
-            payoutDue: `₹${formatNumber((metrics.totalRevenue || 0) * 0.6)}`
+            gross: money(metrics.totalRevenue || 0),
+            net: money((metrics.totalRevenue || 0) * 0.7),
+            payoutDue: money((metrics.totalRevenue || 0) * 0.6)
           },
           table: (metrics.geoBreakdown || []).map((geo: any) => ({
             country: geo.country,
             installs: formatNumber(geo.installs || 0),
-            grossRev: `₹${formatNumber(geo.revenue || 0)}`,
+            grossRev: money(geo.revenue || 0),
             revShare: '30%',
-            netRev: `₹${formatNumber((geo.revenue || 0) * 0.7)}`,
-            payoutDue: `₹${formatNumber((geo.revenue || 0) * 0.6)}`
+            netRev: money((geo.revenue || 0) * 0.7),
+            payoutDue: money((geo.revenue || 0) * 0.6)
           }))
         }
       },
@@ -545,13 +579,13 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         color: '#673ab7',
         data: {
           kpi: {
-            ecpm: `₹${(metrics.avgEcpm || 0).toFixed(2)}`,
+            ecpm: moneyF(metrics.avgEcpm || 0, 2),
             fillRate: `${(metrics.fillRate || 0).toFixed(1)}%`,
             impressions: formatNumber(metrics.totalImpressions || 0)
           },
           table: daily.map(day => ({
             date: formatDate(day.date),
-            ecpm: `₹${(day.avgEcpm || 0).toFixed(2)}`,
+            ecpm: moneyF(day.avgEcpm || 0, 2),
             fillRate: `${(day.fillRate || 0).toFixed(1)}%`,
             impressions: formatNumber(day.impressions || 0)
           }))
@@ -651,7 +685,6 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
       }
     };
 
-  const [games, setGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Safety timeout to prevent infinite loading
@@ -847,7 +880,6 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
           studio: undefined,
           platform: undefined,
           subPlatform: undefined,
-          region: undefined,
           game: undefined,
           dateRange: filters.dateRange,
           currency: filters.currency
@@ -887,7 +919,6 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
               (a: any, b: any) => (b.dau || 0) - (a.dau || 0)
             );
             console.log('✅ Initial games loaded:', games.length);
-            setGames(games);
             setAllGames(games);
             setLoading(false);
           }
@@ -905,82 +936,18 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
     loadFilterData();
   }, []);
 
-  // Fetch games based on current filters for display
-  const fetchGames = async (currentFilters: typeof filters) => {
-    try {
-      setLoading(true);
-
-      // Convert "All" to undefined for backend
-      const cleanedFilters = {
-        studio: currentFilters.studio !== 'All' ? currentFilters.studio : undefined,
-        platform: currentFilters.platform !== 'All' ? currentFilters.platform : undefined,
-        subPlatform: currentFilters.subPlatform !== 'All' ? currentFilters.subPlatform : undefined,
-        region: currentFilters.region !== 'All' ? currentFilters.region : undefined,
-        game: currentFilters.game !== 'All' ? currentFilters.game : undefined,
-        dateRange: currentFilters.dateRange,
-        currency: currentFilters.currency
-      };
-
-      const response = await fetch(GRAPHQL_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            query PublisherGamesList($filters: PublisherFiltersInput!) {
-              publisherGamesList(filters: $filters) {
-                id
-                name
-                icon
-                platform
-                subPlatform
-                dau
-                installs
-                cpi
-                revenue
-                studioId
-                studio {
-                  id
-                  name
-                }
-              }
-            }
-          `,
-          variables: {
-            filters: cleanedFilters
-          }
-        })
-      });
-      const result = await response.json();
-      if (result.errors) {
-        console.error('Error fetching games:', result.errors);
-        setGames([]);
-        setAllGames([]);
-      } else {
-        const games = [...(result.data.publisherGamesList || [])].sort(
-          (a: any, b: any) => (b.dau || 0) - (a.dau || 0)
-        );
-        console.log('✅ Fetched games:', games.length);
-        setGames(games);
-        setAllGames(games);
-      }
-    } catch (error) {
-      console.error('Error fetching games:', error);
-      setGames([]);
-      setAllGames([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch available games for the game filter dropdown based on current filters
+  // Games for dropdown + table: scoped by studio / platform / subPlatform (never by selected game).
+  // Selected game only narrows the table client-side so options stay in sync with scope.
   const fetchAvailableGames = async (currentFilters: typeof filters) => {
     try {
       setLoadingAvailableGames(true);
       console.log('🎮 Fetching available games with filters:', currentFilters);
 
-      // Build filter object for the query
-      const studioId = currentFilters.studio !== 'All' ?
-        studios.find(s => s.name === currentFilters.studio)?.id : undefined;
+      // Studio dropdown uses studio.id as value — must pass id through, not lookup by name
+      const studioId =
+        currentFilters.studio !== 'All' && currentFilters.studio
+          ? currentFilters.studio
+          : undefined;
 
       // If we need a studio filter but studios array is empty, skip this fetch
       if (currentFilters.studio !== 'All' && studios.length === 0) {
@@ -993,14 +960,13 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         studio: studioId,
         platform: currentFilters.platform !== 'All' ? currentFilters.platform : undefined,
         subPlatform: currentFilters.subPlatform !== 'All' ? currentFilters.subPlatform : undefined,
-        region: currentFilters.region !== 'All' ? currentFilters.region : undefined,
         dateRange: currentFilters.dateRange,
         currency: currentFilters.currency
       };
 
       console.log('🎯 Studio filter mapping:', {
-        studioName: currentFilters.studio,
-        studioId: studioId,
+        studioFilterValue: currentFilters.studio,
+        studioIdSentToApi: studioId,
         availableStudios: studios.map(s => ({ name: s.name, id: s.id })),
         allFilters: currentFilters
       });
@@ -1058,7 +1024,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
     }
   };
 
-  // Fetch games when filters change
+  // Refetch scoped game list when studio / platform / sub-platform / date / currency change — not when only `game` changes.
   useEffect(() => {
     console.log('🔄 useEffect triggered with:', {
       loadingFilters,
@@ -1069,21 +1035,26 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
 
     if (!loadingFilters) {
       if (platforms.length > 0 && studios.length > 0) {
-        console.log('🔄 Filters changed, fetching games and available games:', filters);
-        fetchGames(filters);
-
-        // Call fetchAvailableGames with error handling
+        console.log('🔄 Scope filters changed, fetching games for dropdown + table:', filters);
         fetchAvailableGames(filters).catch(error => {
           console.error('❌ Error in fetchAvailableGames:', error);
         });
       } else {
         console.log('⚠️ Platforms or studios not loaded yet, setting loading to false and using fallback');
         setLoading(false);
-        // Try to fetch all games as fallback
         fetchAllGames();
       }
     }
-  }, [filters, loadingFilters, platforms.length, studios.length]);
+  }, [
+    loadingFilters,
+    platforms.length,
+    studios.length,
+    filters.studio,
+    filters.platform,
+    filters.subPlatform,
+    filters.dateRange,
+    filters.currency,
+  ]);
 
   const handleFilterChange = (filterType: string, value: string) => {
     console.log(`🎯 handleFilterChange called: ${filterType} = ${value}`);
@@ -1104,34 +1075,21 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
       } else if (filterType === 'subPlatform') {
         console.log(`🔄 Sub-platform changed to: ${value}, resetting game to 'All'`);
         newFilters.game = 'All';
-      } else if (filterType === 'region') {
-        console.log(`🔄 Region changed to: ${value}, resetting game to 'All'`);
-        newFilters.game = 'All';
       }
 
       console.log(`🎯 New filters after ${filterType} change:`, newFilters);
       console.log(`🎯 About to update filters state with:`, newFilters);
 
-      // Call fetchAvailableGames directly with the new filters
-      if (filterType === 'studio' || filterType === 'platform' || filterType === 'subPlatform' || filterType === 'region') {
-        console.log(`🎯 Calling fetchAvailableGames directly for ${filterType} change`);
-        fetchAvailableGames(newFilters).catch(error => {
-          console.error('❌ Error in fetchAvailableGames from handleFilterChange:', error);
-        });
-      }
-
       return newFilters;
     });
   };
 
-  // Get filtered games based on current filters
+  // Table rows: same scope as dropdown (studio / platform / subPlatform), then optional single-game filter
   const getFilteredGames = () => {
-    console.log(`🎮 getFilteredGames called with allGames: ${allGames.length} games`);
-
-    // allGames is already filtered by fetchAvailableGames based on current filters
-    // So we can return it directly without additional filtering
-    console.log(`🎮 getFilteredGames returning ${allGames.length} games (already filtered by fetchAvailableGames)`);
-    return allGames;
+    if (filters.game === 'All') {
+      return allGames;
+    }
+    return allGames.filter((g) => g.id === filters.game);
   };
 
   // Get available games for the game filter dropdown
@@ -1166,6 +1124,10 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
   // Get filtered games for display
   const filteredGames = getFilteredGames();
   const availableGames = getAvailableGames();
+  const gameFilterOptions = useMemo(
+    () => getPublisherGameFilterOptions(availableGames),
+    [allGames]
+  );
   const availableSubPlatforms = getAvailableSubPlatforms();
 
   // Group games by studio
@@ -1236,20 +1198,6 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
       }));
     }
   }, [filters.platform]);
-
-  // Reset game filter if selected game is not available in current games list
-  useEffect(() => {
-    if (filters.game !== 'All' && availableGames.length > 0) {
-      const gameExists = availableGames.some(game => game.id === filters.game);
-      if (!gameExists) {
-        console.log(`🔄 Selected game '${filters.game}' not available, resetting to 'All'`);
-        setFilters(prev => ({
-          ...prev,
-          game: 'All'
-        }));
-      }
-    }
-  }, [availableGames, filters.game]);
 
   if (loading) {
     return (
@@ -1345,33 +1293,17 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
           <Grid item xs={12} sm={6} md={2}>
             <FormControl fullWidth size="small">
               <Select
-                value={filters.region}
-                onChange={(e) => handleFilterChange('region', e.target.value)}
-                displayEmpty
-              >
-                <MenuItem value="All">Region [ All ▼ ]</MenuItem>
-                <MenuItem value="US">US</MenuItem>
-                <MenuItem value="EU">EU</MenuItem>
-                <MenuItem value="APAC">APAC</MenuItem>
-                <MenuItem value="Global">Global</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={2}>
-            <FormControl fullWidth size="small">
-              <Select
                 value={filters.game}
                 onChange={(e) => handleFilterChange('game', e.target.value)}
                 displayEmpty
                 disabled={loadingAvailableGames}
               >
                 <MenuItem value="All">
-                  Game [ All ▼ ] {loadingAvailableGames ? '(Loading...)' : `(${availableGames.length} games)`}
+                  Game [ All ▼ ] {loadingAvailableGames ? '(Loading...)' : `(${gameFilterOptions.length} games)`}
                 </MenuItem>
-                {availableGames.map((game: any) => (
+                {gameFilterOptions.map(({ game, label }) => (
                   <MenuItem key={game.id} value={game.id}>
-                    {game.name}
+                    {label}
                   </MenuItem>
                 ))}
               </Select>
@@ -1406,40 +1338,15 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                 onChange={(e) => handleFilterChange('currency', e.target.value)}
                 displayEmpty
               >
-                <MenuItem value="USD">Currency [ USD ▼ ]</MenuItem>
+                <MenuItem value="INR">Currency [ INR ▼ ]</MenuItem>
+                <MenuItem value="USD">USD</MenuItem>
                 <MenuItem value="EUR">EUR</MenuItem>
                 <MenuItem value="GBP">GBP</MenuItem>
-                <MenuItem value="JPY">JPY</MenuItem>
               </Select>
             </FormControl>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={2}>
-            <FormControl fullWidth size="small">
-              <Select
-                value="Default"
-                displayEmpty
-              >
-                <MenuItem value="Default">Saved View [ Default ▼ ]</MenuItem>
-                <MenuItem value="Custom1">Custom View 1</MenuItem>
-                <MenuItem value="Custom2">Custom View 2</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={2}>
-            <Button variant="outlined" size="small">
-              Save Current
-            </Button>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={2}>
-            <Button variant="outlined" size="small">
-              Manage Views
-            </Button>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid item xs={12} sm={6} md={10}>
             <Typography variant="body2" color="textSecondary">
               {filteredGames.length} games found
             </Typography>
@@ -1532,10 +1439,10 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                           <TableRow key={row.country}>
                                             <TableCell>{row.country}</TableCell>
                                             <TableCell align="right">{formatDecimalNumber(row.installs)}</TableCell>
-                                            <TableCell align="right">₹{formatDecimalNumber(row.grossRevenue)}</TableCell>
+                                            <TableCell align="right">{formatPublisherMoney(row.grossRevenue ?? 0, filters.currency)}</TableCell>
                                             <TableCell align="right">{row.revenueShare}%</TableCell>
-                                            <TableCell align="right">₹{formatDecimalNumber(row.netRevenue)}</TableCell>
-                                            <TableCell align="right">₹{formatDecimalNumber(row.payoutDue)}</TableCell>
+                                            <TableCell align="right">{formatPublisherMoney(row.netRevenue ?? 0, filters.currency)}</TableCell>
+                                            <TableCell align="right">{formatPublisherMoney(row.payoutDue ?? 0, filters.currency)}</TableCell>
                                           </TableRow>
                                         ))}
                                       </TableBody>
@@ -1551,9 +1458,9 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                       💰 Payout Summary - {studioDisplayName}
                                     </Typography>
                                     <Typography variant="h6" sx={{ mb: 2 }}>
-                                      Total Net: ₹{formatDecimalNumber(payoutSummaryData.totalNet)} |
-                                      Paid: ₹{formatDecimalNumber(payoutSummaryData.totalPaid)} |
-                                      Outstanding: ₹{formatDecimalNumber(payoutSummaryData.totalOutstanding)}
+                                      Total Net: {formatPublisherMoney(payoutSummaryData.totalNet ?? 0, filters.currency)} |
+                                      Paid: {formatPublisherMoney(payoutSummaryData.totalPaid ?? 0, filters.currency)} |
+                                      Outstanding: {formatPublisherMoney(payoutSummaryData.totalOutstanding ?? 0, filters.currency)}
                                     </Typography>
                                     <Table>
                                       <TableHead>
@@ -1569,10 +1476,10 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                         {payoutSummaryData.studios.map((studio: any) => (
                                           <TableRow key={studio.studioId}>
                                             <TableCell>{studio.studioName}</TableCell>
-                                            <TableCell align="right">₹{formatDecimalNumber(studio.grossRevenue)}</TableCell>
-                                            <TableCell align="right">₹{formatDecimalNumber(studio.netRevenue)}</TableCell>
-                                            <TableCell align="right">₹{formatDecimalNumber(studio.paid)}</TableCell>
-                                            <TableCell align="right">₹{formatDecimalNumber(studio.outstanding)}</TableCell>
+                                            <TableCell align="right">{formatPublisherMoney(studio.grossRevenue ?? 0, filters.currency)}</TableCell>
+                                            <TableCell align="right">{formatPublisherMoney(studio.netRevenue ?? 0, filters.currency)}</TableCell>
+                                            <TableCell align="right">{formatPublisherMoney(studio.paid ?? 0, filters.currency)}</TableCell>
+                                            <TableCell align="right">{formatPublisherMoney(studio.outstanding ?? 0, filters.currency)}</TableCell>
                                           </TableRow>
                                         ))}
                                       </TableBody>
@@ -1650,20 +1557,20 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                 <Typography variant="caption" color="textSecondary">
                                   (📊) DAU: {formatDecimalNumber(game.dau || 0)}
                                   {filters.platform !== 'Web' && (
-                                    <>  Installs: {formatDecimalNumber(game.installs || 0)}  CPI: ₹{(game.cpi || 0).toFixed(2)}</>
+                                    <>  Installs: {formatDecimalNumber(game.installs || 0)}  CPI: {formatPublisherMoneyFixed(game.cpi || 0, filters.currency, 2)}</>
                                   )}
                                 </Typography>
                               </Box>
                             </Box>
                           </TableCell>
                           <TableCell>{formatDecimalNumber(game.dau || 0)}</TableCell>
-                          <TableCell>₹{formatDecimalNumber(game.revenue || 0)}</TableCell>
-                          <TableCell>₹{formatDecimalNumber((game.revenue || 0) * 0.8)}</TableCell>
+                          <TableCell>{formatPublisherMoney(game.revenue || 0, filters.currency)}</TableCell>
+                          <TableCell>{formatPublisherMoney((game.revenue || 0) * 0.8, filters.currency)}</TableCell>
                           {filters.platform !== 'Web' && (
                             <TableCell>{formatDecimalNumber(game.installs || 0)}</TableCell>
                           )}
                           {filters.platform !== 'Web' && (
-                            <TableCell>₹{formatDecimalNumber(game.cpi || 0)}</TableCell>
+                            <TableCell>{formatPublisherMoneyFixed(game.cpi || 0, filters.currency, 2)}</TableCell>
                           )}
                           <TableCell>
                             <Box display="flex" alignItems="center" justifyContent="space-between">

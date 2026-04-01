@@ -53,6 +53,7 @@ export const App = () => {
       dataProvider={dataProvider}
       authProvider={authProvider}
       loginPage={<LoginPage />}
+      requireAuth
     >
       {/* Single "Dashboard" nav item: publisher vs developer (non-publishers use developer dashboard, incl. admin) */}
       {isPublisher ? (

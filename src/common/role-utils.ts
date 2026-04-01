@@ -27,6 +27,16 @@ export function isDeveloperRole(role: string) {
   return r.includes("developer") || r === "dev" || r.includes("dev");
 }
 
+/** Admin must be checked before isDeveloperRole (e.g. "administrator" contains "dev"). */
+export function isAllowedAppRole(role: string) {
+  const r = role.toLowerCase().trim();
+  if (!r) return false;
+  if (r.includes("admin") || r.includes("administrator")) return true;
+  if (isPublisherRole(role)) return true;
+  if (isDeveloperRole(role)) return true;
+  return false;
+}
+
 /**
  * Bucket for Reports hub + APIs: publisher vs developer.
  * Same rules as reports-page.tsx (substring match, not exact localStorage equality).

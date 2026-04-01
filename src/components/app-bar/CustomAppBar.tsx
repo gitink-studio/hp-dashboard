@@ -30,6 +30,8 @@ const CustomAppBar = () => {
   const isAdmin = userRole?.toLowerCase().includes('admin') || userRole?.toLowerCase().includes('administrator');
 
   const navResourceNames = Object.keys(resources).filter((name) => {
+    // Hidden from navbar only; <Resource name="reports" /> stays in App.tsx
+    if (name === "reports") return false;
     if (name === "gameplay-reports") return isPublisherRole(userRole);
     return true;
   });
