@@ -1,4 +1,6 @@
-import { Admin, defaultDarkTheme, defaultLightTheme, Resource } from "react-admin";
+import { useCallback, useEffect, useLayoutEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Admin, defaultDarkTheme, defaultLightTheme, Resource, useAuthProvider } from "react-admin";
 import { DeviceList } from "./pages/devices/device-list";
 import { dataProvider } from "./data-providers/data-provider";
 import { UserList } from "./pages/users/user-list";
@@ -8,7 +10,7 @@ import { GamePlatformList } from "./pages/game-platforms/game-platform-list";
 import { GameList } from "./pages/games/game-list";
 import { GamePlatformCreate } from "./pages/game-platforms/game-platform-create";
 import { GameCreate } from "./pages/games/game-create";
-import { QueryNames } from "./common/constants";
+import { APP_AUTH_CHANGED_EVENT, QueryNames } from "./common/constants";
 import { isPublisherRole, useUserRole } from "./common/role-utils";
 import CustomLayout from "./components/layouts/CustomLayout";
 import { authProvider } from "./auth-providers/auth-provider";
@@ -36,6 +38,38 @@ import { customStyle } from "./common/styles";
 import { light } from "@mui/material/styles/createPalette";
 // import { ResetPasswordPage } from "./pages/auth/reset-password-page";
 
+/**
+ * UserMenu reads identity from react-query (5m stale). Login only changes the hash, so the SPA keeps a stale cache.
+ * `APP_AUTH_CHANGED_EVENT` can fire while the login route is shown (CoreAdminRoutes not mounted), so we also push
+ * fresh identity from authProvider on layout mount via setQueryData.
+ */
+function AuthIdentityQuerySync() {
+  const queryClient = useQueryClient();
+  const authProvider = useAuthProvider();
+
+  const pushIdentityToCache = useCallback(async () => {
+    if (!authProvider?.getIdentity) return;
+    try {
+      const identity = await authProvider.getIdentity();
+      queryClient.setQueryData(["auth", "getIdentity"], identity);
+    } catch {
+      queryClient.removeQueries({ queryKey: ["auth", "getIdentity"] });
+    }
+  }, [authProvider, queryClient]);
+
+  useLayoutEffect(() => {
+    void pushIdentityToCache();
+  }, [pushIdentityToCache]);
+
+  useEffect(() => {
+    const onAuth = () => void pushIdentityToCache();
+    window.addEventListener(APP_AUTH_CHANGED_EVENT, onAuth);
+    return () => window.removeEventListener(APP_AUTH_CHANGED_EVENT, onAuth);
+  }, [pushIdentityToCache]);
+
+  return null;
+}
+
 export const App = () => {
   const userRole = useUserRole();
   const lower = userRole.toLowerCase();
@@ -55,6 +89,7 @@ export const App = () => {
       loginPage={<LoginPage />}
       requireAuth
     >
+      <AuthIdentityQuerySync />
       {/* Single "Dashboard" nav item: publisher vs developer (non-publishers use developer dashboard, incl. admin) */}
       {isPublisher ? (
         <Resource

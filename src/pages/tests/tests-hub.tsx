@@ -45,6 +45,8 @@ type TestRow = {
     primaryMetric: string;
     gameName: string;
     gamePlatform: string;
+    /** Populated when API includes game.studio (publisher table column). */
+    studioName: string;
 };
 
 /** Inclusive bounds for filtering tests by start date (same presets as developer dashboard). */
@@ -634,6 +636,7 @@ export const TestsHub: React.FC = () => {
                     primaryMetric: test.primaryMetric || "CPI",
                     gameName: test.game?.name || "—",
                     gamePlatform: test.game?.gamePlatform?.name || "—",
+                    studioName: test.game?.studio?.name?.trim() || "—",
                 }));
 
                 setFetchError(null);
@@ -1061,6 +1064,7 @@ export const TestsHub: React.FC = () => {
                     <TableHead>
                         <TableRow>
                             <TableCell>Title</TableCell>
+                            {publisherUser && <TableCell>Studio</TableCell>}
                             <TableCell>Game</TableCell>
                             <TableCell>Type</TableCell>
                             <TableCell>Variants</TableCell>
@@ -1072,12 +1076,17 @@ export const TestsHub: React.FC = () => {
                     <TableBody>
                         {displayTests.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={7} align="center">No tests found</TableCell>
+                                <TableCell colSpan={publisherUser ? 8 : 7} align="center">No tests found</TableCell>
                             </TableRow>
                         ) : (
                             displayTests.map((row) => (
                                 <TableRow key={row.id} hover sx={{ cursor: "pointer" }} onClick={() => handleOpenDetail(row)}>
                                     <TableCell sx={{ color: "primary.main", textDecoration: "underline" }}>{row.title}</TableCell>
+                                    {publisherUser && (
+                                        <TableCell>
+                                            <Typography variant="body2" noWrap>{row.studioName}</Typography>
+                                        </TableCell>
+                                    )}
                                     <TableCell>
                                         <Typography variant="body2" fontWeight={500} noWrap>{row.gameName}</Typography>
                                         {row.gamePlatform !== "—" && (
@@ -1165,9 +1174,18 @@ export const TestsHub: React.FC = () => {
                                                 plt === "android" ? "success" :
                                                 plt === "ios" ? "primary" :
                                                 plt === "web" ? "warning" : "default";
+                                            const studioName = publisherUser && g.studio?.name?.trim();
                                             return (
                                                 <MenuItem key={g.id} value={g.id} sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
                                                     <Typography variant="body2" sx={{ flexShrink: 0 }}>{g.name}</Typography>
+                                                    {studioName && (
+                                                        <Chip
+                                                            label={studioName}
+                                                            size="small"
+                                                            variant="outlined"
+                                                            sx={{ height: 18, fontSize: 10, flexShrink: 0, color: "text.secondary", borderColor: "divider" }}
+                                                        />
+                                                    )}
                                                     {g.platform && (
                                                         <Chip
                                                             label={g.platform}

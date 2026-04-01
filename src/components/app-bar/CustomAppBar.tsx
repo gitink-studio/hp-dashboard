@@ -21,11 +21,12 @@ import {
   Divider,
 } from "@mui/material";
 import { ExitToApp, AdminPanelSettings, LogoutRounded, LogoutSharp, PeopleOutline, VerifiedUserRounded, Person } from "@mui/icons-material";
-import { isPublisherRole, useUserRole } from "../../common/role-utils";
+import { isPublisherRole, useUserName, useUserRole } from "../../common/role-utils";
+import { APP_AUTH_CHANGED_EVENT, STUDIO_ID } from "../../common/constants";
 
 const CustomAppBar = () => {
   const resources = useResourceDefinitions();
-  const userName = localStorage.getItem("userName");
+  const userName = useUserName();
   const userRole = useUserRole();
   const isAdmin = userRole?.toLowerCase().includes('admin') || userRole?.toLowerCase().includes('administrator');
 
@@ -66,6 +67,7 @@ const CustomAppBar = () => {
 
           <UserMenu>
             <MenuItemLink
+              key={`profile-${userName}-${userRole}`}
               to="/"
               primaryText={`${userName || "Guest"} (${userRole})`}
               leftIcon={<Person />}
@@ -82,6 +84,8 @@ const CustomAppBar = () => {
                 localStorage.removeItem("userRoleId");
                 localStorage.removeItem("userId");
                 localStorage.removeItem("userStudio");
+                localStorage.removeItem(STUDIO_ID);
+                window.dispatchEvent(new Event(APP_AUTH_CHANGED_EVENT));
                 window.location.href = '/#/login';
               }}
             />

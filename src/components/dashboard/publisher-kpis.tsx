@@ -42,9 +42,10 @@ interface PublisherKPIsProps {
         dateRange?: string;
         currency?: string;
     };
+    hideActionButtons?: boolean;
 }
 
-export const PublisherKPIs = ({ filter }: PublisherKPIsProps) => {
+export const PublisherKPIs = ({ filter, hideActionButtons = false }: PublisherKPIsProps) => {
     const [kpis, setKpis] = useState<PublisherKPIsData>(defaultKPIs);
     const [isLoading, setIsLoading] = useState(true);
     const [fetchError, setFetchError] = useState<string | null>(null);
@@ -212,14 +213,17 @@ export const PublisherKPIs = ({ filter }: PublisherKPIsProps) => {
                 </Grid>
             </Grid>
 
-            {/* Action Buttons */}
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                <Button variant="outlined" startIcon={<Schedule />} size="small">Payout Schedule</Button>
-                <Button variant="outlined" startIcon={<Description />} size="small">Invoices</Button>
-                <Button variant="outlined" startIcon={<Assignment />} size="small">Contracts</Button>
-                <Button variant="outlined" startIcon={<Notifications />} size="small">Alerts ▼</Button>
-                <Button variant="outlined" startIcon={<HealthAndSafety />} size="small">Data Health ▼</Button>
-            </Box>
+            {!hideActionButtons && (
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <Button variant="outlined" startIcon={<Schedule />} size="small">Payout Schedule</Button>
+                    <Button variant="outlined" startIcon={<Description />} size="small">Invoices</Button>
+                    <Button variant="outlined" startIcon={<Assignment />} size="small">Contracts</Button>
+                    <Button variant="outlined" startIcon={<Notifications />} size="small">Alerts ▼</Button>
+                    <Button variant="outlined" startIcon={<HealthAndSafety />} size="small">Data Health ▼</Button>
+                </Box>
+            )}
         </Box>
     );
 };
+
+export { PublisherKPIs as PublishKPIs };

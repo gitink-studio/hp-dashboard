@@ -1215,7 +1215,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
       {/* Publisher KPIs Section */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <PublisherKPIs filter={filters} />
+          <PublisherKPIs filter={filters} hideActionButtons />
         </CardContent>
       </Card>
 
@@ -1364,19 +1364,6 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
           </Box>
         ) : (
           <>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Studio & Games</TableCell>
-                  <TableCell>DAU</TableCell>
-                  <TableCell>Gross Revenue</TableCell>
-                  <TableCell>Net Revenue</TableCell>
-                  {filters.platform !== 'Web' && <TableCell>Installs</TableCell>}
-                  {filters.platform !== 'Web' && <TableCell>CPI</TableCell>}
-                  <TableCell>Reports</TableCell>
-                </TableRow>
-              </TableHead>
-            </Table>
             <Stack spacing={2} sx={{ p: 2, pt: 1 }}>
               {(Object.entries(gamesByStudio) as [string, any[]][]).map(([studioName, games], index) => {
                 const studioDisplayName = studioName;
@@ -1495,17 +1482,6 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
 
                     <Collapse in={isStudioExpanded} timeout="auto" unmountOnExit>
                     <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Studio & Games</TableCell>
-                          <TableCell>DAU</TableCell>
-                          <TableCell>Gross Revenue</TableCell>
-                          <TableCell>Net Revenue</TableCell>
-                          {filters.platform !== 'Web' && <TableCell>Installs</TableCell>}
-                          {filters.platform !== 'Web' && <TableCell>CPI</TableCell>}
-                          <TableCell>Reports</TableCell>
-                        </TableRow>
-                      </TableHead>
                       <TableBody>
                     {games.map((game: any) => (
                       <React.Fragment key={game.id}>

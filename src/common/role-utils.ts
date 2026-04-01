@@ -15,6 +15,15 @@ export function readUserRoleSnapshot() {
   return localStorage.getItem("userRole") ?? "";
 }
 
+export function readUserNameSnapshot() {
+  return localStorage.getItem("userName") ?? "";
+}
+
+/** Re-renders when login/logout updates `userName` (same signals as `useUserRole`). */
+export function useUserName() {
+  return useSyncExternalStore(subscribeRoleRefresh, readUserNameSnapshot, readUserNameSnapshot);
+}
+
 /** Same rule as dashboard routing: role string contains "publisher" (e.g. DB name "Publisher"). */
 export function isPublisherRole(role: string) {
   return role.toLowerCase().trim().includes("publisher");

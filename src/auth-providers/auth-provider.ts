@@ -85,15 +85,12 @@ export const authProvider: AuthProvider = {
   },
   getIdentity: () => {
     const userName = localStorage.getItem("userName");
-    const userRole = localStorage.getItem("userRole") || '';
     if (!userName) {
       return Promise.reject(new Error("Not authenticated"));
     }
+    // Omit fullName so UserMenu shows icon-only in the app bar; profile text stays in the menu (CustomAppBar).
     return Promise.resolve({
       id: localStorage.getItem("userId") || userName,
-      fullName: localStorage.getItem("userStudio")
-        ? `${userName} (${localStorage.getItem("userStudio")})`
-        : userName,
       avatar: undefined,
     });
   },
