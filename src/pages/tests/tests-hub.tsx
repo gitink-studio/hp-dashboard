@@ -58,6 +58,7 @@ export const TestsHub: React.FC = () => {
     const [games, setGames] = useState<any[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [tests, setTests] = useState<TestRow[]>([]);
+    const [fetchError, setFetchError] = useState<string | null>(null);
 
     // Map internal platform selection to the UI's platform label when needed
     const [platform, setPlatform] = useState("All");
@@ -84,6 +85,17 @@ export const TestsHub: React.FC = () => {
     };
     const [form, setForm] = useState(emptyForm);
     const [formErrors, setFormErrors] = useState<Partial<typeof emptyForm & { variants: string }>>({});
+
+    // Returns today's date as "YYYY-MM-DD" in the user's LOCAL timezone.
+    // new Date().toISOString() returns UTC — for users in UTC+ timezones this
+    // can be "tomorrow" locally, making today unselectable as a start date.
+    const todayLocal = (): string => {
+        const d = new Date();
+        const yyyy = d.getFullYear();
+        const mm   = String(d.getMonth() + 1).padStart(2, "0");
+        const dd   = String(d.getDate()).padStart(2, "0");
+        return `${yyyy}-${mm}-${dd}`;
+    };
 
     const PRIMARY_METRIC_OPTIONS = [
         { value: "CPI", label: "CPI – Cost Per Install" },
@@ -129,6 +141,7 @@ export const TestsHub: React.FC = () => {
 
             const res = await fetch(`${ROOT_URL}/tests`, {
                 method: "POST",
+                mode: 'cors',
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             });
@@ -221,6 +234,8 @@ export const TestsHub: React.FC = () => {
                 id
                 name
                 icon
+                platform
+                subPlatform
                 dau
                 installs
                 cpi
@@ -277,9 +292,9 @@ export const TestsHub: React.FC = () => {
                     queryParams.append('status', testStatus);
                 }
 
-                const response = await fetch(`${ROOT_URL}/tests?${queryParams}`);
+                const response = await fetch(`${ROOT_URL}/tests?${queryParams}`, { mode: 'cors' });
                 if (!response.ok) {
-                    throw new Error('Failed to fetch tests');
+                    throw new Error(`Failed to fetch tests (${response.status})`);
                 }
 
                 const data = await response.json();
@@ -297,9 +312,15 @@ export const TestsHub: React.FC = () => {
                     gamePlatform: test.game?.gamePlatform?.name || "—",
                 }));
 
+                setFetchError(null);
                 setTests(transformedTests);
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Error fetching tests:', error);
+                const isCors = error instanceof TypeError && error.message.toLowerCase().includes('fetch');
+                setFetchError(isCors
+                    ? 'Could not reach the server. This may be a network or CORS issue — please try again.'
+                    : (error.message || 'Failed to load tests.')
+                );
                 setTests([]);
             } finally {
                 setLoading(false);
@@ -377,6 +398,12 @@ export const TestsHub: React.FC = () => {
             <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                 Active / Recent Tests
             </Typography>
+
+            {fetchError && (
+                <Alert severity="error" sx={{ mb: 2 }} onClose={() => setFetchError(null)}>
+                    {fetchError}
+                </Alert>
+            )}
 
             <Table size="small">
                 <TableHead>
@@ -483,17 +510,41 @@ export const TestsHub: React.FC = () => {
                                             No approved games found — launch a game first
                                         </MenuItem>
                                     ) : (
-                                        games.map((g: any) => (
-                                            <MenuItem key={g.id} value={g.id}>
-                                                {g.name}
-                                                <Chip
-                                                    label="Events Active"
-                                                    size="small"
-                                                    color="success"
-                                                    sx={{ ml: 1, height: 18, fontSize: 10 }}
-                                                />
-                                            </MenuItem>
-                                        ))
+                                        games.map((g: any) => {
+                                            const plt = (g.platform || "").toLowerCase();
+                                            const platformColor =
+                                                plt === "android" ? "success" :
+                                                plt === "ios" ? "primary" :
+                                                plt === "web" ? "warning" : "default";
+                                            return (
+                                                <MenuItem key={g.id} value={g.id} sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
+                                                    <Typography variant="body2" sx={{ flexShrink: 0 }}>{g.name}</Typography>
+                                                    {g.platform && (
+                                                        <Chip
+                                                            label={g.platform}
+                                                            size="small"
+                                                            color={platformColor as any}
+                                                            variant="outlined"
+                                                            sx={{ height: 18, fontSize: 10, flexShrink: 0 }}
+                                                        />
+                                                    )}
+                                                    {g.subPlatform && (
+                                                        <Chip
+                                                            label={g.subPlatform}
+                                                            size="small"
+                                                            variant="outlined"
+                                                            sx={{ height: 18, fontSize: 10, flexShrink: 0, color: "text.secondary", borderColor: "divider" }}
+                                                        />
+                                                    )}
+                                                    <Chip
+                                                        label="Events Active"
+                                                        size="small"
+                                                        color="success"
+                                                        sx={{ ml: "auto", height: 18, fontSize: 10, flexShrink: 0 }}
+                                                    />
+                                                </MenuItem>
+                                            );
+                                        })
                                     )}
                                 </Select>
                                 {formErrors.gameId && (
@@ -568,7 +619,7 @@ export const TestsHub: React.FC = () => {
                                 }}
                                 error={!!formErrors.startDate}
                                 helperText={formErrors.startDate}
-                                inputProps={{ min: new Date().toISOString().split("T")[0] }}
+                                inputProps={{ min: todayLocal() }}
                             />
                         </Grid>
 
@@ -587,7 +638,7 @@ export const TestsHub: React.FC = () => {
                                 }}
                                 error={!!formErrors.endDate}
                                 helperText={formErrors.endDate}
-                                inputProps={{ min: form.startDate || new Date().toISOString().split("T")[0] }}
+                                inputProps={{ min: form.startDate || todayLocal() }}
                             />
                         </Grid>
 

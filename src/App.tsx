@@ -21,7 +21,6 @@ import { ReportConfigurationPage } from "./pages/admin/report-configuration-page
 import { AdvancedReportConfiguration } from "./pages/admin/advanced-report-configuration";
 import { SDKConfigurationPage } from "./pages/admin/sdk-configuration-page";
 import { GameAnalyticsImportExport } from "./components/admin/game-analytics-import-export";
-import { AdminRoleSetter } from "./components/admin-role-setter";
 import { TestsHub } from "./pages/tests/tests-hub";
 import { DeveloperTestDetail } from "./pages/tests/developer-test-detail";
 import { PublisherTestDetail } from "./pages/tests/publisher-test-detail";
@@ -204,13 +203,6 @@ export const App = () => {
           />
         </>
       )}
-
-      {/* Testing component - remove in production */}
-      <Resource
-        name="admin-role-setter"
-        list={AdminRoleSetter}
-        options={{ label: "Set Admin Role (Testing)" }}
-      />
     </Admin>
   );
 };

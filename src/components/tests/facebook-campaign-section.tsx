@@ -154,63 +154,49 @@ export const FacebookCampaignSection: React.FC<Props> = ({ testId, readonly = fa
     };
 
     /**
-     * Video upload flow with real S3 progress via Server-Sent Events:
-     *  1. Generate a unique uploadId
-     *  2. Open SSE channel → backend registers a writer for that id
-     *  3. Wait for the "connected" event before sending the file
-     *  4. POST/PUT the file with uploadId in metadata
-     *  5. SSE events stream real S3 progress (pct, loadedMB, totalMB) back
-     *  6. XHR completes → backend has finished → close SSE
+     * Video upload with browser-native XHR progress tracking.
+     * Uses xhr.upload.onprogress — no SSE or persistent connections required,
+     * so it works reliably on AWS App Runner and behind any proxy/load balancer.
      */
-    const uploadWithSseProgress = (
+    const uploadWithProgress = (
         url: string,
         method: string,
         metaPayload: object,
-        uploadId: string,
     ): Promise<void> =>
         new Promise((resolve, reject) => {
-            // Open SSE channel
-            const evtSrc = new EventSource(`${ROOT_URL}/tests/${testId}/facebook-creatives/progress/${uploadId}`);
+            const fd = new FormData();
+            fd.append("creative-video", videoFile!);
+            fd.append("metadata", JSON.stringify(metaPayload));
 
-            evtSrc.onmessage = (e) => {
-                try {
-                    const data = JSON.parse(e.data) as { phase: string; pct?: number; loadedMB?: string; totalMB?: string };
-                    if (data.phase === "connected") {
-                        // Channel ready — now send the file
-                        const fd = new FormData();
-                        fd.append("creative-video", videoFile!);
-                        fd.append("metadata", JSON.stringify({ ...metaPayload, uploadId }));
+            const xhr = new XMLHttpRequest();
 
-                        const xhr = new XMLHttpRequest();
-                        xhr.onload = () => {
-                            evtSrc.close();
-                            if (xhr.status >= 200 && xhr.status < 300) {
-                                setUploadPhase("done");
-                                resolve();
-                            } else {
-                                try { reject(new Error(JSON.parse(xhr.responseText)?.error || `Upload failed (${xhr.status})`)); }
-                                catch { reject(new Error(`Upload failed (${xhr.status})`)); }
-                            }
-                        };
-                        xhr.onerror  = () => { evtSrc.close(); reject(new Error("Network error")); };
-                        xhr.ontimeout = () => { evtSrc.close(); reject(new Error("Upload timed out")); };
-                        xhr.timeout  = 15 * 60 * 1000; // 15 min
-                        xhr.open(method, url);
-                        xhr.send(fd);
-
-                        setUploadPhase("s3");
-                    } else if (data.phase === "s3" && data.pct !== undefined) {
-                        // Real S3 progress from the multipart upload
-                        setUploadPct(data.pct);
-                        setUploadLabel(`${data.loadedMB} / ${data.totalMB} MB`);
-                    }
-                } catch { /* ignore parse errors */ }
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const pct = Math.round((e.loaded / e.total) * 100);
+                    setUploadPct(pct);
+                    const loadedMB = (e.loaded / 1_048_576).toFixed(1);
+                    const totalMB  = (e.total  / 1_048_576).toFixed(1);
+                    setUploadLabel(`${loadedMB} / ${totalMB} MB`);
+                }
             };
 
-            evtSrc.onerror = () => {
-                evtSrc.close();
-                reject(new Error("SSE connection failed — could not track upload progress"));
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    setUploadPhase("done");
+                    resolve();
+                } else {
+                    try { reject(new Error(JSON.parse(xhr.responseText)?.error || `Upload failed (${xhr.status})`)); }
+                    catch { reject(new Error(`Upload failed (${xhr.status})`)); }
+                }
             };
+            xhr.onerror   = () => reject(new Error("Network error during upload"));
+            xhr.ontimeout = () => reject(new Error("Upload timed out"));
+            xhr.timeout   = 15 * 60 * 1000; // 15 min
+
+            xhr.open(method, url);
+            xhr.send(fd);
+
+            setUploadPhase("s3");
         });
 
     const handleSubmit = async () => {
@@ -235,9 +221,7 @@ export const FacebookCampaignSection: React.FC<Props> = ({ testId, readonly = fa
 
         try {
             if (videoFile) {
-                // Generate a unique channel ID for this upload session
-                const uploadId = Math.random().toString(36).slice(2) + Date.now().toString(36);
-                await uploadWithSseProgress(url, method, metaPayload, uploadId);
+                await uploadWithProgress(url, method, metaPayload);
             } else {
                 await jsonFetch(url, method, metaPayload);
             }

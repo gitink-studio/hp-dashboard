@@ -1,6 +1,6 @@
 {
-    "short_name": "hr-dashboard-react-admin",
-    "name": "{{name}}",
+    "short_name": "HR Dashboard",
+    "name": "Hyper Rabbit Dashboard",
     "icons": [
         {
             "src": "favicon.ico",
@@ -9,7 +9,7 @@
         }
     ],
     "start_url": "./index.html",
-    "display": "standalone",
+    "display": "browser",
     "theme_color": "#000000",
     "background_color": "#ffffff"
 }
