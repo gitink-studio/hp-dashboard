@@ -154,20 +154,45 @@ export const FacebookCampaignSection: React.FC<Props> = ({ testId, readonly = fa
     };
 
     /**
-     * Video upload with browser-native XHR progress tracking.
-     * Uses xhr.upload.onprogress — no SSE or persistent connections required,
-     * so it works reliably on AWS App Runner and behind any proxy/load balancer.
+     * Presign (small JSON to API) → PUT file directly to S3 (XHR progress) → save row with s3Key.
+     * Avoids sending large bodies through App Runner; S3 bucket must allow PUT from this origin (CORS).
      */
-    const uploadWithProgress = (
-        url: string,
-        method: string,
+    const uploadVideoDirectToS3ThenSave = async (
+        saveUrl: string,
+        saveMethod: string,
         metaPayload: object,
-    ): Promise<void> =>
-        new Promise((resolve, reject) => {
-            const fd = new FormData();
-            fd.append("creative-video", videoFile!);
-            fd.append("metadata", JSON.stringify(metaPayload));
+    ): Promise<void> => {
+        setUploadPhase("s3");
+        setUploadPct(0);
+        setUploadLabel("");
 
+        const presignRes = await fetch(
+            `${ROOT_URL}/tests/${testId}/facebook-creatives/presign`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    filename: videoFile!.name,
+                    contentType: videoFile!.type || "",
+                }),
+            },
+        );
+        if (!presignRes.ok) {
+            let msg = `Presign failed (${presignRes.status})`;
+            try {
+                const j = await presignRes.json();
+                if (j?.error) msg = j.error;
+            } catch { /* ignore */ }
+            throw new Error(msg);
+        }
+
+        const { uploadUrl, key, contentType: signedContentType } = await presignRes.json() as {
+            uploadUrl: string;
+            key: string;
+            contentType: string;
+        };
+
+        await new Promise<void>((resolve, reject) => {
             const xhr = new XMLHttpRequest();
 
             xhr.upload.onprogress = (e) => {
@@ -175,7 +200,7 @@ export const FacebookCampaignSection: React.FC<Props> = ({ testId, readonly = fa
                     const pct = Math.round((e.loaded / e.total) * 100);
                     setUploadPct(pct);
                     const loadedMB = (e.loaded / 1_048_576).toFixed(1);
-                    const totalMB  = (e.total  / 1_048_576).toFixed(1);
+                    const totalMB = (e.total / 1_048_576).toFixed(1);
                     setUploadLabel(`${loadedMB} / ${totalMB} MB`);
                 }
             };
@@ -185,19 +210,20 @@ export const FacebookCampaignSection: React.FC<Props> = ({ testId, readonly = fa
                     setUploadPhase("done");
                     resolve();
                 } else {
-                    try { reject(new Error(JSON.parse(xhr.responseText)?.error || `Upload failed (${xhr.status})`)); }
-                    catch { reject(new Error(`Upload failed (${xhr.status})`)); }
+                    reject(new Error(`S3 upload failed (${xhr.status})`));
                 }
             };
-            xhr.onerror   = () => reject(new Error("Network error during upload"));
-            xhr.ontimeout = () => reject(new Error("Upload timed out"));
-            xhr.timeout   = 15 * 60 * 1000; // 15 min
+            xhr.onerror = () => reject(new Error("Network error during S3 upload (check bucket CORS)"));
+            xhr.ontimeout = () => reject(new Error("S3 upload timed out"));
+            xhr.timeout = 15 * 60 * 1000;
 
-            xhr.open(method, url);
-            xhr.send(fd);
-
-            setUploadPhase("s3");
+            xhr.open("PUT", uploadUrl);
+            xhr.setRequestHeader("Content-Type", signedContentType || videoFile!.type || "video/mp4");
+            xhr.send(videoFile!);
         });
+
+        await jsonFetch(saveUrl, saveMethod, { ...metaPayload, s3Key: key });
+    };
 
     const handleSubmit = async () => {
         setSubmitting(true);
@@ -221,7 +247,7 @@ export const FacebookCampaignSection: React.FC<Props> = ({ testId, readonly = fa
 
         try {
             if (videoFile) {
-                await uploadWithProgress(url, method, metaPayload);
+                await uploadVideoDirectToS3ThenSave(url, method, metaPayload);
             } else {
                 await jsonFetch(url, method, metaPayload);
             }
