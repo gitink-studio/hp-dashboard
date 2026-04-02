@@ -2,7 +2,46 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { formatDecimalNumber } from '../../common/utils';
 import { formatPublisherMoney, formatPublisherMoneyFixed } from '../../common/currency-utils';
 import { ROOT_URL, GRAPHQL_URL } from '../../common/constants';
+import {
+  clampPublisherCustomRange,
+  getPublisherCustomMaxEndDate,
+} from '../../common/publisher-custom-dates';
 import { PublisherKPIs } from '../dashboard/publisher-kpis';
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Box,
+  Typography,
+  IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  FormControl,
+  Select,
+  MenuItem,
+  Grid,
+  TextField,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Stack,
+  Collapse,
+} from '@mui/material';
+import {
+  Assessment,
+  AttachMoney,
+  HealthAndSafety,
+  ExpandMore,
+  ExpandLess,
+  MonetizationOn,
+  TrendingUp,
+} from '@mui/icons-material';
 
 // Helper function to get game icon based on game name
 const getGameIcon = (gameName: string) => {
@@ -70,62 +109,72 @@ const getPublisherGameFilterOptions = (games: any[]): { game: any; label: string
   });
 };
 
-import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  Box,
-  Typography,
-  IconButton,
-  Tooltip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  FormControl,
-  Select,
-  MenuItem,
-  Grid,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  Stack,
-  Collapse,
-} from '@mui/material';
-import {
-  Assessment,
-  AttachMoney,
-  HealthAndSafety,
-  ExpandMore,
-  ExpandLess,
-  GetApp,
-  Visibility,
-  MonetizationOn,
-  TrendingUp,
-} from '@mui/icons-material';
-
-interface PublisherGamesListProps {
-  onReportsNavigation: (gameName: string) => void;
+/**
+ * Summary fields for `gameMetrics` derived from DailyMetrics rows.
+ * Lets the publisher UI skip the slow EventLog-based GET /hyper-rabbit/metrics/:id when daily data exists.
+ */
+function aggregateFromPublisherDaily(daily: any[]): Record<string, any> {
+  if (!daily.length) return {};
+  const sum = (pick: (d: any) => number) =>
+    daily.reduce((s, d) => s + (Number(pick(d)) || 0), 0);
+  const last = daily[daily.length - 1];
+  const totalSessions = sum((d) => d.numSessions || 0);
+  const totalErrors = sum((d) => d.errorCount || 0);
+  const totalImp = sum((d) => d.impressions || 0);
+  const totalAdRev = sum((d) => d.adRevenue || 0);
+  const totalReq = sum((d) => d.adRequested || 0);
+  const totalStarted = sum((d) => d.adStarted || 0);
+  return {
+    dau: Number(last.dau) || 0,
+    mau: Number(last.mau) || 0,
+    avgSessionLength: sum((d) => d.avgSessionLength || 0) / daily.length,
+    levelAttempts: sum((d) => d.levelAttempts || 0),
+    winRate: Number(last.winRate) || 0,
+    newUsers: sum((d) => d.newUsers || 0),
+    iapRevenue: sum((d) => d.iapRevenue || 0),
+    adRevenue: totalAdRev,
+    totalRevenue: sum((d) => d.totalRevenue || 0),
+    grossRevenue: sum((d) => d.grossRevenue || d.totalRevenue || 0),
+    crashRate:
+      totalSessions > 0 ? (totalErrors / totalSessions) * 100 : Number(last.crashRate) || 0,
+    retentionD1: Number(last.retentionD1) || 0,
+    retentionD7: Number(last.retentionD7) || 0,
+    retentionD30: Number(last.retentionD30) || 0,
+    usersAffectedByErrors: sum((d) => d.usersAffectedByErrors || 0),
+    geoBreakdown: [],
+    totalImpressions: totalImp,
+    avgEcpm: totalImp > 0 ? (totalAdRev / totalImp) * 1000 : 0,
+    fillRate: totalReq > 0 ? (totalStarted / totalReq) * 100 : 0,
+  };
 }
 
-export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReportsNavigation }) => {
-  // Provide default value if prop is undefined
-  const handleReportsNavigation = onReportsNavigation || ((gameName: string) => {
-    console.log('Reports navigation called for:', gameName);
-  });
+/** Shared date fields for publisher GraphQL (matches backend getDateRange custom branch). */
+function buildPublisherDateFilters(f: {
+  dateRange: string;
+  customStartDate?: string;
+  customEndDate?: string;
+}): { dateRange: string; startDate?: string; endDate?: string } {
+  const out: { dateRange: string; startDate?: string; endDate?: string } = {
+    dateRange: f.dateRange,
+  };
+  if (f.dateRange === 'Custom' && f.customStartDate && f.customEndDate) {
+    const { start, end } = clampPublisherCustomRange(f.customStartDate, f.customEndDate);
+    out.startDate = start;
+    out.endDate = `${end}T23:59:59.999Z`;
+  }
+  return out;
+}
 
+export const PublisherGamesList: React.FC = () => {
   const [filters, setFilters] = useState({
     studio: "All",
     platform: "All",
     subPlatform: "All",
     game: "All",
     dateRange: "30d",
-    currency: "INR"
+    currency: "INR",
+    customStartDate: "",
+    customEndDate: "",
   });
 
   // State for managing expanded games (accordion)
@@ -146,6 +195,8 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
 
   // Track ongoing fetches to prevent duplicate requests
   const ongoingFetches = useRef<Set<string>>(new Set());
+  /** Skip refetch only when we already loaded this game for the same start/end range (date filter changes must reload). */
+  const lastFetchedMetricsRangeRef = useRef<Record<string, string>>({});
 
   const handleToggleExpanded = async (gameId: string) => {
     const newExpanded = new Set(expandedGames);
@@ -164,55 +215,81 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
   };
 
   // Helper function to get date range from filter
+  /** YYYY-MM-DD and optional end-of-day ISO for Hyper Rabbit REST (EventLog uses ms timestamps). */
   const getDateRange = () => {
     const now = new Date();
-    let startDate = new Date();
-    let endDate = new Date();
 
     switch (filters.dateRange) {
-      case 'Today':
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-        break;
-      case 'Yesterday':
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        break;
+      case 'Yesterday': {
+        const y = now.getUTCFullYear();
+        const m = now.getUTCMonth();
+        const d = now.getUTCDate();
+        const dayStr = new Date(Date.UTC(y, m, d - 1)).toISOString().split('T')[0];
+        return {
+          startDate: dayStr,
+          endDate: `${dayStr}T23:59:59.999Z`,
+        };
+      }
       case 'Last 7d':
-      case '7d':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
+      case '7d': {
+        const startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return {
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: now.toISOString().split('T')[0],
+        };
+      }
       case 'Last 14d':
-      case '14d':
-        startDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-        break;
+      case '14d': {
+        const startDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+        return {
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: now.toISOString().split('T')[0],
+        };
+      }
       case 'Last 30d':
-      case '30d':
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        break;
-      default:
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      case '30d': {
+        const startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        return {
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: now.toISOString().split('T')[0],
+        };
+      }
+      case 'Custom': {
+        if (filters.customStartDate && filters.customEndDate) {
+          const { start, end } = clampPublisherCustomRange(
+            filters.customStartDate,
+            filters.customEndDate,
+          );
+          return {
+            startDate: start,
+            endDate: `${end}T23:59:59.999Z`,
+          };
+        }
+        const startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        return {
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: now.toISOString().split('T')[0],
+        };
+      }
+      default: {
+        const startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        return {
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: now.toISOString().split('T')[0],
+        };
+      }
     }
-
-    return {
-      startDate: startDate.toISOString().split('T')[0],
-      endDate: endDate.toISOString().split('T')[0]
-    };
   };
 
   // Fetch game metrics from backend
   const fetchGameMetrics = async (gameId: string) => {
-    console.log('🔵 fetchGameMetrics called for game:', gameId);
-
-    // Check if already fetching
     if (ongoingFetches.current.has(gameId)) {
-      console.log('⏳ Already fetching for game:', gameId);
       return;
     }
 
-    // Only fetch if not already cached
-    if (gameMetrics[gameId] && dailyMetrics[gameId]) {
-      console.log('✅ Metrics already cached for game:', gameId);
+    const { startDate, endDate } = getDateRange();
+    const rangeSig = `${startDate}|${endDate}`;
+    if (lastFetchedMetricsRangeRef.current[gameId] === rangeSig) {
       return;
     }
 
@@ -220,30 +297,44 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
       ongoingFetches.current.add(gameId);
       setLoadingMetrics(prev => ({ ...prev, [gameId]: true }));
 
-      const { startDate, endDate } = getDateRange();
-      console.log(`📊 Fetching metrics for game ${gameId} (${startDate} to ${endDate})`);
+      const q = (v: string) => encodeURIComponent(v);
+      const dailyUrl = `${ROOT_URL}/hyper-rabbit/metrics/daily/${gameId}?startDate=${q(startDate)}&endDate=${q(endDate)}`;
+      const metricsUrl = `${ROOT_URL}/hyper-rabbit/metrics/${gameId}?startDate=${q(startDate)}&endDate=${q(endDate)}`;
 
-      const metricsResponse = await fetch(`${ROOT_URL}/hyper-rabbit/metrics/${gameId}?startDate=${startDate}&endDate=${endDate}`);
-      const dailyResponse = await fetch(`${ROOT_URL}/hyper-rabbit/metrics/daily/${gameId}?startDate=${startDate}&endDate=${endDate}`);
+      const dailyResponse = await fetch(dailyUrl);
+      let dailyRows: any[] = [];
+      if (dailyResponse.ok) {
+        const dailyResult = await dailyResponse.json();
+        if (dailyResult.success && Array.isArray(dailyResult.data)) {
+          dailyRows = dailyResult.data;
+        }
+      }
 
+      if (dailyRows.length > 0) {
+        setDailyMetrics(prev => ({ ...prev, [gameId]: dailyRows }));
+        setGameMetrics(prev => ({
+          ...prev,
+          [gameId]: aggregateFromPublisherDaily(dailyRows),
+        }));
+        lastFetchedMetricsRangeRef.current[gameId] = rangeSig;
+        return;
+      }
+
+      const metricsResponse = await fetch(metricsUrl);
+      let metricsOk = false;
       if (metricsResponse.ok) {
         const result = await metricsResponse.json();
         if (result.success && result.data) {
+          metricsOk = true;
           setGameMetrics(prev => ({
             ...prev,
-            [gameId]: result.data
+            [gameId]: result.data,
           }));
         }
       }
 
-      if (dailyResponse.ok) {
-        const dailyResult = await dailyResponse.json();
-        if (dailyResult.success && dailyResult.data) {
-          setDailyMetrics(prev => ({
-            ...prev,
-            [gameId]: dailyResult.data
-          }));
-        }
+      if (metricsOk) {
+        lastFetchedMetricsRangeRef.current[gameId] = rangeSig;
       }
     } catch (error) {
       console.error(`Error fetching metrics for game ${gameId}:`, error);
@@ -253,10 +344,26 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
     }
   };
 
+  // Reload per-game report tables when date range changes (expanded rows were stuck on old multi-day cache).
+  useEffect(() => {
+    expandedGames.forEach((gameId) => {
+      void fetchGameMetrics(gameId);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- expand path calls fetchGameMetrics directly
+  }, [filters.dateRange, filters.customStartDate, filters.customEndDate]);
+
   // Publisher reports data dynamically generated from backend metrics
   const getPublisherReports = (gameId: string) => {
     const metrics = gameMetrics[gameId] || {};
     const daily = dailyMetrics[gameId] || [];
+    const hasDaily = daily.length > 0;
+    const sumDaily = (pick: (d: any) => number) =>
+      daily.reduce((sum, d) => sum + (Number(pick(d)) || 0), 0);
+    const geoBreakdown = metrics.geoBreakdown || [];
+    const geoGrossSum = geoBreakdown.reduce(
+      (s: number, g: any) => s + (Number(g.revenue) || 0),
+      0,
+    );
 
     const formatNumber = (num: number) => formatDecimalNumber(num);
     const cur = filters.currency;
@@ -377,8 +484,10 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         color: '#2e7d32',
         data: {
           kpi: (() => {
-            const totalAdSpend = daily.reduce((sum, d) => sum + (d.adSpend || 0), 0);
-            const totalRevenue = metrics.totalRevenue || 0;
+            const totalAdSpend = sumDaily(d => d.adSpend || 0);
+            const totalRevenue = hasDaily
+              ? sumDaily(d => d.totalRevenue || 0)
+              : Number(metrics.totalRevenue) || 0;
             const roas = totalAdSpend > 0 ? (totalRevenue / totalAdSpend) * 100 : 0;
             return {
               totalRevenue: money(totalRevenue),
@@ -406,12 +515,25 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         icon: <Assessment />,
         color: '#ed6c02',
         data: {
-          kpi: {
-            // Backend returns retention as percentage (0-100), so no multiplication needed
-            d1: `${(metrics.retentionD1 || 0).toFixed(1)}%`,
-            d7: `${(metrics.retentionD7 || 0).toFixed(1)}%`,
-            d30: metrics.retentionD30 ? `${metrics.retentionD30.toFixed(1)}%` : 'N/A'
-          },
+          kpi: (() => {
+            const w = sumDaily(d => d.newUsers || 0);
+            const wAvg = (field: 'retentionD1' | 'retentionD7' | 'retentionD30') =>
+              w > 0
+                ? daily.reduce(
+                    (s, d) => s + (Number(d[field]) || 0) * (Number(d.newUsers) || 0),
+                    0,
+                  ) / w
+                : Number(metrics[field]) || 0;
+            return {
+              d1: `${wAvg('retentionD1').toFixed(1)}%`,
+              d7: `${wAvg('retentionD7').toFixed(1)}%`,
+              d30: hasDaily
+                ? `${wAvg('retentionD30').toFixed(1)}%`
+                : metrics.retentionD30 != null
+                  ? `${Number(metrics.retentionD30).toFixed(1)}%`
+                  : 'N/A',
+            };
+          })(),
           // Heatmap format: rows are cohorts/dates, columns are days 1-9
           table: (() => {
             let retentionRows: any[] = [];
@@ -514,9 +636,21 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         color: '#9c27b0',
         data: {
           kpi: {
-            gross: money(metrics.totalRevenue || 0),
-            iap: money(metrics.iapRevenue || 0),
-            ads: money(metrics.adRevenue || 0)
+            gross: money(
+              hasDaily
+                ? sumDaily(d => d.totalRevenue || 0)
+                : Number(metrics.totalRevenue) || 0,
+            ),
+            iap: money(
+              hasDaily
+                ? sumDaily(d => d.iapRevenue || 0)
+                : Number(metrics.iapRevenue) || 0,
+            ),
+            ads: money(
+              hasDaily
+                ? sumDaily(d => d.adRevenue || 0)
+                : Number(metrics.adRevenue) || 0,
+            ),
           },
           table: daily.map(day => ({
             date: formatDate(day.date),
@@ -533,13 +667,28 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         icon: <HealthAndSafety />,
         color: '#d32f2f',
         data: {
-          kpi: {
-            crashRate: `${(metrics.crashRate || 0).toFixed(2)}%`,
-            errors: formatNumber(
-              daily.reduce((sum, d) => sum + (d.errorCount || 0), 0)
-            ),
-            usersAffected: formatNumber(metrics.usersAffectedByErrors || 0)
-          },
+          kpi: (() => {
+            const totalSessions = hasDaily
+              ? sumDaily(d => d.numSessions || 0)
+              : 0;
+            const totalErrors = hasDaily
+              ? sumDaily(d => d.errorCount || 0)
+              : 0;
+            const totalUsersAff = hasDaily
+              ? sumDaily(d => d.usersAffectedByErrors || 0)
+              : 0;
+            const crashPct =
+              hasDaily && totalSessions > 0
+                ? (totalErrors / totalSessions) * 100
+                : Number(metrics.crashRate) || 0;
+            return {
+              crashRate: `${crashPct.toFixed(2)}%`,
+              errors: formatNumber(totalErrors),
+              usersAffected: formatNumber(
+                hasDaily ? totalUsersAff : metrics.usersAffectedByErrors || 0,
+              ),
+            };
+          })(),
           table: daily.map(day => ({
             date: formatDate(day.date),
             sessions: formatNumber(day.numSessions || 0),
@@ -557,11 +706,21 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         color: '#1976d2',
         data: {
           kpi: {
-            gross: money(metrics.totalRevenue || 0),
-            net: money((metrics.totalRevenue || 0) * 0.7),
-            payoutDue: money((metrics.totalRevenue || 0) * 0.6)
+            gross: money(
+              geoBreakdown.length > 0
+                ? geoGrossSum
+                : Number(metrics.totalRevenue) || 0,
+            ),
+            net: money(
+              (geoBreakdown.length > 0 ? geoGrossSum : Number(metrics.totalRevenue) || 0) *
+                0.7,
+            ),
+            payoutDue: money(
+              (geoBreakdown.length > 0 ? geoGrossSum : Number(metrics.totalRevenue) || 0) *
+                0.6,
+            ),
           },
-          table: (metrics.geoBreakdown || []).map((geo: any) => ({
+          table: geoBreakdown.map((geo: any) => ({
             country: geo.country,
             installs: formatNumber(geo.installs || 0),
             grossRev: money(geo.revenue || 0),
@@ -578,17 +737,54 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         icon: <MonetizationOn />,
         color: '#673ab7',
         data: {
-          kpi: {
-            ecpm: moneyF(metrics.avgEcpm || 0, 2),
-            fillRate: `${(metrics.fillRate || 0).toFixed(1)}%`,
-            impressions: formatNumber(metrics.totalImpressions || 0)
-          },
-          table: daily.map(day => ({
-            date: formatDate(day.date),
-            ecpm: moneyF(day.avgEcpm || 0, 2),
-            fillRate: `${(day.fillRate || 0).toFixed(1)}%`,
-            impressions: formatNumber(day.impressions || 0)
-          }))
+          kpi: (() => {
+            const totalImp = hasDaily
+              ? sumDaily(d => d.impressions || 0)
+              : Number(metrics.totalImpressions) || 0;
+            const totalAdRev = hasDaily
+              ? sumDaily(d => d.adRevenue || 0)
+              : Number(metrics.adRevenue) || 0;
+            const ecpmVal =
+              totalImp > 0
+                ? (totalAdRev / totalImp) * 1000
+                : Number(metrics.avgEcpm) || 0;
+            const totalReq = hasDaily ? sumDaily(d => d.adRequested || 0) : 0;
+            const totalStarted = hasDaily
+              ? sumDaily(d => d.adStarted || 0)
+              : 0;
+            // Period fill rate = Σ starts / Σ requests (matches summing the underlying events)
+            const fillVal =
+              hasDaily && totalReq > 0
+                ? (totalStarted / totalReq) * 100
+                : Number(metrics.fillRate) || 0;
+            return {
+              ecpm: moneyF(ecpmVal, 2),
+              fillRate: `${fillVal.toFixed(1)}%`,
+              impressions: formatNumber(
+                hasDaily ? totalImp : Number(metrics.totalImpressions) || 0,
+              ),
+            };
+          })(),
+          table: daily.map(day => {
+            const imp = Number(day.impressions) || 0;
+            const adv = Number(day.adRevenue) || 0;
+            const rowEcpm =
+              day.avgEcpm != null && Number(day.avgEcpm) > 0
+                ? Number(day.avgEcpm)
+                : imp > 0
+                  ? (adv / imp) * 1000
+                  : 0;
+            const req = Number(day.adRequested) || 0;
+            const started = Number(day.adStarted) || 0;
+            const rowFill =
+              req > 0 ? (started / req) * 100 : Number(day.fillRate) || 0;
+            return {
+              date: formatDate(day.date),
+              ecpm: moneyF(rowEcpm, 2),
+              fillRate: `${rowFill.toFixed(1)}%`,
+              impressions: formatNumber(imp),
+            };
+          }),
         }
       }
     ];
@@ -617,8 +813,8 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
             filters: {
               studio: studioFilter,
               game: 'All',
-              dateRange: filters.dateRange,
-              currency: filters.currency
+              currency: filters.currency,
+              ...buildPublisherDateFilters(filters),
             }
           }
         })
@@ -652,8 +848,8 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
           variables: {
             filters: {
               studio: studioFilter,
-              dateRange: filters.dateRange,
-              currency: filters.currency
+              currency: filters.currency,
+              ...buildPublisherDateFilters(filters),
             }
           }
         })
@@ -705,6 +901,8 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
   const [allGames, setAllGames] = useState<any[]>([]);
   const [loadingFilters, setLoadingFilters] = useState(true);
   const [loadingAvailableGames, setLoadingAvailableGames] = useState(false);
+  /** Hide games Stack while publisherGamesList refetches after a date-range change */
+  const [gameTableAwaitingDateStats, setGameTableAwaitingDateStats] = useState(false);
 
   // Simple GraphQL fetch for sub-platforms
   const fetchSubPlatforms = async () => {
@@ -836,8 +1034,8 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
           `,
           variables: {
             filters: {
-              dateRange: filters.dateRange,
-              currency: filters.currency
+              currency: filters.currency,
+              ...buildPublisherDateFilters(filters),
             }
           }
         })
@@ -856,6 +1054,8 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
     } catch (error) {
       console.error('Error fetching all games:', error);
       setAllGames([]);
+    } finally {
+      setGameTableAwaitingDateStats(false);
     }
   };
 
@@ -881,8 +1081,8 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
           platform: undefined,
           subPlatform: undefined,
           game: undefined,
-          dateRange: filters.dateRange,
-          currency: filters.currency
+          currency: filters.currency,
+          ...buildPublisherDateFilters(filters),
         };
 
         try {
@@ -953,6 +1153,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
       if (currentFilters.studio !== 'All' && studios.length === 0) {
         console.log('⚠️ Studios array is empty, skipping fetchAvailableGames');
         setLoadingAvailableGames(false);
+        setGameTableAwaitingDateStats(false);
         return;
       }
 
@@ -960,8 +1161,8 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         studio: studioId,
         platform: currentFilters.platform !== 'All' ? currentFilters.platform : undefined,
         subPlatform: currentFilters.subPlatform !== 'All' ? currentFilters.subPlatform : undefined,
-        dateRange: currentFilters.dateRange,
-        currency: currentFilters.currency
+        currency: currentFilters.currency,
+        ...buildPublisherDateFilters(currentFilters),
       };
 
       console.log('🎯 Studio filter mapping:', {
@@ -1021,6 +1222,7 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
       await fetchAllGames();
     } finally {
       setLoadingAvailableGames(false);
+      setGameTableAwaitingDateStats(false);
     }
   };
 
@@ -1054,15 +1256,50 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
     filters.subPlatform,
     filters.dateRange,
     filters.currency,
+    filters.customStartDate,
+    filters.customEndDate,
   ]);
+
+  const handleCustomRangeChange = (field: 'customStartDate' | 'customEndDate', value: string) => {
+    setGameTableAwaitingDateStats(true);
+    const maxEnd = getPublisherCustomMaxEndDate();
+    setFilters(prev => {
+      if (field === 'customEndDate') {
+        const end = !value || value > maxEnd ? maxEnd : value;
+        let start = prev.customStartDate;
+        if (start && start > end) start = end;
+        return { ...prev, customEndDate: end, customStartDate: start };
+      }
+      let start = !value || value > maxEnd ? maxEnd : value;
+      const cap = prev.customEndDate && prev.customEndDate < maxEnd ? prev.customEndDate : maxEnd;
+      if (start > cap) start = cap;
+      return { ...prev, customStartDate: start };
+    });
+  };
 
   const handleFilterChange = (filterType: string, value: string) => {
     console.log(`🎯 handleFilterChange called: ${filterType} = ${value}`);
+    if (filterType === 'dateRange') {
+      setGameTableAwaitingDateStats(true);
+    }
     setFilters(prev => {
-      const newFilters = {
+      const newFilters: typeof prev = {
         ...prev,
-        [filterType]: value
+        [filterType]: value,
       };
+
+      if (filterType === 'dateRange' && value === 'Custom') {
+        const maxEnd = getPublisherCustomMaxEndDate();
+        const [ey, em, ed] = maxEnd.split('-').map(Number);
+        const defaultStart = new Date(Date.UTC(ey, em - 1, ed - 6)).toISOString().split('T')[0];
+        let end =
+          prev.customEndDate && prev.customEndDate <= maxEnd ? prev.customEndDate : maxEnd;
+        let start = prev.customStartDate;
+        if (!start || start > end) start = defaultStart;
+        if (start > end) start = end;
+        newFilters.customStartDate = start;
+        newFilters.customEndDate = end;
+      }
 
       // Reset dependent filters with cascading effect
       if (filterType === 'platform') {
@@ -1212,13 +1449,6 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
 
   return (
     <Box sx={{ p: 2 }}>
-      {/* Publisher KPIs Section */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <PublisherKPIs filter={filters} hideActionButtons />
-        </CardContent>
-      </Card>
-
       {/* Filters Section */}
       <Paper sx={{ p: 2, mb: 2 }}>
         {loadingFilters && (
@@ -1318,7 +1548,6 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                 displayEmpty
               >
                 <MenuItem value="30d">Date [ 30d ▼ ]</MenuItem>
-                <MenuItem value="Today">Today</MenuItem>
                 <MenuItem value="Yesterday">Yesterday</MenuItem>
                 <MenuItem value="7d">Last 7d</MenuItem>
                 <MenuItem value="14d">Last 14d</MenuItem>
@@ -1327,6 +1556,42 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
               </Select>
             </FormControl>
           </Grid>
+
+          {filters.dateRange === 'Custom' && (() => {
+            const customMaxEnd = getPublisherCustomMaxEndDate();
+            const fromMax =
+              filters.customEndDate && filters.customEndDate < customMaxEnd
+                ? filters.customEndDate
+                : customMaxEnd;
+            return (
+            <>
+              <Grid item xs={12} sm={6} md={2}>
+                <TextField
+                  label="From"
+                  type="date"
+                  size="small"
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                  inputProps={{ max: fromMax }}
+                  value={filters.customStartDate}
+                  onChange={(e) => handleCustomRangeChange('customStartDate', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={2}>
+                <TextField
+                  label="To"
+                  type="date"
+                  size="small"
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                  inputProps={{ max: customMaxEnd }}
+                  value={filters.customEndDate}
+                  onChange={(e) => handleCustomRangeChange('customEndDate', e.target.value)}
+                />
+              </Grid>
+            </>
+            );
+          })()}
         </Grid>
 
         {/* Second Row of Filters */}
@@ -1354,9 +1619,32 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
         </Grid>
       </Paper>
 
+      {/* Publisher KPIs — below filters */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <PublisherKPIs filter={filters} hideActionButtons />
+        </CardContent>
+      </Card>
+
       {/* Studio reports: MUI Accordion outside <tbody> — nested rows/divs in one cell broke open/close */}
       <TableContainer component={Paper}>
-        {filteredGames.length === 0 ? (
+        {gameTableAwaitingDateStats ? (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: 2,
+              p: 6,
+              minHeight: 220,
+            }}
+          >
+            <CircularProgress size={40} thickness={4} />
+            <Typography variant="body2" color="text.secondary">
+              Updating game stats…
+            </Typography>
+          </Box>
+        ) : filteredGames.length === 0 ? (
           <Box sx={{ p: 3, textAlign: 'center' }}>
             <Typography variant="body2" color="textSecondary">
               No games found matching the current filters
@@ -1530,42 +1818,57 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                     />
                                   )}
                                 </Box>
-                                <Typography variant="caption" color="textSecondary">
-                                  (📊) DAU: {formatDecimalNumber(game.dau || 0)}
-                                  {filters.platform !== 'Web' && (
-                                    <>  Installs: {formatDecimalNumber(game.installs || 0)}  CPI: {formatPublisherMoneyFixed(game.cpi || 0, filters.currency, 2)}</>
-                                  )}
-                                </Typography>
                               </Box>
                             </Box>
                           </TableCell>
-                          <TableCell>{formatDecimalNumber(game.dau || 0)}</TableCell>
-                          <TableCell>{formatPublisherMoney(game.revenue || 0, filters.currency)}</TableCell>
-                          <TableCell>{formatPublisherMoney((game.revenue || 0) * 0.8, filters.currency)}</TableCell>
+                          <TableCell align="right" sx={{ verticalAlign: 'top' }}>
+                            <Typography variant="caption" color="textSecondary" display="block" sx={{ mb: 0.25, fontWeight: 600 }}>
+                              DAU
+                            </Typography>
+                            <Typography variant="body2" fontWeight={500}>
+                              {formatDecimalNumber(game.dau || 0)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell align="right" sx={{ verticalAlign: 'top' }}>
+                            <Typography variant="caption" color="textSecondary" display="block" sx={{ mb: 0.25, fontWeight: 600 }}>
+                              Gross Revenue
+                            </Typography>
+                            <Typography variant="body2" fontWeight={500}>
+                              {formatPublisherMoney(game.revenue || 0, filters.currency)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell align="right" sx={{ verticalAlign: 'top' }}>
+                            <Typography variant="caption" color="textSecondary" display="block" sx={{ mb: 0.25, fontWeight: 600 }}>
+                              Net Revenue
+                            </Typography>
+                            <Typography variant="body2" fontWeight={500}>
+                              {formatPublisherMoney((game.revenue || 0) * 0.8, filters.currency)}
+                            </Typography>
+                          </TableCell>
                           {filters.platform !== 'Web' && (
-                            <TableCell>{formatDecimalNumber(game.installs || 0)}</TableCell>
-                          )}
-                          {filters.platform !== 'Web' && (
-                            <TableCell>{formatPublisherMoneyFixed(game.cpi || 0, filters.currency, 2)}</TableCell>
-                          )}
-                          <TableCell>
-                            <Box display="flex" alignItems="center" justifyContent="space-between">
-                              <Typography variant="body2" color="textSecondary">
-                                {expandedGames.has(game.id) ? 'Hide Reports' : 'Show Reports'}
+                            <TableCell align="right" sx={{ verticalAlign: 'top' }}>
+                              <Typography variant="caption" color="textSecondary" display="block" sx={{ mb: 0.25, fontWeight: 600 }}>
+                                Installs
                               </Typography>
-                              <Tooltip title="View Reports">
-                                <IconButton
-                                  size="small"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleReportsNavigation(game.name);
-                                  }}
-                                  color="primary"
-                                >
-                                  <Assessment fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            </Box>
+                              <Typography variant="body2" fontWeight={500}>
+                                {formatDecimalNumber(game.installs || 0)}
+                              </Typography>
+                            </TableCell>
+                          )}
+                          {filters.platform !== 'Web' && (
+                            <TableCell align="right" sx={{ verticalAlign: 'top' }}>
+                              <Typography variant="caption" color="textSecondary" display="block" sx={{ mb: 0.25, fontWeight: 600 }}>
+                                CPI
+                              </Typography>
+                              <Typography variant="body2" fontWeight={500}>
+                                {formatPublisherMoneyFixed(game.cpi || 0, filters.currency, 2)}
+                              </Typography>
+                            </TableCell>
+                          )}
+                          <TableCell align="right" sx={{ verticalAlign: 'middle' }}>
+                            <Typography variant="body2" color="textSecondary">
+                              {expandedGames.has(game.id) ? 'Hide Reports' : 'Show Reports'}
+                            </Typography>
                           </TableCell>
                         </TableRow>
 
@@ -1722,25 +2025,6 @@ export const PublisherGamesList: React.FC<PublisherGamesListProps> = ({ onReport
                                             No data available for this period
                                           </Typography>
                                         )}
-
-                                        {/* Action Buttons */}
-                                        <Box display="flex" gap={2} mt={3} justifyContent="flex-end">
-                                          <Button
-                                            variant="contained"
-                                            startIcon={<Visibility />}
-                                            sx={{ backgroundColor: report.color }}
-                                            onClick={() => handleReportsNavigation(game.name)}
-                                          >
-                                            Open Full Report
-                                          </Button>
-                                          <Button
-                                            variant="outlined"
-                                            startIcon={<GetApp />}
-                                            sx={{ borderColor: report.color, color: report.color }}
-                                          >
-                                            Export CSV
-                                          </Button>
-                                        </Box>
                                       </CardContent>
                                     </Card>
                                   ))

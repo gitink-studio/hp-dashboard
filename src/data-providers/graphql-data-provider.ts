@@ -213,17 +213,6 @@ export const graphqlDataProvider = buildGraphQLProvider({
                 console.log('Field data:', res.data?.[fieldName]);
               }
 
-              // Debug logging for notifications
-              if (resource === QueryNames.NOTIFICATIONS) {
-                console.log('🔔 Notifications Query Response:', res);
-                console.log('Field name:', fieldName);
-                console.log('Response data:', res.data);
-                console.log('Field data:', res.data?.[fieldName]);
-                console.log('Variables:', customVariables);
-                console.log('Is array:', Array.isArray(res.data?.[fieldName]));
-                console.log('Data type:', typeof res.data?.[fieldName]);
-              }
-
               // Check for GraphQL errors
               if (res.errors) {
                 console.error(`GraphQL errors for resource '${resource}':`, res.errors);
@@ -249,11 +238,9 @@ export const graphqlDataProvider = buildGraphQLProvider({
               // Handle array responses (like notifications)
               if (Array.isArray(data)) {
                 // Data is already an array, use it directly
-                console.log(`✅ Data is array with ${data.length} items`);
               } else if (data && Array.isArray(data.data)) {
                 // Data is wrapped in a data property
                 data = data.data;
-                console.log(`✅ Unwrapped data array with ${data.length} items`);
               } else {
                 // Single object (e.g. portfolioKPIs) or other type — wrap in array
                 if (!Array.isArray(data)) {
@@ -271,9 +258,6 @@ export const graphqlDataProvider = buildGraphQLProvider({
                   total = data.length;
                 }
                 // Ensure data is properly formatted
-                if (resource === QueryNames.NOTIFICATIONS) {
-                  console.log(`📊 Notifications parsed: ${data.length} items, total: ${total}`);
-                }
               }
 
               // Debug logging for portfolio KPIs

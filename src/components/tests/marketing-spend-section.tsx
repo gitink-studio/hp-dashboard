@@ -29,8 +29,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import EditIcon from "@mui/icons-material/Edit";
 import CheckIcon from "@mui/icons-material/Check";
 import SaveIcon from "@mui/icons-material/Save";
-
-const API = "http://localhost:3000";
+import { ROOT_URL } from "../../common/constants";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -160,7 +159,7 @@ export const MarketingSpendSection: React.FC<Props> = ({
         setHasFetched(true);
         setLoading(true);
 
-        fetch(`${API}/tests/${testId}/marketing-budget`)
+        fetch(`${ROOT_URL}/tests/${testId}/marketing-budget`)
             .then((r) => r.json())
             .then((data) => {
                 if (!data) return; // no plan saved yet — keep defaults
@@ -241,7 +240,7 @@ export const MarketingSpendSection: React.FC<Props> = ({
                 autoPct,
                 rows:             rowsToJson(rows),
             };
-            const res = await fetch(`${API}/tests/${testId}/marketing-budget`, {
+            const res = await fetch(`${ROOT_URL}/tests/${testId}/marketing-budget`, {
                 method:  "PUT",
                 headers: { "Content-Type": "application/json" },
                 body:    JSON.stringify(payload),

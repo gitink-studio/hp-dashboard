@@ -1,6 +1,7 @@
 import { Typography, Box, Card, CardContent, Grid, CircularProgress } from "@mui/material";
 import { formatDecimalNumber } from "../../common/utils";
 import { DECIMAL_LENGTH, GRAPHQL_URL } from "../../common/constants";
+import { getDashboardQueryDateBounds } from "../../common/utils";
 import { useState, useEffect } from "react";
 
 interface PortfolioKPIsData {
@@ -27,7 +28,14 @@ const defaultKPIs: PortfolioKPIsData = {
     mau: 0
 };
 
-export const PortfolioKPIs = ({ filter }: { filter: any }) => {
+export const PortfolioKPIs = ({
+  filter,
+  onFetchSettled,
+}: {
+  filter: any;
+  /** Called after each portfolio KPI request finishes (success or error). */
+  onFetchSettled?: () => void;
+}) => {
     const [kpis, setKpis] = useState<PortfolioKPIsData>(defaultKPIs);
     const [isLoading, setIsLoading] = useState(true);
     const [fetchError, setFetchError] = useState<string | null>(null);
@@ -66,6 +74,10 @@ export const PortfolioKPIs = ({ filter }: { filter: any }) => {
                                 subPlatform: filter?.subPlatform ?? 'All',
                                 game: filter?.game ?? 'All',
                                 dateRange: filter?.dateRange ?? 'Last 30d',
+                                ...(() => {
+                                    const b = getDashboardQueryDateBounds(filter ?? { dateRange: 'Last 30d' });
+                                    return b ? { startDate: b.startDate, endDate: b.endDate } : {};
+                                })(),
                             },
                         },
                     }),
@@ -90,11 +102,12 @@ export const PortfolioKPIs = ({ filter }: { filter: any }) => {
                 setKpis(defaultKPIs);
             } finally {
                 setIsLoading(false);
+                onFetchSettled?.();
             }
         };
 
         fetchKPIs();
-    }, [filter?.platform, filter?.subPlatform, filter?.game, filter?.dateRange]);
+    }, [filter?.platform, filter?.subPlatform, filter?.game, filter?.dateRange, filter?.startDate, filter?.endDate, onFetchSettled]);
 
     // Determine platform type for conditional KPI display
     const isMajorStores = filter?.platform !== 'Web' && filter?.platform !== 'All';

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GRAPHQL_URL, ROOT_URL } from '../../common/constants';
-import { formatDecimalNumber } from '../../common/utils';
+import { formatDecimalNumber, getDashboardDateBounds, getDashboardQueryDateBounds } from '../../common/utils';
 import {
   Box,
   Typography,
@@ -13,7 +13,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Button,
   Card,
   CardContent,
   Collapse,
@@ -26,8 +25,6 @@ import {
   MonetizationOn,
   AttachMoney,
   HealthAndSafety,
-  Visibility,
-  GetApp,
   ExpandMore,
   ExpandLess
 } from '@mui/icons-material';
@@ -35,9 +32,37 @@ import {
 interface GamesListProps {
   filters: any;
   onReportsNavigation: (gameName: string) => void;
+  /** Called after each games list request finishes (success or error). */
+  onFetchSettled?: () => void;
 }
 
-export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigation }) => {
+/** Period KPIs derived from DailyMetrics rows — avoids slow EventLog-based /metrics/:gameId. */
+function aggregateGameMetricsFromDaily(daily: any[]): Record<string, number> {
+  if (!daily.length) return {};
+  const n = daily.length;
+  const sum = (key: string) => daily.reduce((s, row) => s + (Number(row[key]) || 0), 0);
+  const avg = (key: string) => sum(key) / n;
+  const last = daily[daily.length - 1];
+  const totalRev = sum('totalRevenue') || sum('grossRevenue');
+  return {
+    totalRevenue: totalRev,
+    grossRevenue: totalRev,
+    iapRevenue: sum('iapRevenue'),
+    adRevenue: sum('adRevenue'),
+    retentionD1: avg('retentionD1'),
+    retentionD7: avg('retentionD7'),
+    retentionD30: avg('retentionD30'),
+    mau: Number(last?.mau) || avg('mau') || avg('dau'),
+    usersAffectedByErrors: sum('usersAffectedByErrors'),
+    crashRate: avg('crashRate'),
+  };
+}
+
+export const GamesList: React.FC<GamesListProps> = ({
+  filters,
+  onReportsNavigation,
+  onFetchSettled,
+}) => {
   // State for games list fetched from backend
   const [gamesData, setGamesData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -78,6 +103,10 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
                 subPlatform: filters.subPlatform ?? 'All',
                 game: filters.game ?? 'All',
                 dateRange: filters.dateRange ?? 'Last 30d',
+                ...(() => {
+                  const b = getDashboardQueryDateBounds(filters);
+                  return b ? { startDate: b.startDate, endDate: b.endDate } : {};
+                })(),
               },
             },
           }),
@@ -100,11 +129,20 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
         setGamesData([]);
       } finally {
         setIsLoading(false);
+        onFetchSettled?.();
       }
     };
 
     fetchGamesList();
-  }, [filters.platform, filters.subPlatform, filters.game, filters.dateRange]);
+  }, [
+    filters.platform,
+    filters.subPlatform,
+    filters.game,
+    filters.dateRange,
+    filters.startDate,
+    filters.endDate,
+    onFetchSettled,
+  ]);
 
   // State for managing expanded games (accordion)
   const [expandedGames, setExpandedGames] = useState<Set<string>>(new Set());
@@ -142,7 +180,7 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [filters.dateRange, filters.platform, filters.subPlatform, filters.game]);
+  }, [filters.dateRange, filters.startDate, filters.endDate, filters.platform, filters.subPlatform, filters.game]);
 
   // Debug: Log gameMetrics changes (commented out to prevent excessive logging)
   // useEffect(() => {
@@ -185,182 +223,62 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
     return '🎮'; // Default icon
   };
 
-  // Helper function to get date range from filter
+  // Same local-calendar bounds as GraphQL (fixes Yesterday + timezone bugs from toISOString).
   const getDateRange = () => {
-    const now = new Date();
-    let startDate = new Date();
-    let endDate = new Date();
-
-    switch (filters.dateRange) {
-      case 'Today':
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        break;
-      case 'Yesterday':
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        break;
-      case 'Last 7d':
-      case '7d':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case 'Last 14d':
-      case '14d':
-        startDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-        break;
-      case 'Last 30d':
-      case '30d':
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        break;
-      case 'Last 90d':
-      case '90d':
-        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-        break;
-      default:
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    }
-
-    return {
-      startDate: startDate.toISOString().split('T')[0],
-      endDate: endDate.toISOString().split('T')[0]
-    };
+    const bounds = getDashboardQueryDateBounds(filters);
+    if (bounds) return bounds;
+    return getDashboardDateBounds('Last 30d')!;
   };
 
-  // Fetch game metrics from backend
+  // Fetch per-game reports: single DailyMetrics query (indexed) + client-side KPI rollup.
+  // Skips /metrics/:gameId (many heavy EventLog aggregations) and non-existent /retention/cohort.
   const fetchGameMetrics = async (gameId: string) => {
-    console.log('🔵 fetchGameMetrics called for game:', gameId);
-
-    // Check if already fetching
     if (ongoingFetches.current.has(gameId)) {
-      console.log('⏳ Already fetching for game:', gameId);
-      return; // Don't fetch if already in progress
+      return;
     }
 
-    // Only fetch if not already cached
-    if (gameMetrics[gameId] && dailyMetrics[gameId]) {
-      console.log('✅ Metrics already cached for game:', gameId);
-      return; // Don't fetch if already loaded
+    if (
+      dailyMetrics[gameId] !== undefined &&
+      gameMetrics[gameId] !== undefined
+    ) {
+      return;
     }
 
     try {
-      // Mark as ongoing
       ongoingFetches.current.add(gameId);
-
-      // Set loading state at the start of fetch
       setLoadingMetrics(prev => ({ ...prev, [gameId]: true }));
       const { startDate, endDate } = getDateRange();
-      console.log('=====================================');
-      console.log('📊 FETCHING GAME METRICS');
-      console.log('=====================================');
-      console.log(`Game ID: ${gameId}`);
-      console.log(`Date Range: ${startDate} to ${endDate}`);
-      console.log('=====================================');
+      const q = `startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`;
+      const dailyResponse = await fetch(
+        `${ROOT_URL}/hyper-rabbit/metrics/daily/${gameId}?${q}`
+      );
 
-      // Fetch both aggregated metrics and daily breakdown
-      console.log('Making API calls...');
-
-      // Fetch sequentially to avoid hanging
-      const [metricsResponse, dailyResponse, cohortResponse] = await Promise.all([
-        fetch(`${ROOT_URL}/hyper-rabbit/metrics/${gameId}?startDate=${startDate}&endDate=${endDate}`),
-        fetch(`${ROOT_URL}/hyper-rabbit/metrics/daily/${gameId}?startDate=${startDate}&endDate=${endDate}`),
-        fetch(`${ROOT_URL}/hyper-rabbit/retention/cohort/${gameId}?startDate=${startDate}&endDate=${endDate}`)
-      ]);
-
-      console.log('Metrics response status:', metricsResponse.status);
-      console.log('Daily response status:', dailyResponse.status);
-      console.log('Cohort response status:', cohortResponse.status);
-
-      if (metricsResponse.ok) {
-        const result = await metricsResponse.json();
-        console.log('API Response data:', result);
-
-        if (result.success && result.data) {
-          console.log('Setting metrics for game:', gameId, result.data);
-          setGameMetrics(prev => {
-            const updated = {
-              ...prev,
-              [gameId]: result.data
-            };
-            console.log('Updated gameMetrics:', updated);
-            return updated;
-          });
-        }
-      }
-
+      let rows: any[] = [];
       if (dailyResponse.ok) {
         const dailyResult = await dailyResponse.json();
-        console.log('=====================================');
-        console.log('📈 DAILY METRICS API RESPONSE');
-        console.log('=====================================');
-        console.log('Status:', dailyResponse.status);
-        console.log('Success:', dailyResult.success);
-        console.log('Data Array Length:', dailyResult.data?.length || 0);
-
-        if (dailyResult.data && dailyResult.data.length > 0) {
-          console.log('Sample Data (first 3 days):');
-          dailyResult.data.slice(0, 3).forEach((day: any, idx: number) => {
-            console.log(`  Day ${idx + 1}:`, day);
-          });
-        }
-        console.log('=====================================');
-
-        if (dailyResult.success && dailyResult.data) {
-          console.log('✅ Setting daily metrics for game:', gameId);
-          setDailyMetrics(prev => {
-            const updated = {
-              ...prev,
-              [gameId]: dailyResult.data
-            };
-            console.log('✅ Updated dailyMetrics state');
-            return updated;
-          });
-        } else {
-          console.error('❌ Daily metrics missing or empty:', dailyResult);
+        if (dailyResult.success && Array.isArray(dailyResult.data)) {
+          rows = dailyResult.data;
         }
       } else {
-        console.error('=====================================');
-        console.error('❌ DAILY API REQUEST FAILED');
-        console.error('=====================================');
-        console.error('Status:', dailyResponse.status);
-        console.error('Status Text:', dailyResponse.statusText);
-        const errorText = await dailyResponse.text();
-        console.error('Error Details:', errorText);
-        console.error('=====================================');
+        console.error(
+          `Daily metrics failed for ${gameId}:`,
+          dailyResponse.status,
+          await dailyResponse.text().catch(() => '')
+        );
       }
 
-      // Fetch cohort retention data
-      if (cohortResponse.ok) {
-        const cohortResult = await cohortResponse.json();
-        console.log('=====================================');
-        console.log('👥 COHORT RETENTION API RESPONSE');
-        console.log('=====================================');
-        console.log('Success:', cohortResult.success);
-        console.log('Cohort Data Length:', cohortResult.data?.length || 0);
-
-        if (cohortResult.success && cohortResult.data) {
-          console.log('✅ Setting cohort retention data for game:', gameId);
-          setCohortRetentionData(prev => {
-            const updated = {
-              ...prev,
-              [gameId]: cohortResult.data
-            };
-            console.log('✅ Updated cohortRetentionData state');
-            return updated;
-          });
-        }
-      }
-
+      const rolled = aggregateGameMetricsFromDaily(rows);
+      setDailyMetrics(prev => ({ ...prev, [gameId]: rows }));
+      setGameMetrics(prev => ({ ...prev, [gameId]: rolled }));
     } catch (error) {
-      console.error(`Error fetching metrics for game ${gameId}:`, error);
+      console.error(`Error fetching daily metrics for game ${gameId}:`, error);
+      setDailyMetrics(prev => ({ ...prev, [gameId]: [] }));
+      setGameMetrics(prev => ({ ...prev, [gameId]: {} }));
     } finally {
-      // Clear ongoing fetch flag
       ongoingFetches.current.delete(gameId);
-
-      // Always clear loading state - whether success or error
-      console.log('🔵 Clearing loading state for:', gameId);
       setLoadingMetrics(prev => {
         const updated = { ...prev };
         updated[gameId] = false;
-        console.log('Updated loading state:', updated);
         return updated;
       });
     }
@@ -1010,25 +928,6 @@ export const GamesList: React.FC<GamesListProps> = ({ filters, onReportsNavigati
                                   )}
                                 </Box>
                               )}
-
-                              {/* Action Buttons */}
-                              <Box display="flex" gap={2} mt={3} justifyContent="flex-end">
-                                <Button
-                                  variant="contained"
-                                  startIcon={<Visibility />}
-                                  sx={{ backgroundColor: report.color }}
-                                  onClick={() => onReportsNavigation(game.name)}
-                                >
-                                  Open Full Report
-                                </Button>
-                                <Button
-                                  variant="outlined"
-                                  startIcon={<GetApp />}
-                                  sx={{ borderColor: report.color, color: report.color }}
-                                >
-                                  Export CSV
-                                </Button>
-                              </Box>
                             </CardContent>
                           </Card>
                         ))}

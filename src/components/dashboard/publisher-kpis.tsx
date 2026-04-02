@@ -2,6 +2,7 @@ import { Typography, Box, Grid, CircularProgress, Button } from "@mui/material";
 import { formatDecimalNumber } from "../../common/utils";
 import { formatPublisherMoney, formatPublisherMoneyFixed } from "../../common/currency-utils";
 import { DECIMAL_LENGTH, GRAPHQL_URL } from "../../common/constants";
+import { clampPublisherCustomRange } from "../../common/publisher-custom-dates";
 import { useState, useEffect } from "react";
 import { AttachMoney, Schedule, Description, Assignment, Notifications, HealthAndSafety } from "@mui/icons-material";
 
@@ -41,6 +42,8 @@ interface PublisherKPIsProps {
         game?: string;
         dateRange?: string;
         currency?: string;
+        customStartDate?: string;
+        customEndDate?: string;
     };
     hideActionButtons?: boolean;
 }
@@ -84,6 +87,20 @@ export const PublisherKPIs = ({ filter, hideActionButtons = false }: PublisherKP
                                 game: filter?.game ?? 'All',
                                 dateRange: filter?.dateRange ?? 'Last 30d',
                                 currency: filter?.currency ?? 'INR',
+                                ...(filter?.dateRange === 'Custom' &&
+                                filter?.customStartDate &&
+                                filter?.customEndDate
+                                    ? (() => {
+                                          const { start, end } = clampPublisherCustomRange(
+                                              filter.customStartDate,
+                                              filter.customEndDate,
+                                          );
+                                          return {
+                                              startDate: start,
+                                              endDate: `${end}T23:59:59.999Z`,
+                                          };
+                                      })()
+                                    : {}),
                             },
                         },
                     }),
@@ -108,7 +125,16 @@ export const PublisherKPIs = ({ filter, hideActionButtons = false }: PublisherKP
         };
 
         fetchKPIs();
-    }, [filter?.studio, filter?.platform, filter?.subPlatform, filter?.game, filter?.dateRange, filter?.currency]);
+    }, [
+        filter?.studio,
+        filter?.platform,
+        filter?.subPlatform,
+        filter?.game,
+        filter?.dateRange,
+        filter?.currency,
+        filter?.customStartDate,
+        filter?.customEndDate,
+    ]);
 
     const displayCurrency = filter?.currency ?? 'INR';
 

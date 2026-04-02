@@ -18,7 +18,7 @@ import { StudiosGamesList } from "../../components/dashboard/studios-games-list"
 import { AdvancedExport } from "../../components/dashboard/advanced-export";
 import { SavedViewsManager } from "../../components/dashboard/saved-views-manager";
 import { RealTimeUpdates } from "../../components/dashboard/real-time-updates";
-import { NotificationSystem } from "../../components/dashboard/notification-system";
+import { AdminDashboardNotifications } from "../../components/dashboard/notification-system";
 import { KPICCharts } from "../../components/dashboard/kpi-charts";
 import { PerformanceOptimizer } from "../../components/dashboard/performance-optimizer";
 
@@ -80,7 +80,7 @@ export const AdminDashboard = () => {
                             onSaveView={(name, filters) => console.log('Save view:', name, filters)}
                         />
                         <AdvancedExport filter={listController.filterValues} type="publisher" />
-                        <NotificationSystem onNotificationClick={(notification) => console.log('Notification clicked:', notification)} />
+                        <AdminDashboardNotifications onNotificationClick={(notification) => console.log('Notification clicked:', notification)} />
                     </Box>
                 </Box>
                 <Stack direction="row">

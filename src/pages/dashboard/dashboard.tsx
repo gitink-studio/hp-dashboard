@@ -1,18 +1,27 @@
 import { QueryNames, GRAPHQL_URL } from "../../common/constants";
+import { getDashboardQueryDateBounds, getDefaultCustomDashboardRange, getLatestDashboardDataDateYmd } from "../../common/utils";
 import { useAuthenticated } from "react-admin";
-import { Stack, Typography, Box, Grid, FormControl, Select, MenuItem, CircularProgress } from "@mui/material";
-import { useState, useEffect } from "react";
+import { Stack, Typography, Box, Grid, FormControl, Select, MenuItem, CircularProgress, TextField } from "@mui/material";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { PlatformFilter } from "../../components/dashboard/platform-filter";
-import { SubPlatformFilter } from "../../components/dashboard/sub-platform-filter";
-import { GamesFilter } from "../../components/dashboard/games-filter";
-import { DateFilter } from "../../components/dashboard/date-filter";
-import { AdvancedDateFilter } from "../../components/dashboard/advanced-date-filter";
 import { PortfolioKPIs } from "../../components/dashboard/portfolio-kpis";
-import { NotificationSystem } from "../../components/dashboard/notification-system";
+import { DeveloperDashboardNotifications } from "../../components/dashboard/notification-system";
 import { FilterList } from "@mui/icons-material";
-import { ReportsHub } from "../../components/reports/reports-hub";
 import { GamesList } from "../../components/dashboard/games-list";
+
+/** When platform filter is "All", disambiguate games with platform and sub-platform when present. */
+function getDeveloperGameOptionLabel(game: { name?: string; platform?: string; subPlatform?: string }, platformFilterIsAll: boolean): string {
+  const base = game.name || "Untitled";
+  if (!platformFilterIsAll) {
+    return base;
+  }
+  const plat = game.platform || "—";
+  const sub =
+    game.subPlatform && String(game.subPlatform).trim() !== "" && game.subPlatform !== "All"
+      ? ` · ${game.subPlatform}`
+      : "";
+  return `${base} (${plat}${sub})`;
+}
 
 export const Dashboard = () => {
   useAuthenticated();
@@ -39,22 +48,14 @@ export const Dashboard = () => {
     );
   }
 
-  const customDatePicker = "Custom";
-  const getDate = (data: any) => data === "Custom"
-    ? data : data === 0
-      ? "Today" : data === 1
-        ? "Yesterday" : `Last ${data} days`;
-
-  const Text = ({ data, ...props }: { data: string; }) => {
-    return (<Typography sx={{ p: 2, pt: 0, }} {...props}> {data} </Typography>);
-  }
-
   // Custom filter state for grid layout
   const [filters, setFilters] = useState({
     platform: "All",
-    subPlatform: "All", 
+    subPlatform: "All",
     game: "All",
-    dateRange: "Last 90d"
+    dateRange: "Last 30d",
+    startDate: "",
+    endDate: "",
   });
 
   // State for platform data from database
@@ -63,6 +64,51 @@ export const Dashboard = () => {
   const [games, setGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  /** Gate notifications until first-load fetches for this page finish (parity with publisher dashboard). */
+  const [initialLoadGates, setInitialLoadGates] = useState({
+    platforms: false,
+    dashboardGames: false,
+    portfolioKpis: false,
+    gamesList: false,
+  });
+  const dashboardGamesFirstFetchDone = useRef(false);
+  const portfolioKpisFirstFetchDone = useRef(false);
+  const gamesListFirstFetchDone = useRef(false);
+
+  const onPortfolioKpisFetchSettled = useCallback(() => {
+    if (portfolioKpisFirstFetchDone.current) return;
+    portfolioKpisFirstFetchDone.current = true;
+    setInitialLoadGates((g) => ({ ...g, portfolioKpis: true }));
+  }, []);
+
+  const onGamesListFetchSettled = useCallback(() => {
+    if (gamesListFirstFetchDone.current) return;
+    gamesListFirstFetchDone.current = true;
+    setInitialLoadGates((g) => ({ ...g, gamesList: true }));
+  }, []);
+
+  const developerMainDataReady = useMemo(
+    () =>
+      initialLoadGates.platforms &&
+      initialLoadGates.dashboardGames &&
+      initialLoadGates.portfolioKpis &&
+      initialLoadGates.gamesList,
+    [initialLoadGates],
+  );
+
+  useEffect(() => {
+    if (!loading) {
+      setInitialLoadGates((g) => (g.platforms ? g : { ...g, platforms: true }));
+    }
+  }, [loading]);
+
+  // If platforms never load (empty), do not block notifications forever on dashboard games fetch.
+  useEffect(() => {
+    if (!loading && platforms.length === 0 && !dashboardGamesFirstFetchDone.current) {
+      dashboardGamesFirstFetchDone.current = true;
+      setInitialLoadGates((g) => ({ ...g, dashboardGames: true }));
+    }
+  }, [loading, platforms.length]);
 
   // Fetch platforms from database
   useEffect(() => {
@@ -126,6 +172,7 @@ export const Dashboard = () => {
   const fetchGames = async (currentFilters: typeof filters) => {
     try {
       const studioId = localStorage.getItem("studioId") || undefined;
+      const dateBounds = getDashboardQueryDateBounds(currentFilters);
 
       const response = await fetch(GRAPHQL_URL, {
         method: 'POST',
@@ -137,6 +184,8 @@ export const Dashboard = () => {
                 id
                 name
                 icon
+                platform
+                subPlatform
                 dau
                 installs
                 cpi
@@ -151,8 +200,7 @@ export const Dashboard = () => {
               subPlatform: currentFilters.subPlatform,
               game: 'All',
               dateRange: currentFilters.dateRange,
-              startDate: '2024-08-15',
-              endDate: '2024-09-14'
+              ...(dateBounds ? { startDate: dateBounds.startDate, endDate: dateBounds.endDate } : {}),
             },
           }
         })
@@ -167,6 +215,11 @@ export const Dashboard = () => {
     } catch (error) {
       console.error('Error fetching games:', error);
       setGames([]);
+    } finally {
+      if (!dashboardGamesFirstFetchDone.current) {
+        dashboardGamesFirstFetchDone.current = true;
+        setInitialLoadGates((g) => ({ ...g, dashboardGames: true }));
+      }
     }
   };
 
@@ -175,22 +228,31 @@ export const Dashboard = () => {
     if (platforms.length > 0) { // Only fetch after platforms are loaded
       fetchGames(filters);
     }
-  }, [filters.platform, filters.subPlatform, platforms.length]);
+  }, [filters.platform, filters.subPlatform, filters.dateRange, filters.startDate, filters.endDate, platforms.length]);
 
   const handleFilterChange = (filterType: string, value: string) => {
     setFilters(prev => {
-      const newFilters = {
-        ...prev,
-        [filterType]: value
-      };
-      
-      // Reset sub-platform and game to "All" when platform changes
-      if (filterType === 'platform') {
-        newFilters.subPlatform = 'All';
-        newFilters.game = 'All';
+      let next: typeof prev = { ...prev, [filterType]: value } as typeof prev;
+
+      if (filterType === "dateRange") {
+        if (value === "Custom") {
+          const b = getDefaultCustomDashboardRange();
+          next = {
+            ...next,
+            startDate: b.startDate,
+            endDate: b.endDate,
+          };
+        } else {
+          next = { ...next, startDate: "", endDate: "" };
+        }
       }
-      
-      return newFilters;
+
+      if (filterType === "platform") {
+        next.subPlatform = "All";
+        next.game = "All";
+      }
+
+      return next;
     });
   };
 
@@ -206,6 +268,8 @@ export const Dashboard = () => {
       }
     }
   }, [games, filters.game]);
+
+  const customDateMaxYmd = getLatestDashboardDataDateYmd();
 
   // Navigation functions for Reports Hub
   const handleReportsNavigation = (gameName: string) => {
@@ -274,7 +338,7 @@ export const Dashboard = () => {
 
           {/* Games Filter */}
           <Grid item>
-            <FormControl size="small" sx={{ minWidth: 120 }}>
+            <FormControl size="small" sx={{ minWidth: filters.platform === "All" ? 280 : 120 }}>
               <Select
                 value={filters.game}
                 displayEmpty
@@ -285,7 +349,7 @@ export const Dashboard = () => {
                 <MenuItem value="All">Game [ All ▼ ]</MenuItem>
                 {games.map((game) => (
                   <MenuItem key={game.id} value={game.id}>
-                    {game.name}
+                    {getDeveloperGameOptionLabel(game, filters.platform === "All")}
                   </MenuItem>
                 ))}
               </Select>
@@ -301,21 +365,61 @@ export const Dashboard = () => {
                 onChange={(e) => handleFilterChange('dateRange', e.target.value)}
                 sx={{ '& .MuiSelect-select': { py: 0.5 } }}
               >
-                <MenuItem value="Last 90d">Date [ 90d ▼ ]</MenuItem>
-                <MenuItem value="Last 30d">30d</MenuItem>
+                <MenuItem value="Last 30d">Date [ 30d ▼ ]</MenuItem>
                 <MenuItem value="Last 14d">14d</MenuItem>
                 <MenuItem value="Last 7d">7d</MenuItem>
                 <MenuItem value="Yesterday">Yesterday</MenuItem>
-                <MenuItem value="Today">Today</MenuItem>
                 <MenuItem value="Custom">Custom</MenuItem>
               </Select>
             </FormControl>
           </Grid>
+          {filters.dateRange === "Custom" && (
+            <>
+              <Grid item>
+                <TextField
+                  type="date"
+                  size="small"
+                  label="From"
+                  InputLabelProps={{ shrink: true }}
+                  inputProps={{ max: customDateMaxYmd }}
+                  value={filters.startDate}
+                  onChange={(e) => {
+                    let v = e.target.value;
+                    if (v > customDateMaxYmd) v = customDateMaxYmd;
+                    setFilters((prev) => {
+                      const next = { ...prev, startDate: v };
+                      if (next.endDate && next.endDate < v) next.endDate = v;
+                      return next;
+                    });
+                  }}
+                />
+              </Grid>
+              <Grid item>
+                <TextField
+                  type="date"
+                  size="small"
+                  label="To"
+                  InputLabelProps={{ shrink: true }}
+                  inputProps={{ max: customDateMaxYmd }}
+                  value={filters.endDate}
+                  onChange={(e) => {
+                    let v = e.target.value;
+                    if (v > customDateMaxYmd) v = customDateMaxYmd;
+                    setFilters((prev) => {
+                      const next = { ...prev, endDate: v };
+                      if (next.startDate && next.startDate > v) next.startDate = v;
+                      return next;
+                    });
+                  }}
+                />
+              </Grid>
+            </>
+          )}
 
           {/* Action Buttons */}
           <Grid item sx={{ ml: 'auto' }}>
             <Box display="flex" gap={1}>
-              <NotificationSystem onNotificationClick={(notification) => console.log('Notification clicked:', notification)} />
+              <DeveloperDashboardNotifications fetchEnabled={developerMainDataReady} />
             </Box>
           </Grid>
         </Grid>
@@ -328,13 +432,14 @@ export const Dashboard = () => {
         </Typography>
       </Box>
       <Stack direction="row">
-        <PortfolioKPIs filter={filters} />
+        <PortfolioKPIs filter={filters} onFetchSettled={onPortfolioKpisFetchSettled} />
       </Stack>
 
       {/* Games List Section - Custom Component */}
-      <GamesList 
+      <GamesList
         filters={filters}
         onReportsNavigation={handleReportsNavigation}
+        onFetchSettled={onGamesListFetchSettled}
       />
     </>
   );

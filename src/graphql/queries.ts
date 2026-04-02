@@ -797,8 +797,8 @@ const Approval = gql`
 
 
 const Notifications = gql`
-  query Notifications($userId: ID) {
-    notifications(userId: $userId) {
+  query Notifications($roleName: String) {
+    notifications(roleName: $roleName) {
       id
       userId
       type

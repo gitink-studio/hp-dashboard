@@ -33,7 +33,7 @@ import {
 import { useGetList, useNotify, useAuthenticated } from 'react-admin';
 import { QueryNames, CONTRACT_TYPES, PAYOUT_TYPES, APPROVAL_TYPES } from '../../common/constants';
 import { formatDecimalNumber } from '../../common/utils';
-import { NotificationSystem } from '../../components/dashboard/notification-system';
+import { PublisherDashboardNotifications } from '../../components/dashboard/notification-system';
 import { PublisherGamesList } from '../../components/publisher/publisher-games-list';
 
 interface TabPanelProps {
@@ -93,17 +93,14 @@ export const PublisherDashboard = () => {
   const [createType, setCreateType] = useState('');
   const notify = useNotify();
 
-  // Fetch studios
-  const { data: studiosData } = useGetList(QueryNames.STUDIOS, {});
+  // Fetch studios / contracts / payouts / approvals first; notifications load after these settle.
+  const { data: studiosData, isPending: studiosPending } = useGetList(QueryNames.STUDIOS, {});
+  const { data: contractsData, isPending: contractsPending } = useGetList(QueryNames.CONTRACTS, {});
+  const { data: payoutsData, isPending: payoutsPending } = useGetList(QueryNames.PAYOUTS, {});
+  const { data: approvalsData, isPending: approvalsPending } = useGetList(QueryNames.APPROVALS, {});
 
-  // Fetch contracts
-  const { data: contractsData } = useGetList(QueryNames.CONTRACTS, {});
-
-  // Fetch payouts
-  const { data: payoutsData } = useGetList(QueryNames.PAYOUTS, {});
-
-  // Fetch approvals
-  const { data: approvalsData } = useGetList(QueryNames.APPROVALS, {});
+  const mainDashboardListsReady =
+    !studiosPending && !contractsPending && !payoutsPending && !approvalsPending;
 
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -173,7 +170,7 @@ export const PublisherDashboard = () => {
           Dashboard
         </Typography>
         <Box display="flex" gap={2}>
-          <NotificationSystem />
+          <PublisherDashboardNotifications fetchEnabled={mainDashboardListsReady} />
         </Box>
       </Box>
 
@@ -193,10 +190,7 @@ export const PublisherDashboard = () => {
 
         {/* Games Tab */}
         <TabPanel value={activeTab} index={0}>
-          <PublisherGamesList onReportsNavigation={(gameName) => {
-            // Navigate to reports page with game filter
-            window.location.href = `#/reports?game=${encodeURIComponent(gameName)}&platform=All&region=All&dateRange=Last 30d&currency=USD`;
-          }} />
+          <PublisherGamesList />
         </TabPanel>
 
         {/* Studios Tab */}

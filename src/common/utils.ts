@@ -33,6 +33,108 @@ export const isUserAlreadyExist = async (value: string) => {
   return await FetchData.isDataAlreadyExist("user", "email", value);
 };
 
+/** YYYY-MM-DD in the user's local calendar (avoids UTC shifting from `toISOString().split('T')[0]`). */
+export function toLocalDateString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** Latest local calendar day expected to have complete daily metrics (not “today”). */
+export function getLatestDashboardDataDateYmd(): string {
+  const n = new Date();
+  return toLocalDateString(new Date(n.getFullYear(), n.getMonth(), n.getDate() - 1));
+}
+
+/**
+ * Bounds for developer dashboard GraphQL / REST from preset `dateRange`.
+ * "Yesterday" is a single local calendar day (startDate === endDate).
+ * Returns undefined for Custom — caller should supply explicit dates if supported.
+ */
+export function getDashboardDateBounds(
+  dateRange: string | undefined,
+): { startDate: string; endDate: string } | undefined {
+  const dr = dateRange ?? 'Last 30d';
+  if (dr === 'Custom') {
+    return undefined;
+  }
+
+  const now = new Date();
+
+  if (dr === 'Yesterday') {
+    const y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    const s = toLocalDateString(y);
+    return { startDate: s, endDate: s };
+  }
+
+  if (dr === 'Today') {
+    const s = toLocalDateString(now);
+    return { startDate: s, endDate: s };
+  }
+
+  let startDate: Date;
+
+  switch (dr) {
+    case 'Last 7d':
+    case '7d':
+      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    case 'Last 14d':
+    case '14d':
+      startDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+      break;
+    case 'Last 30d':
+    case '30d':
+      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+    default:
+      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  }
+
+  return {
+    startDate: toLocalDateString(startDate),
+    endDate: toLocalDateString(now),
+  };
+}
+
+/** Default Custom range: last ~30d through latest data day (yesterday), not today. */
+export function getDefaultCustomDashboardRange(): { startDate: string; endDate: string } {
+  const b = getDashboardDateBounds('Last 30d')!;
+  const maxEnd = getLatestDashboardDataDateYmd();
+  let endDate = b.endDate > maxEnd ? maxEnd : b.endDate;
+  let startDate = b.startDate;
+  if (startDate > endDate) startDate = endDate;
+  return { startDate, endDate };
+}
+
+export type DashboardFilterDates = {
+  dateRange: string;
+  startDate?: string;
+  endDate?: string;
+};
+
+/** Preset bounds from `dateRange`, or explicit `startDate`/`endDate` when `dateRange === 'Custom'`. */
+export function getDashboardQueryDateBounds(
+  filters: DashboardFilterDates,
+): { startDate: string; endDate: string } | undefined {
+  if (filters.dateRange === 'Custom') {
+    const s = filters.startDate?.trim();
+    const e = filters.endDate?.trim();
+    if (s && e) {
+      const maxEnd = getLatestDashboardDataDateYmd();
+      let start = s <= e ? s : e;
+      let end = s <= e ? e : s;
+      if (end > maxEnd) end = maxEnd;
+      if (start > maxEnd) start = maxEnd;
+      if (start > end) start = end;
+      return { startDate: start, endDate: end };
+    }
+    return undefined;
+  }
+  return getDashboardDateBounds(filters.dateRange);
+}
+
 export const formatDecimalNumber = (_value: number | string): string => {
   if (_value === undefined || _value === null || _value === '') {
     return '0';
