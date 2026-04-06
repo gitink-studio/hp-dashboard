@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useGetList } from 'react-admin';
+import { useGetList, useDelete, useNotify } from 'react-admin';
 import { useNavigate } from 'react-router-dom';
 import { QueryNames } from '../../../common/constants';
 import {
@@ -17,7 +17,6 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  ListItemSecondaryAction,
   IconButton,
   Chip,
   Badge,
@@ -91,6 +90,9 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
       enabled: queryEnabled,
     },
   );
+
+  const [deleteOne, { isPending: deletePending }] = useDelete();
+  const notify = useNotify();
 
   const loadingNotifications = queryEnabled && isPending && backendNotifications === undefined;
   const showInitialListLoading = waitingForPrerequisites || loadingNotifications;
@@ -184,8 +186,24 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
     handleMenuClose();
   };
 
-  const deleteNotification = (notificationId: string) => {
-    setLocalDeletedState((prev) => new Set(prev).add(notificationId));
+  const removeNotification = (notificationId: string) => {
+    void deleteOne(
+      QueryNames.NOTIFICATIONS,
+      {
+        id: notificationId,
+        previousData: { id: notificationId } as BackendNotification,
+      },
+      {
+        mutationMode: 'pessimistic',
+        onSuccess: () => {
+          setLocalDeletedState((prev) => new Set(prev).add(notificationId));
+          void refetch();
+        },
+        onError: (err) => {
+          notify(err instanceof Error ? err.message : 'Could not remove notification', { type: 'error' });
+        },
+      },
+    );
   };
 
   const clearAllNotifications = () => {
@@ -311,6 +329,21 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
               <ListItem
                 key={notification.id}
                 divider
+                secondaryAction={
+                  <IconButton
+                    edge="end"
+                    aria-label="Delete notification"
+                    type="button"
+                    disabled={deletePending}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeNotification(notification.id);
+                    }}
+                    size="small"
+                  >
+                    <Delete />
+                  </IconButton>
+                }
                 sx={{
                   backgroundColor: notification.read ? 'transparent' : 'action.hover',
                   cursor: 'pointer',
@@ -350,18 +383,6 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
                     </Box>
                   }
                 />
-                <ListItemSecondaryAction>
-                  <IconButton
-                    edge="end"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteNotification(notification.id);
-                    }}
-                    size="small"
-                  >
-                    <Delete />
-                  </IconButton>
-                </ListItemSecondaryAction>
               </ListItem>
             ))}
           </List>

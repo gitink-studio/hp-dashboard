@@ -1,6 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { GRAPHQL_URL, ROOT_URL } from '../../common/constants';
-import { formatDecimalNumber, getDashboardDateBounds, getDashboardQueryDateBounds } from '../../common/utils';
+import {
+  formatDecimalNumber,
+  getDashboardQueryDateBounds,
+  getHyperRabbitDailyMetricsRange,
+} from '../../common/utils';
+import {
+  aggregateHyperRabbitDailyMetrics,
+  hyperRabbitDailyRowGrossRevenue,
+} from '../../common/aggregate-hyper-rabbit-daily';
+import {
+  heatmapRetentionCell,
+  isDashboardLast30dPreset,
+  retentionAsOfFromRangeEnd,
+  RETENTION_HEATMAP_DAYS,
+  weightedRetentionForMatureCohorts,
+} from '../../common/retention-cohort';
 import {
   Box,
   Typography,
@@ -34,28 +49,6 @@ interface GamesListProps {
   onReportsNavigation: (gameName: string) => void;
   /** Called after each games list request finishes (success or error). */
   onFetchSettled?: () => void;
-}
-
-/** Period KPIs derived from DailyMetrics rows — avoids slow EventLog-based /metrics/:gameId. */
-function aggregateGameMetricsFromDaily(daily: any[]): Record<string, number> {
-  if (!daily.length) return {};
-  const n = daily.length;
-  const sum = (key: string) => daily.reduce((s, row) => s + (Number(row[key]) || 0), 0);
-  const avg = (key: string) => sum(key) / n;
-  const last = daily[daily.length - 1];
-  const totalRev = sum('totalRevenue') || sum('grossRevenue');
-  return {
-    totalRevenue: totalRev,
-    grossRevenue: totalRev,
-    iapRevenue: sum('iapRevenue'),
-    adRevenue: sum('adRevenue'),
-    retentionD1: avg('retentionD1'),
-    retentionD7: avg('retentionD7'),
-    retentionD30: avg('retentionD30'),
-    mau: Number(last?.mau) || avg('mau') || avg('dau'),
-    usersAffectedByErrors: sum('usersAffectedByErrors'),
-    crashRate: avg('crashRate'),
-  };
 }
 
 export const GamesList: React.FC<GamesListProps> = ({
@@ -161,26 +154,31 @@ export const GamesList: React.FC<GamesListProps> = ({
 
   // Track ongoing fetches to prevent duplicate requests
   const ongoingFetches = React.useRef<Set<string>>(new Set());
+  /** Same range signature as publisher dashboard — refetch daily tables when dates change. */
+  const lastFetchedMetricsRangeRef = React.useRef<Record<string, string>>({});
 
-  // Clear cached metrics when filters change (especially date range)
+  // Platform / game / subPlatform: list context changed — reset expanded reports and caches
   useEffect(() => {
-    console.log('🔄 Filters changed, clearing cached metrics');
-    // Close all expanded accordions to avoid showing stale data
     setExpandedGames(new Set());
-    // Clear cached metrics
     setGameMetrics({});
     setDailyMetrics({});
     setCohortRetentionData({});
     setLoadingMetrics({});
     ongoingFetches.current.clear();
+    lastFetchedMetricsRangeRef.current = {};
+  }, [filters.platform, filters.subPlatform, filters.game]);
 
-    // Debounce to prevent rapid successive calls
-    const timeoutId = setTimeout(() => {
-      console.log('✅ Cache cleared, ready for new data');
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [filters.dateRange, filters.startDate, filters.endDate, filters.platform, filters.subPlatform, filters.game]);
+  // Date only: keep accordions open; invalidate per-game range and refetch (publisher parity)
+  useEffect(() => {
+    expandedGames.forEach((gameId) => {
+      delete lastFetchedMetricsRangeRef.current[gameId];
+      ongoingFetches.current.delete(gameId);
+    });
+    expandedGames.forEach((gameId) => {
+      void fetchGameMetrics(gameId);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchGameMetrics reads latest filters from closure
+  }, [filters.dateRange, filters.startDate, filters.endDate]);
 
   // Debug: Log gameMetrics changes (commented out to prevent excessive logging)
   // useEffect(() => {
@@ -223,12 +221,8 @@ export const GamesList: React.FC<GamesListProps> = ({
     return '🎮'; // Default icon
   };
 
-  // Same local-calendar bounds as GraphQL (fixes Yesterday + timezone bugs from toISOString).
-  const getDateRange = () => {
-    const bounds = getDashboardQueryDateBounds(filters);
-    if (bounds) return bounds;
-    return getDashboardDateBounds('Last 30d')!;
-  };
+  /** Same Hyper Rabbit REST range as publisher daily metrics (rolling end, UTC Today/Yesterday, custom clamp). */
+  const getDateRange = () => getHyperRabbitDailyMetricsRange(filters);
 
   // Fetch per-game reports: single DailyMetrics query (indexed) + client-side KPI rollup.
   // Skips /metrics/:gameId (many heavy EventLog aggregations) and non-existent /retention/cohort.
@@ -237,17 +231,15 @@ export const GamesList: React.FC<GamesListProps> = ({
       return;
     }
 
-    if (
-      dailyMetrics[gameId] !== undefined &&
-      gameMetrics[gameId] !== undefined
-    ) {
+    const { startDate, endDate } = getHyperRabbitDailyMetricsRange(filters);
+    const rangeSig = `${startDate}|${endDate}`;
+    if (lastFetchedMetricsRangeRef.current[gameId] === rangeSig) {
       return;
     }
 
     try {
       ongoingFetches.current.add(gameId);
       setLoadingMetrics(prev => ({ ...prev, [gameId]: true }));
-      const { startDate, endDate } = getDateRange();
       const q = `startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`;
       const dailyResponse = await fetch(
         `${ROOT_URL}/hyper-rabbit/metrics/daily/${gameId}?${q}`
@@ -267,9 +259,16 @@ export const GamesList: React.FC<GamesListProps> = ({
         );
       }
 
-      const rolled = aggregateGameMetricsFromDaily(rows);
+      const rolled = aggregateHyperRabbitDailyMetrics(
+        rows,
+        retentionAsOfFromRangeEnd({ startDate, endDate }),
+        isDashboardLast30dPreset(filters.dateRange)
+          ? { d30KpiRelaxed: true }
+          : undefined,
+      );
       setDailyMetrics(prev => ({ ...prev, [gameId]: rows }));
       setGameMetrics(prev => ({ ...prev, [gameId]: rolled }));
+      lastFetchedMetricsRangeRef.current[gameId] = rangeSig;
     } catch (error) {
       console.error(`Error fetching daily metrics for game ${gameId}:`, error);
       setDailyMetrics(prev => ({ ...prev, [gameId]: [] }));
@@ -295,6 +294,7 @@ export const GamesList: React.FC<GamesListProps> = ({
     const hasMetrics = Object.keys(metrics).length > 0;
     const hasDaily = daily.length > 0;
     const hasCohortRetention = cohortRetention.length > 0;
+    const retentionAsOf = retentionAsOfFromRangeEnd(getDateRange());
 
     // Only log when expanding accordion (when data is fetched)
     if (expandedGames.has(gameId) && hasDaily) {
@@ -324,53 +324,34 @@ export const GamesList: React.FC<GamesListProps> = ({
       return `rgb(${red}, ${green}, ${blue})`;
     };
 
-    // Helper function to calculate retention for a specific day
-    // Uses interpolation between D1, D7, D30 if needed
-    const calculateDayRetention = (day: number, d1: number, d7: number, d30: number): number => {
-      if (day === 1) return d1;
-      if (day === 7) return d7;
-      if (day === 30) return d30;
-
-      // Interpolate between D1 and D7 for days 2-6
-      if (day > 1 && day < 7) {
-        const ratio = (day - 1) / 6;
-        return d1 - (d1 - d7) * ratio;
-      }
-
-      // Interpolate between D7 and D30 for days 8-29
-      if (day > 7 && day < 30) {
-        const ratio = (day - 7) / 23;
-        return d7 - (d7 - d30) * ratio;
-      }
-
-      // For days beyond 30, use D30 (or extrapolate down)
-      if (day > 30) {
-        const daysPast30 = day - 30;
-        // Exponential decay beyond day 30
-        return d30 * Math.pow(0.95, daysPast30);
-      }
-
-      return 0;
-    };
-
-    // Calculate max retention value for normalization
+    // Calculate max retention value for normalization (aligned with publisher dashboard)
     const calculateMaxRetention = () => {
       if (hasDaily && daily.length > 0) {
-        return Math.max(...daily.map(d => Math.max(
-          d.retentionD1 || 0,
-          d.retentionD7 || 0,
-          d.retentionD30 || 0
-        )));
+        return Math.max(
+          ...daily.map((d) =>
+            Math.max(
+              Number(d.retentionD1) || 0,
+              Number(d.retentionD7) || 0,
+              Number(d.retentionD30) || 0,
+            ),
+          ),
+        );
       }
       if (hasCohortRetention && cohortRetention.length > 0) {
         const allValues = cohortRetention.flatMap((c: any) => [
           parseFloat(c.d1?.replace('%', '') || '0'),
           parseFloat(c.d7?.replace('%', '') || '0'),
-          parseFloat(c.d30?.replace('%', '') || '0')
+          parseFloat(c.d30?.replace('%', '') || '0'),
         ]);
         return Math.max(...allValues, 0);
       }
-      return 100; // Default max
+      return (
+        Math.max(
+          Number(metrics.retentionD1) || 0,
+          Number(metrics.retentionD7) || 0,
+          Number(metrics.retentionD30) || 0,
+        ) || 100
+      );
     };
 
     const maxRetention = calculateMaxRetention();
@@ -434,7 +415,7 @@ export const GamesList: React.FC<GamesListProps> = ({
             roasD30: hasMetrics ? `${roasD30.toFixed(0)}%` : '0%'
           },
           table: hasDaily ? daily.map(d => {
-            const totalRevenue = d.totalRevenue || d.grossRevenue || 0;
+            const totalRevenue = hyperRabbitDailyRowGrossRevenue(d);
             const adSpend = d.adSpend || 0;
             const installs = d.newUsers || 0;
             // Calculate daily spend: use adSpend if available, otherwise calculate from installs * CPI
@@ -461,69 +442,147 @@ export const GamesList: React.FC<GamesListProps> = ({
         icon: <Assessment />,
         color: '#ed6c02',
         data: {
-          kpi: {
-            d1: hasMetrics ? `${(metrics.retentionD1 || 0).toFixed(1)}%` : '0.0%',
-            d7: hasMetrics ? `${(metrics.retentionD7 || 0).toFixed(1)}%` : '0.0%',
-            d30: hasMetrics ? `${(metrics.retentionD30 || 0).toFixed(1)}%` : 'N/A'
-          },
-          // Heatmap format: rows are cohorts/dates, columns are days 1-9
-          // Use cohort-based retention data from backend, fallback to daily data
+          kpi: (() => {
+            if (!hasDaily) {
+              return {
+                d1: `${Number(metrics.retentionD1 || 0).toFixed(1)}%`,
+                d7:
+                  metrics.retentionD7NoMatureCohorts === true
+                    ? 'N/A'
+                    : `${Number(metrics.retentionD7 || 0).toFixed(1)}%`,
+                d30:
+                  metrics.retentionD30NoMatureCohorts === true
+                    ? 'N/A'
+                    : metrics.retentionD30 != null
+                      ? `${Number(metrics.retentionD30).toFixed(1)}%`
+                      : 'N/A',
+              };
+            }
+            const r1 = weightedRetentionForMatureCohorts(
+              daily,
+              'retentionD1',
+              1,
+              retentionAsOf,
+            );
+            const r7 = weightedRetentionForMatureCohorts(
+              daily,
+              'retentionD7',
+              7,
+              retentionAsOf,
+            );
+            const r30 = weightedRetentionForMatureCohorts(
+              daily,
+              'retentionD30',
+              30,
+              retentionAsOf,
+              isDashboardLast30dPreset(filters.dateRange)
+                ? { d30KpiRelaxed: true }
+                : undefined,
+            );
+            const d1Fallback =
+              daily.reduce((s, d) => s + (Number(d.retentionD1) || 0), 0) / daily.length;
+            return {
+              d1: `${(r1.hasMature ? r1.avg : d1Fallback).toFixed(1)}%`,
+              d7: r7.hasMature ? `${r7.avg.toFixed(1)}%` : 'N/A',
+              d30: r30.hasMature ? `${r30.avg.toFixed(1)}%` : 'N/A',
+            };
+          })(),
+          // Heatmap: prefer DailyMetrics rows (publisher parity); else cohort API; else summary row
           table: (() => {
             let retentionRows: any[] = [];
 
-            if (hasCohortRetention && cohortRetention.length > 0) {
+            if (hasDaily) {
+              retentionRows = daily.map((d) => {
+                const installs = d.newUsers || 0;
+                const d1 = d.retentionD1 ?? 0;
+                const d7 = d.retentionD7 ?? 0;
+                const d30 = d.retentionD30 ?? 0;
+                const dateStr = formatDate(d.date);
+                const dayName = new Date(d.date).toLocaleDateString('en-US', {
+                  weekday: 'short',
+                });
+
+                const row: any = {
+                  cohortDate: `${dayName}, ${dateStr} (${formatDecimalNumber(installs)} Users)`,
+                  isMean: false,
+                };
+
+                for (const day of RETENTION_HEATMAP_DAYS) {
+                  const cell = heatmapRetentionCell(day, d1, d7, d30, d.date, retentionAsOf);
+                  row[`day${day}`] = {
+                    value: cell.value,
+                    display: cell.display,
+                    pending: cell.pending,
+                    color: cell.pending
+                      ? '#ffffff'
+                      : getHeatmapColor(cell.value ?? 0, maxRetention),
+                  };
+                }
+
+                return row;
+              });
+            } else if (hasCohortRetention && cohortRetention.length > 0) {
               retentionRows = cohortRetention.map((cohort: any) => {
-                const cohortDate = new Date(cohort.cohort).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                const cohortDate = new Date(cohort.cohort).toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                });
                 const installs = cohort.installs || 0;
                 const d1 = parseFloat(cohort.d1?.replace('%', '') || '0');
                 const d7 = parseFloat(cohort.d7?.replace('%', '') || '0');
                 const d30 = parseFloat(cohort.d30?.replace('%', '') || '0');
 
-                // Create row with date/cohort label and retention for each day (1-9)
                 const row: any = {
                   cohortDate: `${cohortDate} (${formatDecimalNumber(installs)} Users)`,
-                  isMean: false
+                  isMean: false,
                 };
 
-                // Calculate retention for days 1-9
-                for (let day = 1; day <= 9; day++) {
-                  const retention = calculateDayRetention(day, d1, d7, d30);
+                for (const day of RETENTION_HEATMAP_DAYS) {
+                  const cell = heatmapRetentionCell(
+                    day,
+                    d1,
+                    d7,
+                    d30,
+                    String(cohort.cohort),
+                    retentionAsOf,
+                  );
                   row[`day${day}`] = {
-                    value: retention,
-                    display: `${retention.toFixed(2)}%`,
-                    color: getHeatmapColor(retention, maxRetention)
+                    value: cell.value,
+                    display: cell.display,
+                    pending: cell.pending,
+                    color: cell.pending
+                      ? '#ffffff'
+                      : getHeatmapColor(cell.value ?? 0, maxRetention),
                   };
                 }
 
                 return row;
               });
-            } else if (hasDaily) {
-              retentionRows = daily.map(d => {
-                const installs = d.newUsers || 0;
-                const d1 = d.retentionD1 || 0;
-                const d7 = d.retentionD7 || 0;
-                const d30 = d.retentionD30 || 0;
-                const dateStr = formatDate(d.date);
-                const dayName = new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' });
+            } else if (hasMetrics) {
+              const totalInstalls = metrics.newUsers || 0;
+              const d1 = metrics.retentionD1 || 0;
+              const d7 = metrics.retentionD7 || 0;
+              const d30 = metrics.retentionD30 || 0;
 
-                // Create row with date and retention for each day (1-9)
-                const row: any = {
-                  cohortDate: `${dayName}, ${dateStr} (${formatDecimalNumber(installs)} Users)`,
-                  isMean: false
+              const row: any = {
+                cohortDate: `Overall Period (${formatDecimalNumber(totalInstalls)} Users)`,
+                isMean: false,
+              };
+
+              for (const day of RETENTION_HEATMAP_DAYS) {
+                const cell = heatmapRetentionCell(day, d1, d7, d30, '', retentionAsOf);
+                row[`day${day}`] = {
+                  value: cell.value,
+                  display: cell.display,
+                  pending: cell.pending,
+                  color: cell.pending
+                    ? '#ffffff'
+                    : getHeatmapColor(cell.value ?? 0, maxRetention),
                 };
+              }
 
-                // Calculate retention for days 1-9
-                for (let day = 1; day <= 9; day++) {
-                  const retention = calculateDayRetention(day, d1, d7, d30);
-                  row[`day${day}`] = {
-                    value: retention,
-                    display: `${retention.toFixed(2)}%`,
-                    color: getHeatmapColor(retention, maxRetention)
-                  };
-                }
-
-                return row;
-              });
+              retentionRows = [row];
             }
 
             // Calculate Mean row if we have data
@@ -538,17 +597,22 @@ export const GamesList: React.FC<GamesListProps> = ({
                 isMean: true
               };
 
-              // Calculate average retention for each day
-              for (let day = 1; day <= 9; day++) {
-                const dayValues = retentionRows.map(row => row[`day${day}`]?.value || 0).filter(v => v > 0);
-                const avgRetention = dayValues.length > 0
-                  ? dayValues.reduce((sum, val) => sum + val, 0) / dayValues.length
-                  : 0;
+              for (const day of RETENTION_HEATMAP_DAYS) {
+                const vals = retentionRows
+                  .filter((row: any) => !row.isMean)
+                  .map((row: any) => row[`day${day}`])
+                  .filter((c: any) => c && !c.pending && c.value !== null);
+                const avgRetention =
+                  vals.length > 0
+                    ? vals.reduce((sum: number, c: any) => sum + c.value, 0) / vals.length
+                    : 0;
+                const allPending = vals.length === 0;
 
                 meanRow[`day${day}`] = {
-                  value: avgRetention,
-                  display: `${avgRetention.toFixed(2)}%`,
-                  color: getHeatmapColor(avgRetention, maxRetention)
+                  value: allPending ? null : avgRetention,
+                  display: allPending ? '—' : `${avgRetention.toFixed(2)}%`,
+                  pending: allPending,
+                  color: allPending ? '#ffffff' : getHeatmapColor(avgRetention, maxRetention)
                 };
               }
 
@@ -575,7 +639,7 @@ export const GamesList: React.FC<GamesListProps> = ({
             ads: hasMetrics ? `₹${formatDecimalNumber(metrics.adRevenue || 0)}` : '₹0.00'
           },
           table: hasDaily ? daily.map(d => {
-            const totalRevenue = d.totalRevenue || d.grossRevenue || 0;
+            const totalRevenue = hyperRabbitDailyRowGrossRevenue(d);
             const iapRevenue = d.iapRevenue || 0;
             const adRevenue = d.adRevenue || 0;
             return {
@@ -596,11 +660,36 @@ export const GamesList: React.FC<GamesListProps> = ({
         icon: <HealthAndSafety />,
         color: '#d32f2f',
         data: {
-          kpi: {
-            sessions: hasMetrics ? formatDecimalNumber(metrics.mau || 0) : '0',
-            crashes: hasMetrics ? formatDecimalNumber(metrics.usersAffectedByErrors || 0) : '0',
-            crashRate: hasMetrics ? `${(metrics.crashRate || 0).toFixed(2)}%` : '0.00%'
-          },
+          kpi: (() => {
+            const daySessions = (d: any) =>
+              Number(d.numSessions ?? d.sessions) || 0;
+            const dayCrashes = (d: any) =>
+              Number(d.errorCount ?? d.crashes) || 0;
+            const totalSessions = hasDaily
+              ? daily.reduce((s, d) => s + daySessions(d), 0)
+              : 0;
+            const totalCrashes = hasDaily
+              ? daily.reduce((s, d) => s + dayCrashes(d), 0)
+              : 0;
+            const crashPct =
+              totalSessions > 0
+                ? (totalCrashes / totalSessions) * 100
+                : totalCrashes > 0
+                  ? null
+                  : 0;
+            return {
+              sessions: hasDaily
+                ? formatDecimalNumber(totalSessions)
+                : '0',
+              crashes: hasDaily
+                ? formatDecimalNumber(totalCrashes)
+                : '0',
+              crashRate:
+                crashPct == null
+                  ? 'N/A'
+                  : `${Number(crashPct).toFixed(2)}%`,
+            };
+          })(),
           table: hasDaily ? daily.map(d => ({
             date: formatDate(d.date),
             sessions: formatDecimalNumber(d.numSessions || d.sessions || 0),
@@ -840,6 +929,19 @@ export const GamesList: React.FC<GamesListProps> = ({
                                     </Box>
                                   ))}
                                 </Box>
+                                {report.id === 'retention' && (
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ display: 'block', mt: 1.5, maxWidth: 720, lineHeight: 1.5 }}
+                                  >
+                                    The table shows days 1–7 after each cohort date. D30 is a weighted KPI from
+                                    DailyMetrics (cohort day +30, UTC); it is not a column. N/A if too few installs are
+                                    in D30-mature cohorts with a recorded retentionD30—backfill the full selected
+                                    range. True 0% only with enough measured cohorts and a weighted average that rounds
+                                    to zero.
+                                  </Typography>
+                                )}
                               </Box>
 
                               {/* Data Table */}
@@ -853,7 +955,7 @@ export const GamesList: React.FC<GamesListProps> = ({
                                           <TableCell sx={{ fontWeight: 'bold', position: 'sticky', left: 0, backgroundColor: `${report.color}20`, zIndex: 1 }}>
                                             Cohort Date
                                           </TableCell>
-                                          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((day) => (
+                                          {RETENTION_HEATMAP_DAYS.map((day) => (
                                             <TableCell key={day} sx={{ fontWeight: 'bold', textAlign: 'center', minWidth: '80px' }}>
                                               {day}
                                             </TableCell>
@@ -874,26 +976,33 @@ export const GamesList: React.FC<GamesListProps> = ({
                                             >
                                               {row.cohortDate}
                                             </TableCell>
-                                            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((day) => {
+                                            {RETENTION_HEATMAP_DAYS.map((day) => {
                                               const dayData = row[`day${day}`];
-                                              // Calculate local max for text color
-                                              const localMax = Math.max(...report.data.table
-                                                .flatMap((r: any) =>
-                                                  [1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => r[`day${d}`]?.value || 0)
-                                                )
+                                              const localMax = Math.max(
+                                                0,
+                                                ...report.data.table.flatMap((r: any) =>
+                                                  RETENTION_HEATMAP_DAYS.map((d) => {
+                                                    const c = r[`day${d}`];
+                                                    return c && !c.pending && c.value != null ? c.value : 0;
+                                                  }),
+                                                ),
                                               );
+                                              const v = dayData?.value;
                                               return (
                                                 <TableCell
                                                   key={day}
                                                   sx={{
                                                     textAlign: 'center',
                                                     backgroundColor: dayData?.color || '#ffffff',
-                                                    color: dayData?.value > localMax * 0.5 ? '#ffffff' : '#000000',
+                                                    color:
+                                                      typeof v === 'number' && v > localMax * 0.5
+                                                        ? '#ffffff'
+                                                        : '#000000',
                                                     fontWeight: 'medium',
                                                     minWidth: '80px'
                                                   }}
                                                 >
-                                                  {dayData?.display || '0.00%'}
+                                                  {dayData?.display ?? '—'}
                                                 </TableCell>
                                               );
                                             })}

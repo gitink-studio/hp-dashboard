@@ -1,5 +1,6 @@
 import { QueryNames, GRAPHQL_URL } from "../../common/constants";
-import { getDashboardQueryDateBounds, getDefaultCustomDashboardRange, getLatestDashboardDataDateYmd } from "../../common/utils";
+import { getPublisherCustomMaxEndDate } from "../../common/publisher-custom-dates";
+import { getDashboardQueryDateBounds, getDefaultCustomDashboardRange } from "../../common/utils";
 import { useAuthenticated } from "react-admin";
 import { Stack, Typography, Box, Grid, FormControl, Select, MenuItem, CircularProgress, TextField } from "@mui/material";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
@@ -269,7 +270,7 @@ export const Dashboard = () => {
     }
   }, [games, filters.game]);
 
-  const customDateMaxYmd = getLatestDashboardDataDateYmd();
+  const customDateMaxYmd = getPublisherCustomMaxEndDate();
 
   // Navigation functions for Reports Hub
   const handleReportsNavigation = (gameName: string) => {

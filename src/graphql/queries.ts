@@ -816,6 +816,12 @@ const Notifications = gql`
   }
 `;
 
+const DeleteNotification = gql`
+  mutation DeleteNotification($id: String!) {
+    deleteNotification(id: $id)
+  }
+`;
+
 const AlertRules = gql`
   query AlertRules($userId: ID) {
     alertRules(userId: $userId) {
@@ -930,6 +936,7 @@ export const Queries = {
   Approvals,
   Approval,
   Notifications,
+  DeleteNotification,
   AlertRules,
   GetAllGameRequests,
   GetAllGameRequestByStudioId,

@@ -27,7 +27,26 @@ export const dataProvider: DataProvider = {
   updateMany: (resource, params) => {
     return restDataProvider.updateMany(resource, params);
   },
-  delete: (resource, params) => {
+  delete: async (resource, params) => {
+    if (resource === QueryNames.NOTIFICATIONS) {
+      const query = print(Queries.DeleteNotification);
+      const response = await fetch(GRAPHQL_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query,
+          variables: { id: String(params.id) },
+        }),
+      });
+      const result = await response.json();
+      if (result.errors?.length) {
+        throw new Error(result.errors.map((e: { message?: string }) => e.message).join("; "));
+      }
+      if (!result.data?.deleteNotification) {
+        throw new Error("Failed to delete notification");
+      }
+      return { data: { id: params.id } as Record<string, unknown> };
+    }
     return restDataProvider.delete(resource, params);
   },
   deleteMany: (resource, params) => {

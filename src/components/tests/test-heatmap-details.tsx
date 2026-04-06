@@ -16,24 +16,30 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 interface HeatmapData {
-    mean: number[];
+    mean: (number | null)[];
     dates: {
         date: string;
-        values: number[];
+        values: (number | null)[];
         users: number;
     }[];
 }
+
+/** Default lag indices match backend `values[1..8]`; tests pass `[1]` for a single stat column. */
+const DEFAULT_HEATMAP_LAG_DAYS = [1, 2, 3, 4, 5, 6, 7, 8] as const;
 
 interface TestHeatmapDetailsProps {
     appu: HeatmapData;
     retention: HeatmapData;
     playtime: HeatmapData;
+    /** Which lag columns to render for all three heatmaps (indices match backend `values[lag]`). */
+    heatmapLagDays?: readonly number[];
 }
 
 export const TestHeatmapDetails: React.FC<TestHeatmapDetailsProps> = ({
     appu,
     retention,
-    playtime
+    playtime,
+    heatmapLagDays = DEFAULT_HEATMAP_LAG_DAYS,
 }) => {
     const [expandedPanels, setExpandedPanels] = React.useState<{ [key: string]: boolean }>({
         appu: false,
@@ -60,19 +66,38 @@ export const TestHeatmapDetails: React.FC<TestHeatmapDetailsProps> = ({
         }
     }
 
-    const calculateMeanUsers = (dates: { date: string; values: number[]; users: number }[]) => {
+    const calculateMeanUsers = (dates: { date: string; values: (number | null)[]; users: number }[]) => {
+        if (dates.length === 0) return 0;
         const totalUsers = dates.reduce((sum, entry) => sum + entry.users, 0);
         return Math.round(totalUsers / dates.length);
     }
 
-    const getColorIntensity = (value: number, metric: string) => {
-        if (!value) return 0;
-        const maxValue = metric === 'Retention' ? 15 : 800;
+    const getColorIntensity = (value: number | null | undefined, metric: string) => {
+        if (value == null || Number.isNaN(value)) return 0;
+        const maxValue = metric === 'Retention' ? 100 : 800;
         const intensity = value / maxValue;
         return Math.min(intensity, 1);
     }
 
-    const renderHeatmapTable = (data: HeatmapData, metric: string) => {
+    const formatCell = (value: number | null | undefined, metric: string) => {
+        if (value == null || Number.isNaN(value)) return "—";
+        if (metric === "Retention") return `${value.toFixed(2)}${getValueSuffix(metric)}`;
+        return `${Math.round(value)} ${getValueSuffix(metric)}`.trim();
+    };
+
+    const columnHeader = (metric: string, day: number, lagDays: readonly number[]) => {
+        // Single-stat test heatmaps: accordion title names the metric; no redundant lag label in the column header.
+        if (lagDays.length === 1 && day === 1) {
+            return 'Value';
+        }
+        return day === 1 ? 'D1' : String(day);
+    };
+
+    const renderHeatmapTable = (
+        data: HeatmapData,
+        metric: string,
+        lagDays: readonly number[] = DEFAULT_HEATMAP_LAG_DAYS,
+    ) => {
         const meanUsers = calculateMeanUsers(data.dates);
 
         return (
@@ -80,9 +105,11 @@ export const TestHeatmapDetails: React.FC<TestHeatmapDetailsProps> = ({
                 <Table size="small">
                     <TableHead>
                         <TableRow>
-                            <TableCell>Days →</TableCell>
-                            {[1, 2, 3, 4, 5, 6, 7, 8].map(day => (
-                                <TableCell key={day} align="center">{day}</TableCell>
+                            <TableCell>{lagDays.length === 1 ? 'Metric →' : 'Days →'}</TableCell>
+                            {lagDays.map((day) => (
+                                <TableCell key={day} align="center">
+                                    {columnHeader(metric, day, lagDays)}
+                                </TableCell>
                             ))}
                         </TableRow>
                     </TableHead>
@@ -94,19 +121,23 @@ export const TestHeatmapDetails: React.FC<TestHeatmapDetailsProps> = ({
                                     {meanUsers} Users
                                 </Typography>
                             </TableCell>
-                            {data.mean.slice(1).map((value, index) => (
-                                <TableCell
-                                    key={index + 1}
-                                    align="center"
-                                    sx={{
-                                        backgroundColor: `rgba(68, 171, 255, ${getColorIntensity(value, metric)})`,
-                                        // color: 'white',
-                                        // fontWeight: 'bold'
-                                    }}
-                                >
-                                    {value} {getValueSuffix(metric)}
-                                </TableCell>
-                            ))}
+                            {lagDays.map((day) => {
+                                const value = data.mean[day];
+                                return (
+                                    <TableCell
+                                        key={day}
+                                        align="center"
+                                        sx={{
+                                            backgroundColor:
+                                                value != null
+                                                    ? `rgba(68, 171, 255, ${getColorIntensity(value, metric)})`
+                                                    : "inherit",
+                                        }}
+                                    >
+                                        {formatCell(value, metric)}
+                                    </TableCell>
+                                );
+                            })}
                         </TableRow>
                         {data.dates.map((dateEntry) => (
                             <TableRow key={dateEntry.date}>
@@ -116,21 +147,23 @@ export const TestHeatmapDetails: React.FC<TestHeatmapDetailsProps> = ({
                                         {dateEntry.users} Users
                                     </Typography>
                                 </TableCell>
-                                {dateEntry.values.slice(1).map((value, index) => (
-                                    <TableCell
-                                        key={index + 1}
-                                        align="center"
-                                        sx={{
-                                            backgroundColor: value
-                                                ? `rgba(68, 171, 255, ${getColorIntensity(value, metric)})`
-                                                : 'inherit',
-                                            // color: value ? 'white' : 'inherit',
-                                            // fontWeight: value ? 'bold' : 'normal'
-                                        }}
-                                    >
-                                        {value} {getValueSuffix(metric)}
-                                    </TableCell>
-                                ))}
+                                {lagDays.map((day) => {
+                                    const value = dateEntry.values[day];
+                                    return (
+                                        <TableCell
+                                            key={day}
+                                            align="center"
+                                            sx={{
+                                                backgroundColor:
+                                                    value != null
+                                                        ? `rgba(68, 171, 255, ${getColorIntensity(value, metric)})`
+                                                        : "inherit",
+                                            }}
+                                        >
+                                            {formatCell(value, metric)}
+                                        </TableCell>
+                                    );
+                                })}
                             </TableRow>
                         ))}
                     </TableBody>
@@ -153,7 +186,7 @@ export const TestHeatmapDetails: React.FC<TestHeatmapDetailsProps> = ({
                     <Typography>APPU (Average Playtime Per User – seconds)</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
-                    {renderHeatmapTable(appu, 'APPU')}
+                    {renderHeatmapTable(appu, 'APPU', heatmapLagDays)}
                 </AccordionDetails>
             </Accordion>
 
@@ -167,10 +200,10 @@ export const TestHeatmapDetails: React.FC<TestHeatmapDetailsProps> = ({
                     aria-controls="retention-content"
                     id="retention-header"
                 >
-                    <Typography>Retention (%)</Typography>
+                    <Typography>Retention</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
-                    {renderHeatmapTable(retention, 'Retention')}
+                    {renderHeatmapTable(retention, 'Retention', heatmapLagDays)}
                 </AccordionDetails>
             </Accordion>
 
@@ -187,7 +220,7 @@ export const TestHeatmapDetails: React.FC<TestHeatmapDetailsProps> = ({
                     <Typography>Playtime (Mean Seconds)</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
-                    {renderHeatmapTable(playtime, 'Playtime')}
+                    {renderHeatmapTable(playtime, 'Playtime', heatmapLagDays)}
                 </AccordionDetails>
             </Accordion>
         </Box>

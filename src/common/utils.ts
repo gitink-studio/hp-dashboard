@@ -1,4 +1,5 @@
 import { fetchUtils } from "react-admin";
+import { clampPublisherCustomRange } from "./publisher-custom-dates";
 import { DECIMAL_LENGTH, FileTypes, GRAPHQL_URL, HttpMethod } from "./constants";
 import { FetchData } from "../data-providers/data-provider";
 import { notify } from "../components/notify";
@@ -47,9 +48,50 @@ export function getLatestDashboardDataDateYmd(): string {
   return toLocalDateString(new Date(n.getFullYear(), n.getMonth(), n.getDate() - 1));
 }
 
+/** Parse `YYYY-MM-DD` as a local-calendar Date (noon avoids DST edge cases). */
+export function parseLocalYmd(ymd: string): Date {
+  const [y, m, d] = ymd.split('-').map(Number);
+  return new Date(y, m - 1, d, 12, 0, 0, 0);
+}
+
+export function addCalendarDaysLocal(base: Date, deltaDays: number): Date {
+  return new Date(base.getFullYear(), base.getMonth(), base.getDate() + deltaDays, 12, 0, 0, 0);
+}
+
+/**
+ * Inclusive end date for rolling presets (Last 7d / 14d / 30d) relative to the daily metrics job.
+ *
+ * - **Before** `VITE_DAILY_METRICS_READY_HOUR_LOCAL` (default 8): assume yesterday’s run is not
+ *   available yet → end is **two calendar days before today** (e.g. on Apr 6 → Apr 4).
+ * - **On/after** that hour: end is **yesterday** (e.g. Apr 6 → Apr 5 after the schedule).
+ *
+ * Uses the browser’s local calendar and local clock. Override hour with
+ * `VITE_DAILY_METRICS_READY_HOUR_LOCAL` (0–23), e.g. `6` if the job finishes by 6:00 local.
+ */
+export function getDailyMetricsRollingEndYmd(now: Date = new Date()): string {
+  const readyHour = Number(
+    import.meta.env.VITE_DAILY_METRICS_READY_HOUR_LOCAL ?? '8',
+  );
+  const h = Number.isFinite(readyHour) ? readyHour : 8;
+  const afterCutoff = now.getHours() >= h;
+  const offsetFromToday = afterCutoff ? 1 : 2;
+
+  const d = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() - offsetFromToday,
+  );
+  return toLocalDateString(d);
+}
+
 /**
  * Bounds for developer dashboard GraphQL / REST from preset `dateRange`.
  * "Yesterday" is a single local calendar day (startDate === endDate).
+ *
+ * Last 7d / 14d / 30d use {@link getDailyMetricsRollingEndYmd} as **endDate** (aligned with when
+ * yesterday’s DailyMetrics row exists). **Last 30d** uses **31** inclusive calendar cohort days
+ * (start = end − 30), e.g. on Apr 6 after cutoff → Mar 6–Apr 5; before cutoff → Mar 5–Apr 4.
+ * Last 7d / 14d use N inclusive days (start = end − (N − 1)).
  * Returns undefined for Custom — caller should supply explicit dates if supported.
  */
 export function getDashboardDateBounds(
@@ -73,39 +115,48 @@ export function getDashboardDateBounds(
     return { startDate: s, endDate: s };
   }
 
-  let startDate: Date;
+  const endYmd = getDailyMetricsRollingEndYmd(now);
+  const endBase = parseLocalYmd(endYmd);
 
+  let spanInclusive: number;
+  let startOffsetFromEnd: number;
   switch (dr) {
     case 'Last 7d':
     case '7d':
-      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      spanInclusive = 7;
+      startOffsetFromEnd = spanInclusive - 1;
       break;
     case 'Last 14d':
     case '14d':
-      startDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+      spanInclusive = 14;
+      startOffsetFromEnd = spanInclusive - 1;
       break;
     case 'Last 30d':
     case '30d':
-      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      spanInclusive = 31;
+      startOffsetFromEnd = 30;
       break;
     default:
-      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      spanInclusive = 31;
+      startOffsetFromEnd = 30;
   }
 
+  const startBase = addCalendarDaysLocal(endBase, -startOffsetFromEnd);
   return {
-    startDate: toLocalDateString(startDate),
-    endDate: toLocalDateString(now),
+    startDate: toLocalDateString(startBase),
+    endDate: endYmd,
   };
 }
 
-/** Default Custom range: last ~30d through latest data day (yesterday), not today. */
+/** Default Custom range: same span as Last 30d (31 inclusive days) through rolling metrics end. */
 export function getDefaultCustomDashboardRange(): { startDate: string; endDate: string } {
-  const b = getDashboardDateBounds('Last 30d')!;
-  const maxEnd = getLatestDashboardDataDateYmd();
-  let endDate = b.endDate > maxEnd ? maxEnd : b.endDate;
-  let startDate = b.startDate;
-  if (startDate > endDate) startDate = endDate;
-  return { startDate, endDate };
+  const endYmd = getDailyMetricsRollingEndYmd();
+  const endBase = parseLocalYmd(endYmd);
+  const startBase = addCalendarDaysLocal(endBase, -30);
+  return {
+    startDate: toLocalDateString(startBase),
+    endDate: endYmd,
+  };
 }
 
 export type DashboardFilterDates = {
@@ -113,6 +164,64 @@ export type DashboardFilterDates = {
   startDate?: string;
   endDate?: string;
 };
+
+/** GraphQL / chips: strip time zone suffix from daily-metrics range strings. */
+export function toDateOnlyYmd(isoOrYmd: string): string {
+  return String(isoOrYmd).split('T')[0];
+}
+
+/** Filters for `GET /hyper-rabbit/metrics/daily/:gameId` (developer + publisher). */
+export type HyperRabbitDailyMetricsFilters = {
+  dateRange?: string;
+  startDate?: string;
+  endDate?: string;
+  customStartDate?: string;
+  customEndDate?: string;
+};
+
+/**
+ * Query params for Hyper Rabbit REST daily (and aggregate) metrics.
+ * Matches publisher `publisher-games-list` date rules: UTC calendar for Today/Yesterday,
+ * rolling presets from {@link getDashboardDateBounds}, Custom via publisher UTC max-end clamp
+ * and `…T23:59:59.999Z` on end (EventLog-style upper bound where used).
+ */
+export function getHyperRabbitDailyMetricsRange(
+  filters: HyperRabbitDailyMetricsFilters,
+): { startDate: string; endDate: string } {
+  const dr = filters.dateRange ?? 'Last 30d';
+
+  if (dr === 'Yesterday') {
+    const now = new Date();
+    const y = now.getUTCFullYear();
+    const m = now.getUTCMonth();
+    const d = now.getUTCDate();
+    const dayStr = new Date(Date.UTC(y, m, d - 1)).toISOString().split('T')[0];
+    return { startDate: dayStr, endDate: `${dayStr}T23:59:59.999Z` };
+  }
+
+  if (dr === 'Today') {
+    const now = new Date();
+    const y = now.getUTCFullYear();
+    const m = now.getUTCMonth();
+    const d = now.getUTCDate();
+    const dayStr = new Date(Date.UTC(y, m, d)).toISOString().split('T')[0];
+    return { startDate: dayStr, endDate: `${dayStr}T23:59:59.999Z` };
+  }
+
+  if (dr === 'Custom') {
+    const s = (filters.startDate ?? filters.customStartDate)?.trim();
+    const e = (filters.endDate ?? filters.customEndDate)?.trim();
+    if (s && e) {
+      const { start, end } = clampPublisherCustomRange(s, e);
+      return { startDate: start, endDate: `${end}T23:59:59.999Z` };
+    }
+    const b = getDashboardDateBounds('Last 30d')!;
+    return { startDate: b.startDate, endDate: b.endDate };
+  }
+
+  const b = getDashboardDateBounds(dr) ?? getDashboardDateBounds('Last 30d')!;
+  return { startDate: b.startDate, endDate: b.endDate };
+}
 
 /** Preset bounds from `dateRange`, or explicit `startDate`/`endDate` when `dateRange === 'Custom'`. */
 export function getDashboardQueryDateBounds(
@@ -122,15 +231,17 @@ export function getDashboardQueryDateBounds(
     const s = filters.startDate?.trim();
     const e = filters.endDate?.trim();
     if (s && e) {
-      const maxEnd = getLatestDashboardDataDateYmd();
-      let start = s <= e ? s : e;
-      let end = s <= e ? e : s;
-      if (end > maxEnd) end = maxEnd;
-      if (start > maxEnd) start = maxEnd;
-      if (start > end) start = end;
+      const { start, end } = clampPublisherCustomRange(s, e);
       return { startDate: start, endDate: end };
     }
     return undefined;
+  }
+  if (filters.dateRange === 'Yesterday' || filters.dateRange === 'Today') {
+    const r = getHyperRabbitDailyMetricsRange(filters);
+    return {
+      startDate: toDateOnlyYmd(r.startDate),
+      endDate: toDateOnlyYmd(r.endDate),
+    };
   }
   return getDashboardDateBounds(filters.dateRange);
 }

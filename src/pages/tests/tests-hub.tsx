@@ -91,6 +91,60 @@ function getDateRangeBounds(dateRange: string): { start: Date; end: Date } | nul
     }
 }
 
+/** Local calendar-day bounds from `YYYY-MM-DD` (inclusive test startDate filter). */
+function localDayBounds(yyyyMmDd: string, endOfDay: boolean): Date {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(yyyyMmDd).trim());
+    if (!m) return new Date(NaN);
+    const y = parseInt(m[1], 10);
+    const mo = parseInt(m[2], 10) - 1;
+    const d = parseInt(m[3], 10);
+    if (endOfDay) return new Date(y, mo, d, 23, 59, 59, 999);
+    return new Date(y, mo, d, 0, 0, 0, 0);
+}
+
+/** Next calendar day as `YYYY-MM-DD` (local), or `""` if `yyyyMmDd` is invalid. */
+function nextCalendarDayYmd(yyyyMmDd: string): string {
+    const d = localDayBounds(yyyyMmDd, false);
+    if (isNaN(d.getTime())) return "";
+    const n = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+    const y = n.getFullYear();
+    const m = String(n.getMonth() + 1).padStart(2, "0");
+    const day = String(n.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+}
+
+/** Previous calendar day as `YYYY-MM-DD` (local), or `""` if `yyyyMmDd` is invalid. */
+function previousCalendarDayYmd(yyyyMmDd: string): string {
+    const d = localDayBounds(yyyyMmDd, false);
+    if (isNaN(d.getTime())) return "";
+    const n = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1);
+    const y = n.getFullYear();
+    const m = String(n.getMonth() + 1).padStart(2, "0");
+    const day = String(n.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+}
+
+function getTestsHubDateBounds(
+    dateRange: string,
+    customStart: string,
+    customEnd: string,
+): { start: Date; end: Date } | null {
+    if (dateRange === "Custom") {
+        const s = (customStart || "").trim();
+        const e = (customEnd || "").trim();
+        if (!s || !e) return null;
+        const start = localDayBounds(s, false);
+        const end = localDayBounds(e, true);
+        if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return null;
+        const minEndDay = nextCalendarDayYmd(s);
+        if (!minEndDay || e < minEndDay) return null;
+        const maxFromDay = previousCalendarDayYmd(e);
+        if (!maxFromDay || s > maxFromDay) return null;
+        return { start, end };
+    }
+    return getDateRangeBounds(dateRange);
+}
+
 const normalizeGameNameKey = (name: string | undefined) => (name || "").trim().toLowerCase();
 
 /** Same disambiguation as `PublisherGamesList` game dropdown. */
@@ -157,6 +211,8 @@ export const TestsHub: React.FC = () => {
         subPlatform: "All",
         game: "All",
         dateRange: "Last 90d",
+        customStartDate: "",
+        customEndDate: "",
     });
 
     const [platforms, setPlatforms] = useState<any[]>([]);
@@ -179,6 +235,8 @@ export const TestsHub: React.FC = () => {
         subPlatform: "All",
         game: "All",
         dateRange: "30d",
+        customStartDate: "",
+        customEndDate: "",
     });
     const [studios, setStudios] = useState<any[]>([]);
     const [publisherStudiosLoading, setPublisherStudiosLoading] = useState(false);
@@ -426,10 +484,21 @@ export const TestsHub: React.FC = () => {
                             studioId,
                             platform: currentFilters.platform,
                             subPlatform: currentFilters.subPlatform,
-                            game: 'All',
+                            game: "All",
                             dateRange: currentFilters.dateRange,
-                            startDate: '2024-08-15',
-                            endDate: '2024-09-14',
+                            ...(currentFilters.dateRange === "Custom" &&
+                            currentFilters.customStartDate?.trim() &&
+                            currentFilters.customEndDate?.trim() &&
+                            getTestsHubDateBounds(
+                                "Custom",
+                                currentFilters.customStartDate.trim(),
+                                currentFilters.customEndDate.trim(),
+                            )
+                                ? {
+                                      startDate: currentFilters.customStartDate.trim(),
+                                      endDate: currentFilters.customEndDate.trim(),
+                                  }
+                                : {}),
                             // Launched games only (for test creation); aligns with dashboard game pickers
                             launchedOnly: true,
                         },
@@ -462,6 +531,15 @@ export const TestsHub: React.FC = () => {
                 subPlatform: pf.subPlatform !== "All" ? pf.subPlatform : undefined,
                 dateRange: pf.dateRange,
                 currency: "INR",
+                ...(pf.dateRange === "Custom" &&
+                pf.customStartDate?.trim() &&
+                pf.customEndDate?.trim() &&
+                getTestsHubDateBounds("Custom", pf.customStartDate.trim(), pf.customEndDate.trim())
+                    ? {
+                          startDate: pf.customStartDate.trim(),
+                          endDate: pf.customEndDate.trim(),
+                      }
+                    : {}),
             };
             const response = await fetch(GRAPHQL_URL, {
                 method: "POST",
@@ -518,6 +596,16 @@ export const TestsHub: React.FC = () => {
                 next.game = "All";
             } else if (filterType === "subPlatform") {
                 next.game = "All";
+            } else if (filterType === "customStartDate") {
+                const minTo = nextCalendarDayYmd(value);
+                if (minTo && next.customEndDate && next.customEndDate < minTo) {
+                    next.customEndDate = minTo;
+                }
+            } else if (filterType === "customEndDate") {
+                const maxFrom = previousCalendarDayYmd(value);
+                if (maxFrom && next.customStartDate && next.customStartDate > maxFrom) {
+                    next.customStartDate = maxFrom;
+                }
             }
             return next;
         });
@@ -529,6 +617,16 @@ export const TestsHub: React.FC = () => {
             if (filterType === "platform") {
                 next.subPlatform = "All";
                 next.game = "All";
+            } else if (filterType === "customStartDate") {
+                const minTo = nextCalendarDayYmd(value);
+                if (minTo && next.customEndDate && next.customEndDate < minTo) {
+                    next.customEndDate = minTo;
+                }
+            } else if (filterType === "customEndDate") {
+                const maxFrom = previousCalendarDayYmd(value);
+                if (maxFrom && next.customStartDate && next.customStartDate > maxFrom) {
+                    next.customStartDate = maxFrom;
+                }
             }
             return next;
         });
@@ -560,7 +658,15 @@ export const TestsHub: React.FC = () => {
     useEffect(() => {
         if (publisherUser || platforms.length === 0) return;
         fetchGames(filters);
-    }, [publisherUser, filters.platform, filters.subPlatform, platforms.length]);
+    }, [
+        publisherUser,
+        filters.platform,
+        filters.subPlatform,
+        filters.dateRange,
+        filters.customStartDate,
+        filters.customEndDate,
+        platforms.length,
+    ]);
 
     // Publisher: scoped games via `publisherGamesList` (same as publisher dashboard)
     useEffect(() => {
@@ -573,6 +679,8 @@ export const TestsHub: React.FC = () => {
         publisherFilters.platform,
         publisherFilters.subPlatform,
         publisherFilters.dateRange,
+        publisherFilters.customStartDate,
+        publisherFilters.customEndDate,
     ]);
 
     // Fetch tests from backend
@@ -612,6 +720,19 @@ export const TestsHub: React.FC = () => {
                 }
                 if (testStatus !== "All") {
                     queryParams.append("status", testStatus);
+                }
+
+                const dr = publisherUser ? publisherFilters.dateRange : filters.dateRange;
+                const cs = (publisherUser ? publisherFilters.customStartDate : filters.customStartDate).trim();
+                const ce = (publisherUser ? publisherFilters.customEndDate : filters.customEndDate).trim();
+                if (
+                    dr === "Custom" &&
+                    cs &&
+                    ce &&
+                    getTestsHubDateBounds("Custom", cs, ce)
+                ) {
+                    queryParams.append("startDate", cs);
+                    queryParams.append("endDate", ce);
                 }
 
                 const response = await fetch(`${ROOT_URL}/tests?${queryParams}`, { mode: "cors" });
@@ -661,7 +782,13 @@ export const TestsHub: React.FC = () => {
         publisherUser,
         publisherFilters.studioId,
         publisherFilters.game,
+        publisherFilters.dateRange,
+        publisherFilters.customStartDate,
+        publisherFilters.customEndDate,
         filters.game,
+        filters.dateRange,
+        filters.customStartDate,
+        filters.customEndDate,
         testType,
         testStatus,
         scopeTestsToStudio,
@@ -678,7 +805,9 @@ export const TestsHub: React.FC = () => {
 
     const displayTests = useMemo(() => {
         const dateKey = publisherUser ? publisherFilters.dateRange : filters.dateRange;
-        const bounds = getDateRangeBounds(dateKey);
+        const customS = publisherUser ? publisherFilters.customStartDate : filters.customStartDate;
+        const customE = publisherUser ? publisherFilters.customEndDate : filters.customEndDate;
+        const bounds = getTestsHubDateBounds(dateKey, customS, customE);
         let rows = apiTests;
         if (bounds) {
             rows = rows.filter((r) => {
@@ -705,8 +834,12 @@ export const TestsHub: React.FC = () => {
         publisherUser,
         publisherFilters.game,
         publisherFilters.dateRange,
+        publisherFilters.customStartDate,
+        publisherFilters.customEndDate,
         filters.game,
         filters.dateRange,
+        filters.customStartDate,
+        filters.customEndDate,
     ]);
 
     const publisherAvailableSubPlatforms = useMemo(() => {
@@ -859,6 +992,54 @@ export const TestsHub: React.FC = () => {
                             </FormControl>
                         </Grid>
                     </Grid>
+                    {publisherFilters.dateRange === "Custom" && (
+                        <Grid container spacing={2} alignItems="center" sx={{ mt: 1 }}>
+                            <Grid item xs={12} sm={6} md={2}>
+                                <TextField
+                                    label="Test start from"
+                                    type="date"
+                                    size="small"
+                                    fullWidth
+                                    InputLabelProps={{ shrink: true }}
+                                    value={publisherFilters.customStartDate}
+                                    onChange={(e) =>
+                                        handlePublisherFilterChange("customStartDate", e.target.value)
+                                    }
+                                    inputProps={{
+                                        max: publisherFilters.customEndDate
+                                            ? previousCalendarDayYmd(publisherFilters.customEndDate) ||
+                                              undefined
+                                            : undefined,
+                                    }}
+                                />
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={2}>
+                                <TextField
+                                    label="Test start to"
+                                    type="date"
+                                    size="small"
+                                    fullWidth
+                                    InputLabelProps={{ shrink: true }}
+                                    value={publisherFilters.customEndDate}
+                                    onChange={(e) =>
+                                        handlePublisherFilterChange("customEndDate", e.target.value)
+                                    }
+                                    inputProps={{
+                                        min: publisherFilters.customStartDate
+                                            ? nextCalendarDayYmd(publisherFilters.customStartDate) ||
+                                              undefined
+                                            : undefined,
+                                    }}
+                                />
+                            </Grid>
+                            <Grid item xs={12}>
+                                <Typography variant="caption" color="text.secondary">
+                                    &quot;From&quot; cannot be after the day before &quot;to&quot;; &quot;to&quot;
+                                    must be the day after &quot;from&quot; or later. Range is inclusive.
+                                </Typography>
+                            </Grid>
+                        </Grid>
+                    )}
                     <Grid container spacing={2} alignItems="center">
                         <Grid item xs={12} sm={6} md={2}>
                             <FormControl fullWidth size="small">
@@ -1027,6 +1208,48 @@ export const TestsHub: React.FC = () => {
                             </FormControl>
                         </Grid>
                     </Grid>
+                    {filters.dateRange === "Custom" && (
+                        <Grid container spacing={2} alignItems="center" sx={{ mt: 1 }}>
+                            <Grid item xs={12} sm={6} md={2}>
+                                <TextField
+                                    label="Test start from"
+                                    type="date"
+                                    size="small"
+                                    fullWidth
+                                    InputLabelProps={{ shrink: true }}
+                                    value={filters.customStartDate}
+                                    onChange={(e) => handleFilterChange("customStartDate", e.target.value)}
+                                    inputProps={{
+                                        max: filters.customEndDate
+                                            ? previousCalendarDayYmd(filters.customEndDate) || undefined
+                                            : undefined,
+                                    }}
+                                />
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={2}>
+                                <TextField
+                                    label="Test start to"
+                                    type="date"
+                                    size="small"
+                                    fullWidth
+                                    InputLabelProps={{ shrink: true }}
+                                    value={filters.customEndDate}
+                                    onChange={(e) => handleFilterChange("customEndDate", e.target.value)}
+                                    inputProps={{
+                                        min: filters.customStartDate
+                                            ? nextCalendarDayYmd(filters.customStartDate) || undefined
+                                            : undefined,
+                                    }}
+                                />
+                            </Grid>
+                            <Grid item xs={12}>
+                                <Typography variant="caption" color="text.secondary">
+                                    &quot;From&quot; cannot be after the day before &quot;to&quot;; &quot;to&quot;
+                                    must be the day after &quot;from&quot; or later. Range is inclusive.
+                                </Typography>
+                            </Grid>
+                        </Grid>
+                    )}
                 </Box>
             )}
 

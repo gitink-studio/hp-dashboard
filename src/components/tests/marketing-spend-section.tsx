@@ -11,7 +11,6 @@ import {
     FormControl,
     FormControlLabel,
     InputAdornment,
-    InputLabel,
     MenuItem,
     Select,
     SelectChangeEvent,
@@ -22,7 +21,6 @@ import {
     TableHead,
     TableRow,
     TextField,
-    Tooltip,
     Typography,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -104,8 +102,6 @@ function rowsToJson(rows: SpendRow[]): SpendRowJson[] {
     return rows.map((r) => ({ ...r, date: r.date.toISOString() }));
 }
 
-const AUTO_PCT_OPTIONS = [5, 10, 15, 20, 25, 30];
-
 const statusColor = (s: SpendStatus) =>
     s === "Active" ? "success" : s === "Paused" ? "warning" : "default";
 
@@ -147,7 +143,6 @@ export const MarketingSpendSection: React.FC<Props> = ({
 
     // ── Controls
     const [distributeEvenly, setDistributeEvenly] = React.useState(false);
-    const [autoPct, setAutoPct] = React.useState<string>(""); // "" = disabled
     const [editMode, setEditMode] = React.useState(false);
 
     // Used to prevent the date-range effect from overwriting rows loaded from API.
@@ -168,7 +163,6 @@ export const MarketingSpendSection: React.FC<Props> = ({
                 if (data.endDate)   setEndInput(new Date(data.endDate).toISOString().split("T")[0]);
                 setTotalBudget(data.totalBudget > 0 ? String(data.totalBudget) : "");
                 setDistributeEvenly(!!data.distributeEvenly);
-                setAutoPct(data.autoPct ?? "");
                 const loaded: SpendRowJson[] = Array.isArray(data.rows) ? data.rows : [];
                 setRows(rowsFromJson(loaded));
             })
@@ -237,7 +231,7 @@ export const MarketingSpendSection: React.FC<Props> = ({
                 startDate:        startInput || null,
                 endDate:          endInput   || null,
                 distributeEvenly,
-                autoPct,
+                autoPct: "",
                 rows:             rowsToJson(rows),
             };
             const res = await fetch(`${ROOT_URL}/tests/${testId}/marketing-budget`, {
@@ -366,43 +360,15 @@ export const MarketingSpendSection: React.FC<Props> = ({
                                 }
                             />
 
-                            <Tooltip title={distributeEvenly ? "Disable even distribution to edit individual rows" : ""}>
-                                <span>
-                                    <Button
-                                        size="small"
-                                        variant={editMode ? "contained" : "outlined"}
-                                        startIcon={editMode ? <CheckIcon /> : <EditIcon />}
-                                        onClick={() => setEditMode((v) => !v)}
-                                        disabled={distributeEvenly}
-                                        sx={{ textTransform: "none" }}
-                                    >
-                                        {editMode ? "Done Editing" : "Edit Table"}
-                                    </Button>
-                                </span>
-                            </Tooltip>
-
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                                <Typography variant="body2" color="text.secondary" noWrap>
-                                    Auto-increase if CPI &lt; target:
-                                </Typography>
-                                <FormControl size="small" sx={{ minWidth: 90 }}>
-                                    <InputLabel>%</InputLabel>
-                                    <Select
-                                        label="%"
-                                        value={autoPct}
-                                        onChange={(e: SelectChangeEvent) => {
-                                            setAutoPct(e.target.value);
-                                            setDirty(true);
-                                        }}
-                                        displayEmpty
-                                    >
-                                        <MenuItem value=""><em>Off</em></MenuItem>
-                                        {AUTO_PCT_OPTIONS.map((p) => (
-                                            <MenuItem key={p} value={String(p)}>{p}%</MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                            </Stack>
+                            <Button
+                                size="small"
+                                variant={editMode ? "contained" : "outlined"}
+                                startIcon={editMode ? <CheckIcon /> : <EditIcon />}
+                                onClick={() => setEditMode((v) => !v)}
+                                sx={{ textTransform: "none" }}
+                            >
+                                {editMode ? "Done Editing" : "Edit Table"}
+                            </Button>
 
                             {/* Save button */}
                             <Box sx={{ ml: "auto !important" }}>

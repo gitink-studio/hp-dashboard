@@ -1,11 +1,22 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { formatDecimalNumber } from '../../common/utils';
+import { formatDecimalNumber, getHyperRabbitDailyMetricsRange } from '../../common/utils';
 import { formatPublisherMoney, formatPublisherMoneyFixed } from '../../common/currency-utils';
 import { ROOT_URL, GRAPHQL_URL } from '../../common/constants';
 import {
   clampPublisherCustomRange,
   getPublisherCustomMaxEndDate,
 } from '../../common/publisher-custom-dates';
+import {
+  aggregateHyperRabbitDailyMetrics,
+  hyperRabbitDailyRowGrossRevenue,
+} from '../../common/aggregate-hyper-rabbit-daily';
+import {
+  heatmapRetentionCell,
+  isDashboardLast30dPreset,
+  retentionAsOfFromRangeEnd,
+  RETENTION_HEATMAP_DAYS,
+  weightedRetentionForMatureCohorts,
+} from '../../common/retention-cohort';
 import { PublisherKPIs } from '../dashboard/publisher-kpis';
 import {
   Accordion,
@@ -109,45 +120,6 @@ const getPublisherGameFilterOptions = (games: any[]): { game: any; label: string
   });
 };
 
-/**
- * Summary fields for `gameMetrics` derived from DailyMetrics rows.
- * Lets the publisher UI skip the slow EventLog-based GET /hyper-rabbit/metrics/:id when daily data exists.
- */
-function aggregateFromPublisherDaily(daily: any[]): Record<string, any> {
-  if (!daily.length) return {};
-  const sum = (pick: (d: any) => number) =>
-    daily.reduce((s, d) => s + (Number(pick(d)) || 0), 0);
-  const last = daily[daily.length - 1];
-  const totalSessions = sum((d) => d.numSessions || 0);
-  const totalErrors = sum((d) => d.errorCount || 0);
-  const totalImp = sum((d) => d.impressions || 0);
-  const totalAdRev = sum((d) => d.adRevenue || 0);
-  const totalReq = sum((d) => d.adRequested || 0);
-  const totalStarted = sum((d) => d.adStarted || 0);
-  return {
-    dau: Number(last.dau) || 0,
-    mau: Number(last.mau) || 0,
-    avgSessionLength: sum((d) => d.avgSessionLength || 0) / daily.length,
-    levelAttempts: sum((d) => d.levelAttempts || 0),
-    winRate: Number(last.winRate) || 0,
-    newUsers: sum((d) => d.newUsers || 0),
-    iapRevenue: sum((d) => d.iapRevenue || 0),
-    adRevenue: totalAdRev,
-    totalRevenue: sum((d) => d.totalRevenue || 0),
-    grossRevenue: sum((d) => d.grossRevenue || d.totalRevenue || 0),
-    crashRate:
-      totalSessions > 0 ? (totalErrors / totalSessions) * 100 : Number(last.crashRate) || 0,
-    retentionD1: Number(last.retentionD1) || 0,
-    retentionD7: Number(last.retentionD7) || 0,
-    retentionD30: Number(last.retentionD30) || 0,
-    usersAffectedByErrors: sum((d) => d.usersAffectedByErrors || 0),
-    geoBreakdown: [],
-    totalImpressions: totalImp,
-    avgEcpm: totalImp > 0 ? (totalAdRev / totalImp) * 1000 : 0,
-    fillRate: totalReq > 0 ? (totalStarted / totalReq) * 100 : 0,
-  };
-}
-
 /** Shared date fields for publisher GraphQL (matches backend getDateRange custom branch). */
 function buildPublisherDateFilters(f: {
   dateRange: string;
@@ -214,72 +186,13 @@ export const PublisherGamesList: React.FC = () => {
     }
   };
 
-  // Helper function to get date range from filter
-  /** YYYY-MM-DD and optional end-of-day ISO for Hyper Rabbit REST (EventLog uses ms timestamps). */
-  const getDateRange = () => {
-    const now = new Date();
-
-    switch (filters.dateRange) {
-      case 'Yesterday': {
-        const y = now.getUTCFullYear();
-        const m = now.getUTCMonth();
-        const d = now.getUTCDate();
-        const dayStr = new Date(Date.UTC(y, m, d - 1)).toISOString().split('T')[0];
-        return {
-          startDate: dayStr,
-          endDate: `${dayStr}T23:59:59.999Z`,
-        };
-      }
-      case 'Last 7d':
-      case '7d': {
-        const startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        return {
-          startDate: startDate.toISOString().split('T')[0],
-          endDate: now.toISOString().split('T')[0],
-        };
-      }
-      case 'Last 14d':
-      case '14d': {
-        const startDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-        return {
-          startDate: startDate.toISOString().split('T')[0],
-          endDate: now.toISOString().split('T')[0],
-        };
-      }
-      case 'Last 30d':
-      case '30d': {
-        const startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        return {
-          startDate: startDate.toISOString().split('T')[0],
-          endDate: now.toISOString().split('T')[0],
-        };
-      }
-      case 'Custom': {
-        if (filters.customStartDate && filters.customEndDate) {
-          const { start, end } = clampPublisherCustomRange(
-            filters.customStartDate,
-            filters.customEndDate,
-          );
-          return {
-            startDate: start,
-            endDate: `${end}T23:59:59.999Z`,
-          };
-        }
-        const startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        return {
-          startDate: startDate.toISOString().split('T')[0],
-          endDate: now.toISOString().split('T')[0],
-        };
-      }
-      default: {
-        const startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        return {
-          startDate: startDate.toISOString().split('T')[0],
-          endDate: now.toISOString().split('T')[0],
-        };
-      }
-    }
-  };
+  /** Shared with developer dashboard — Hyper Rabbit daily/metrics REST query bounds. */
+  const getDateRange = () =>
+    getHyperRabbitDailyMetricsRange({
+      dateRange: filters.dateRange,
+      customStartDate: filters.customStartDate,
+      customEndDate: filters.customEndDate,
+    });
 
   // Fetch game metrics from backend
   const fetchGameMetrics = async (gameId: string) => {
@@ -311,10 +224,17 @@ export const PublisherGamesList: React.FC = () => {
       }
 
       if (dailyRows.length > 0) {
+        const retentionAsOf = retentionAsOfFromRangeEnd({ startDate, endDate });
         setDailyMetrics(prev => ({ ...prev, [gameId]: dailyRows }));
         setGameMetrics(prev => ({
           ...prev,
-          [gameId]: aggregateFromPublisherDaily(dailyRows),
+          [gameId]: aggregateHyperRabbitDailyMetrics(
+            dailyRows,
+            retentionAsOf,
+            isDashboardLast30dPreset(filters.dateRange)
+              ? { d30KpiRelaxed: true }
+              : undefined,
+          ),
         }));
         lastFetchedMetricsRangeRef.current[gameId] = rangeSig;
         return;
@@ -347,6 +267,10 @@ export const PublisherGamesList: React.FC = () => {
   // Reload per-game report tables when date range changes (expanded rows were stuck on old multi-day cache).
   useEffect(() => {
     expandedGames.forEach((gameId) => {
+      delete lastFetchedMetricsRangeRef.current[gameId];
+      ongoingFetches.current.delete(gameId);
+    });
+    expandedGames.forEach((gameId) => {
       void fetchGameMetrics(gameId);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- expand path calls fetchGameMetrics directly
@@ -357,6 +281,7 @@ export const PublisherGamesList: React.FC = () => {
     const metrics = gameMetrics[gameId] || {};
     const daily = dailyMetrics[gameId] || [];
     const hasDaily = daily.length > 0;
+    const retentionAsOf = retentionAsOfFromRangeEnd(getDateRange());
     const sumDaily = (pick: (d: any) => number) =>
       daily.reduce((sum, d) => sum + (Number(pick(d)) || 0), 0);
     const geoBreakdown = metrics.geoBreakdown || [];
@@ -384,35 +309,6 @@ export const PublisherGamesList: React.FC = () => {
       const green = Math.floor(242 - (normalized * 65)); // 242 -> 118
       const blue = Math.floor(253 - (normalized * 55)); // 253 -> 216
       return `rgb(${red}, ${green}, ${blue})`;
-    };
-
-    // Helper function to calculate retention for a specific day
-    // Uses interpolation between D1, D7, D30 if needed
-    const calculateDayRetention = (day: number, d1: number, d7: number, d30: number): number => {
-      if (day === 1) return d1;
-      if (day === 7) return d7;
-      if (day === 30) return d30;
-
-      // Interpolate between D1 and D7 for days 2-6
-      if (day > 1 && day < 7) {
-        const ratio = (day - 1) / 6;
-        return d1 - (d1 - d7) * ratio;
-      }
-
-      // Interpolate between D7 and D30 for days 8-29
-      if (day > 7 && day < 30) {
-        const ratio = (day - 7) / 23;
-        return d7 - (d7 - d30) * ratio;
-      }
-
-      // For days beyond 30, use D30 (or extrapolate down)
-      if (day > 30) {
-        const daysPast30 = day - 30;
-        // Exponential decay beyond day 30
-        return d30 * Math.pow(0.95, daysPast30);
-      }
-
-      return 0;
     };
 
     // Calculate max retention value for normalization
@@ -486,7 +382,7 @@ export const PublisherGamesList: React.FC = () => {
           kpi: (() => {
             const totalAdSpend = sumDaily(d => d.adSpend || 0);
             const totalRevenue = hasDaily
-              ? sumDaily(d => d.totalRevenue || 0)
+              ? sumDaily(d => hyperRabbitDailyRowGrossRevenue(d))
               : Number(metrics.totalRevenue) || 0;
             const roas = totalAdSpend > 0 ? (totalRevenue / totalAdSpend) * 100 : 0;
             return {
@@ -497,7 +393,7 @@ export const PublisherGamesList: React.FC = () => {
           })(),
           table: daily.map(day => {
             const adSpend = day.adSpend || 0;
-            const revenue = day.totalRevenue || 0;
+            const revenue = hyperRabbitDailyRowGrossRevenue(day);
             const roas = adSpend > 0 ? (revenue / adSpend) * 100 : 0;
             return {
               date: formatDate(day.date),
@@ -516,22 +412,38 @@ export const PublisherGamesList: React.FC = () => {
         color: '#ed6c02',
         data: {
           kpi: (() => {
-            const w = sumDaily(d => d.newUsers || 0);
-            const wAvg = (field: 'retentionD1' | 'retentionD7' | 'retentionD30') =>
-              w > 0
-                ? daily.reduce(
-                    (s, d) => s + (Number(d[field]) || 0) * (Number(d.newUsers) || 0),
-                    0,
-                  ) / w
-                : Number(metrics[field]) || 0;
+            if (!hasDaily) {
+              return {
+                d1: `${Number(metrics.retentionD1 || 0).toFixed(1)}%`,
+                d7:
+                  metrics.retentionD7NoMatureCohorts === true
+                    ? 'N/A'
+                    : `${Number(metrics.retentionD7 || 0).toFixed(1)}%`,
+                d30:
+                  metrics.retentionD30NoMatureCohorts === true
+                    ? 'N/A'
+                    : metrics.retentionD30 != null
+                      ? `${Number(metrics.retentionD30).toFixed(1)}%`
+                      : 'N/A',
+              };
+            }
+            const r1 = weightedRetentionForMatureCohorts(daily, 'retentionD1', 1, retentionAsOf);
+            const r7 = weightedRetentionForMatureCohorts(daily, 'retentionD7', 7, retentionAsOf);
+            const r30 = weightedRetentionForMatureCohorts(
+              daily,
+              'retentionD30',
+              30,
+              retentionAsOf,
+              isDashboardLast30dPreset(filters.dateRange)
+                ? { d30KpiRelaxed: true }
+                : undefined,
+            );
+            const d1Fallback =
+              daily.reduce((s, d) => s + (Number(d.retentionD1) || 0), 0) / daily.length;
             return {
-              d1: `${wAvg('retentionD1').toFixed(1)}%`,
-              d7: `${wAvg('retentionD7').toFixed(1)}%`,
-              d30: hasDaily
-                ? `${wAvg('retentionD30').toFixed(1)}%`
-                : metrics.retentionD30 != null
-                  ? `${Number(metrics.retentionD30).toFixed(1)}%`
-                  : 'N/A',
+              d1: `${(r1.hasMature ? r1.avg : d1Fallback).toFixed(1)}%`,
+              d7: r7.hasMature ? `${r7.avg.toFixed(1)}%` : 'N/A',
+              d30: r30.hasMature ? `${r30.avg.toFixed(1)}%` : 'N/A',
             };
           })(),
           // Heatmap format: rows are cohorts/dates, columns are days 1-9
@@ -554,12 +466,13 @@ export const PublisherGamesList: React.FC = () => {
                 };
 
                 // Calculate retention for days 1-9
-                for (let day = 1; day <= 9; day++) {
-                  const retention = calculateDayRetention(day, d1, d7, d30);
+                for (const day of RETENTION_HEATMAP_DAYS) {
+                  const cell = heatmapRetentionCell(day, d1, d7, d30, d.date, retentionAsOf);
                   row[`day${day}`] = {
-                    value: retention,
-                    display: `${retention.toFixed(2)}%`,
-                    color: getHeatmapColor(retention, maxRetention)
+                    value: cell.value,
+                    display: cell.display,
+                    pending: cell.pending,
+                    color: cell.pending ? '#ffffff' : getHeatmapColor(cell.value ?? 0, maxRetention)
                   };
                 }
 
@@ -578,12 +491,13 @@ export const PublisherGamesList: React.FC = () => {
               };
 
               // Calculate retention for days 1-9
-              for (let day = 1; day <= 9; day++) {
-                const retention = calculateDayRetention(day, d1, d7, d30);
+              for (const day of RETENTION_HEATMAP_DAYS) {
+                const cell = heatmapRetentionCell(day, d1, d7, d30, '', retentionAsOf);
                 row[`day${day}`] = {
-                  value: retention,
-                  display: `${retention.toFixed(2)}%`,
-                  color: getHeatmapColor(retention, maxRetention)
+                  value: cell.value,
+                  display: cell.display,
+                  pending: cell.pending,
+                  color: cell.pending ? '#ffffff' : getHeatmapColor(cell.value ?? 0, maxRetention)
                 };
               }
 
@@ -606,17 +520,22 @@ export const PublisherGamesList: React.FC = () => {
                 isMean: true
               };
 
-              // Calculate average retention for each day
-              for (let day = 1; day <= 9; day++) {
-                const dayValues = retentionRows.map(row => row[`day${day}`]?.value || 0).filter(v => v > 0);
-                const avgRetention = dayValues.length > 0
-                  ? dayValues.reduce((sum, val) => sum + val, 0) / dayValues.length
-                  : 0;
+              for (const day of RETENTION_HEATMAP_DAYS) {
+                const vals = retentionRows
+                  .filter((row: any) => !row.isMean)
+                  .map((row: any) => row[`day${day}`])
+                  .filter((c: any) => c && !c.pending && c.value !== null);
+                const avgRetention =
+                  vals.length > 0
+                    ? vals.reduce((sum: number, c: any) => sum + c.value, 0) / vals.length
+                    : 0;
+                const allPending = vals.length === 0;
 
                 meanRow[`day${day}`] = {
-                  value: avgRetention,
-                  display: `${avgRetention.toFixed(2)}%`,
-                  color: getHeatmapColor(avgRetention, maxRetention)
+                  value: allPending ? null : avgRetention,
+                  display: allPending ? '—' : `${avgRetention.toFixed(2)}%`,
+                  pending: allPending,
+                  color: allPending ? '#ffffff' : getHeatmapColor(avgRetention, maxRetention)
                 };
               }
 
@@ -638,7 +557,7 @@ export const PublisherGamesList: React.FC = () => {
           kpi: {
             gross: money(
               hasDaily
-                ? sumDaily(d => d.totalRevenue || 0)
+                ? sumDaily(d => hyperRabbitDailyRowGrossRevenue(d))
                 : Number(metrics.totalRevenue) || 0,
             ),
             iap: money(
@@ -654,7 +573,7 @@ export const PublisherGamesList: React.FC = () => {
           },
           table: daily.map(day => ({
             date: formatDate(day.date),
-            gross: money(day.totalRevenue || 0),
+            gross: money(hyperRabbitDailyRowGrossRevenue(day)),
             iap: money(day.iapRevenue || 0),
             ads: money(day.adRevenue || 0)
           }))
@@ -1932,6 +1851,19 @@ export const PublisherGamesList: React.FC = () => {
                                               </Box>
                                             ))}
                                           </Box>
+                                          {report.id === 'retention' && (
+                                            <Typography
+                                              variant="caption"
+                                              color="text.secondary"
+                                              sx={{ display: 'block', mt: 1.5, maxWidth: 720, lineHeight: 1.5 }}
+                                            >
+                                              The table shows days 1–7 after each cohort date. D30 is a weighted KPI
+                                              from DailyMetrics (cohort day +30, UTC); it is not a column. N/A if too
+                                              few installs are in D30-mature cohorts with a recorded retentionD30—
+                                              backfill the full selected range. True 0% only with enough measured
+                                              cohorts and a weighted average that rounds to zero.
+                                            </Typography>
+                                          )}
                                         </Box>
 
                                         {/* Data Table */}
@@ -1945,7 +1877,7 @@ export const PublisherGamesList: React.FC = () => {
                                                     <TableCell sx={{ fontWeight: 'bold', position: 'sticky', left: 0, backgroundColor: `${report.color}20`, zIndex: 1 }}>
                                                       Cohort Date
                                                     </TableCell>
-                                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((day) => (
+                                                    {RETENTION_HEATMAP_DAYS.map((day) => (
                                                       <TableCell key={day} sx={{ fontWeight: 'bold', textAlign: 'center', minWidth: '80px' }}>
                                                         {day}
                                                       </TableCell>
@@ -1966,26 +1898,35 @@ export const PublisherGamesList: React.FC = () => {
                                                       >
                                                         {row.cohortDate}
                                                       </TableCell>
-                                                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((day) => {
+                                                      {RETENTION_HEATMAP_DAYS.map((day) => {
                                                         const dayData = row[`day${day}`];
-                                                        // Calculate local max for text color
-                                                        const localMax = Math.max(...report.data.table
-                                                          .flatMap((r: any) =>
-                                                            [1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => r[`day${d}`]?.value || 0)
-                                                          )
+                                                        const localMax = Math.max(
+                                                          0,
+                                                          ...report.data.table.flatMap((r: any) =>
+                                                            RETENTION_HEATMAP_DAYS.map((d) => {
+                                                              const c = r[`day${d}`];
+                                                              return c && !c.pending && c.value != null
+                                                                ? c.value
+                                                                : 0;
+                                                            }),
+                                                          ),
                                                         );
+                                                        const v = dayData?.value;
                                                         return (
                                                           <TableCell
                                                             key={day}
                                                             sx={{
                                                               textAlign: 'center',
                                                               backgroundColor: dayData?.color || '#ffffff',
-                                                              color: dayData?.value > localMax * 0.5 ? '#ffffff' : '#000000',
+                                                              color:
+                                                                typeof v === 'number' && v > localMax * 0.5
+                                                                  ? '#ffffff'
+                                                                  : '#000000',
                                                               fontWeight: 'medium',
                                                               minWidth: '80px'
                                                             }}
                                                           >
-                                                            {dayData?.display || '0.00%'}
+                                                            {dayData?.display ?? '—'}
                                                           </TableCell>
                                                         );
                                                       })}

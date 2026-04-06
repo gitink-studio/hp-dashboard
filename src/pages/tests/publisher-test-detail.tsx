@@ -53,6 +53,30 @@ export const PublisherTestDetail: React.FC = () => {
     const [loading, setLoading] = React.useState<boolean>(true);
     const [testMetrics, setTestMetrics] = React.useState<any>(null);
     const [chartData, setChartData] = React.useState<any>(null);
+    const [reprocessingMetrics, setReprocessingMetrics] = React.useState<boolean>(false);
+    const [reprocessMessage, setReprocessMessage] = React.useState<string | null>(null);
+
+    const refreshChartsAndMetrics = React.useCallback(async () => {
+        if (!id) return;
+        const metricsResponse = await fetch(`${ROOT_URL}/tests/${id}/metrics`);
+        if (metricsResponse.ok) {
+            const metrics = await metricsResponse.json();
+            setTestMetrics(metrics);
+        }
+        const chartsResponse = await fetch(`${ROOT_URL}/tests/${id}/charts`);
+        if (chartsResponse.ok) {
+            const charts = await chartsResponse.json();
+            setChartData(charts);
+        } else {
+            const metricsResponse2 = await fetch(`${ROOT_URL}/tests/${id}/metrics`);
+            if (metricsResponse2.ok) {
+                const metrics = await metricsResponse2.json();
+                if (metrics.metrics?.charts) {
+                    setChartData(metrics.metrics.charts);
+                }
+            }
+        }
+    }, [id]);
 
     // Fetch test data from backend
     React.useEffect(() => {
@@ -61,7 +85,6 @@ export const PublisherTestDetail: React.FC = () => {
 
             setLoading(true);
             try {
-                // Fetch test details
                 const testResponse = await fetch(`${ROOT_URL}/tests/${id}`);
                 if (!testResponse.ok) {
                     throw new Error('Failed to fetch test');
@@ -69,28 +92,7 @@ export const PublisherTestDetail: React.FC = () => {
                 const test = await testResponse.json();
                 setTestData(test);
 
-                // Fetch test metrics
-                const metricsResponse = await fetch(`${ROOT_URL}/tests/${id}/metrics`);
-                if (metricsResponse.ok) {
-                    const metrics = await metricsResponse.json();
-                    setTestMetrics(metrics);
-                }
-
-                // Fetch chart data
-                const chartsResponse = await fetch(`${ROOT_URL}/tests/${id}/charts`);
-                if (chartsResponse.ok) {
-                    const charts = await chartsResponse.json();
-                    setChartData(charts);
-                } else {
-                    // Fallback: try to get chart data from metrics if charts endpoint fails
-                    const metricsResponse2 = await fetch(`${ROOT_URL}/tests/${id}/metrics`);
-                    if (metricsResponse2.ok) {
-                        const metrics = await metricsResponse2.json();
-                        if (metrics.metrics?.charts) {
-                            setChartData(metrics.metrics.charts);
-                        }
-                    }
-                }
+                await refreshChartsAndMetrics();
             } catch (error) {
                 console.error('Error fetching test data:', error);
             } finally {
@@ -99,7 +101,32 @@ export const PublisherTestDetail: React.FC = () => {
         };
 
         fetchTestData();
-    }, [id]);
+    }, [id, refreshChartsAndMetrics]);
+
+    const handleReprocessTestDailyMetrics = async () => {
+        if (!id) return;
+        setReprocessingMetrics(true);
+        setReprocessMessage(null);
+        try {
+            const res = await fetch(`${ROOT_URL}/tests/${id}/daily-metrics/reprocess`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            });
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(body.error || res.statusText);
+            }
+            setReprocessMessage(
+                `Updated ${body.daysWritten ?? 0} day(s); skipped ${body.daysSkipped ?? 0}.` +
+                    (body.errors?.length ? ` ${body.errors.length} error(s) — check server logs.` : ''),
+            );
+            await refreshChartsAndMetrics();
+        } catch (e: any) {
+            setReprocessMessage(`Error: ${e?.message || 'Failed to reprocess test daily metrics'}`);
+        } finally {
+            setReprocessingMetrics(false);
+        }
+    };
 
     // Calculate overall values from chart data
     const overallValues = React.useMemo(() => {
@@ -269,9 +296,9 @@ export const PublisherTestDetail: React.FC = () => {
     const heatmapData = React.useMemo(() => {
         if (chartData?.heatmaps) {
             return {
-                appu: chartData.heatmaps.appu || { mean: new Array(9).fill(0), dates: [] },
-                retention: chartData.heatmaps.retention || { mean: new Array(9).fill(0), dates: [] },
-                playtime: chartData.heatmaps.playtime || { mean: new Array(9).fill(0), dates: [] },
+                appu: chartData.heatmaps.appu || { mean: new Array(9).fill(null), dates: [] },
+                retention: chartData.heatmaps.retention || { mean: new Array(9).fill(null), dates: [] },
+                playtime: chartData.heatmaps.playtime || { mean: new Array(9).fill(null), dates: [] },
             };
         }
         return {
@@ -280,16 +307,6 @@ export const PublisherTestDetail: React.FC = () => {
             playtime: { mean: new Array(9).fill(0), dates: [] },
         };
     }, [chartData]);
-
-    const handleExportCSV = () => {
-        // Implement CSV export logic
-        console.log('Exporting CSV for test:', id);
-    };
-
-    const handleSaveReport = () => {
-        // Implement save report logic
-        console.log('Saving report for test:', id);
-    };
 
     if (!localStorage.getItem("userName")) return null;
 
@@ -311,15 +328,34 @@ export const PublisherTestDetail: React.FC = () => {
 
     return (
         <Box p={3} mt={6}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
                 <Typography variant="h6" fontWeight="bold">{testDetails.title}</Typography>
-                <TestOverallValues
-                    cpi={testDetails.cpi}
-                    gender={testDetails.gender}
-                    age={testDetails.age}
-                    placements={testDetails.placements}
-                />
+                <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        disabled={reprocessingMetrics}
+                        onClick={handleReprocessTestDailyMetrics}
+                    >
+                        {reprocessingMetrics ? 'Recalculating…' : 'Recalculate test daily metrics'}
+                    </Button>
+                    <TestOverallValues
+                        cpi={testDetails.cpi}
+                        gender={testDetails.gender}
+                        age={testDetails.age}
+                        placements={testDetails.placements}
+                    />
+                </Stack>
             </Stack>
+            {reprocessMessage ? (
+                <Typography
+                    variant="caption"
+                    color={reprocessMessage.startsWith('Error:') ? 'error' : 'text.secondary'}
+                    sx={{ display: 'block', mb: 1 }}
+                >
+                    {reprocessMessage}
+                </Typography>
+            ) : null}
 
             <Divider sx={{ my: 2 }} />
 
@@ -350,7 +386,7 @@ export const PublisherTestDetail: React.FC = () => {
                         <Box>
                             <Typography variant="subtitle1" fontWeight="bold">Game Performance</Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                Daily active users, sessions, revenue and retention during the test window
+                                Daily active users, sessions, revenue and D1 retention during the test window
                             </Typography>
 
                             {performanceData.length > 0 ? (
@@ -412,7 +448,7 @@ export const PublisherTestDetail: React.FC = () => {
 
                                     {/* Retention */}
                                     <Box>
-                                        <Typography variant="h6" sx={{ mb: 2 }}>Retention (%)</Typography>
+                                        <Typography variant="h6" sx={{ mb: 2 }}>D1 retention (%)</Typography>
                                         <Box sx={{ height: 260 }}>
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <LineChart data={performanceData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
@@ -422,7 +458,6 @@ export const PublisherTestDetail: React.FC = () => {
                                                     <RechartsTooltip formatter={(v: any) => `${Number(v).toFixed(1)}%`} contentStyle={{ borderRadius: 8 }} />
                                                     <Legend />
                                                     <Line type="monotone" dataKey="retentionD1" stroke="#e65100" strokeWidth={2} name="D1 Retention" dot={{ r: 3 }} />
-                                                    <Line type="monotone" dataKey="retentionD7" stroke="#ff8f00" strokeWidth={2} name="D7 Retention" dot={{ r: 3 }} />
                                                 </LineChart>
                                             </ResponsiveContainer>
                                         </Box>
@@ -518,6 +553,7 @@ export const PublisherTestDetail: React.FC = () => {
                         appu={heatmapData.appu}
                         retention={heatmapData.retention}
                         playtime={heatmapData.playtime}
+                        heatmapLagDays={[1]}
                     />
                 </AccordionDetails>
             </Accordion>
@@ -546,8 +582,6 @@ export const PublisherTestDetail: React.FC = () => {
             </Accordion>
 
             <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
-                <Button variant="outlined" onClick={handleExportCSV}>Export CSV</Button>
-                <Button variant="outlined" onClick={handleSaveReport}>Save Report</Button>
                 <Button variant="contained" onClick={() => navigate(-1)}>Back to Tests</Button>
             </Stack>
         </Box>
