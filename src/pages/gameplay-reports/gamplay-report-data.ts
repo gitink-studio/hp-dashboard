@@ -244,10 +244,6 @@ const getGameplayReportData = (props: any) => {
                 ]
             },
             {
-                name: 'Tutorial Event Data',
-                data: isObjectEmpty(tutorialData?.stepDetails) ? emptyData : tutorialData.stepDetails
-            },
-            {
                 name: 'Level Event Data',
                 data: [
                     {
@@ -265,63 +261,58 @@ const getGameplayReportData = (props: any) => {
                 ]
             },
             {
+                name: 'Tutorial Event Data',
+                data: isObjectEmpty(tutorialData?.stepDetails) ? emptyData : tutorialData.stepDetails
+            },
+            {
                 name: 'Level Start Event Data',
                 data: levelData?.countInfo?.levelStart ?? [],
-                additionalMetrics: [
-                    {
-                        type: MEAN,
-                        name: 'Average Level Start',
-                        value: formatDecimalNumber(additionalMetricsData?.levelData?.levelStart?.mean),
-                    },
-                    {
-                        type: MEDIAN,
-                        name: 'Level Start Median',
-                        value: additionalMetricsData?.levelData?.levelStart?.median,
-                        columns: levelDataColumns,
-                    },
-                    {
-                        type: MODE,
-                        name: 'Highest Level Started',
-                        value: additionalMetricsData?.levelData?.levelStart?.mode,
-                        columns: levelDataColumns,
-                    },
-                ]
+                mean: {
+                    name: 'Average Level Start',
+                    value: formatDecimalNumber(additionalMetricsData?.levelData?.levelStart?.mean),
+                },
+                median: {
+                    name: 'Level Start Median',
+                    value: additionalMetricsData?.levelData?.levelStart?.median,
+                    columns: levelDataColumns,
+                },
+                mode: {
+                    name: 'Highest Level Started',
+                    value: additionalMetricsData?.levelData?.levelStart?.mode,
+                    columns: levelDataColumns,
+                }
             },
             {
                 name: 'Level Complete Event Data',
                 data: levelData?.countInfo?.levelComplete ?? [],
-                additionalMetrics: [
-                    {
-                        name: 'Average Level Complete',
-                        value: formatDecimalNumber(additionalMetricsData?.levelData?.levelComplete?.mean)
-                    },
-                    {
-                        name: 'Level Complete Median',
-                        value: additionalMetricsData?.levelData?.levelComplete?.median
-                    },
-                    {
-                        name: 'Highest Level Completed',
-                        value: additionalMetricsData?.levelData?.levelComplete?.mode
-                    },
-                ]
+                mean: {
+                    name: 'Average Level Complete',
+                    value: formatDecimalNumber(additionalMetricsData?.levelData?.levelComplete?.mean)
+                },
+                median: {
+                    name: 'Level Complete Median',
+                    value: additionalMetricsData?.levelData?.levelComplete?.median
+                },
+                mode: {
+                    name: 'Highest Level Completed',
+                    value: additionalMetricsData?.levelData?.levelComplete?.mode
+                },
             },
             {
                 name: 'Level Fail Event Data',
                 data: levelData?.countInfo?.levelFail ?? [],
-                additionalMetrics: [
-                    {
-                        name: 'Average Level Fail',
-                        value: formatDecimalNumber(additionalMetricsData?.levelData?.levelFail?.mean)
-                    },
-                    {
-                        name: 'Level Fail Median',
-                        value: additionalMetricsData?.levelData?.levelFail?.median
-                    },
-                    {
-                        name: 'Highest Level Failed',
-                        value: additionalMetricsData?.levelData?.levelFail?.mode
-                    },
-                ]
+                mean: {
+                    name: 'Average Level Fail',
+                    value: formatDecimalNumber(additionalMetricsData?.levelData?.levelFail?.mean)
+                },
+                median: {
+                    name: 'Level Fail Median',
+                    value: additionalMetricsData?.levelData?.levelFail?.median
+                },
+                mode: {
+                    name: 'Highest Level Failed',
+                    value: additionalMetricsData?.levelData?.levelFail?.mode
+                },
             },
             {
                 name: 'All Level Event Data',
@@ -730,7 +721,6 @@ const getGameplayReportData = (props: any) => {
         detailedReportData: detailedReportData,
     }
 }
-
 
 export const GameplayReportData = {
     getGameplayReportData

@@ -8,8 +8,13 @@ export const levelDataColumns: GridColDef[] = [
         ...columnProps,
     },
     {
+        field: 'totalPlayerCount',
+        headerName: 'Total Player Count',
+        ...columnProps
+    },
+    {
         field: 'totalCount',
-        headerName: 'Total Count',
+        headerName: 'Total Event Count',
         ...columnProps
     },
 ];
