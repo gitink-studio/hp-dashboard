@@ -24,11 +24,11 @@ export const CustomAccordion = (props: any) => {
                     }}>
                     {!isEmptyObject(tableProps) ?
                         (
-                            <Stack direction={'row'} display={'flex'} justifyContent={'space-between'}>
+                            <Stack direction={'row'} display={'flex'} justifyContent={'space-around'} width={"100%"}>
                                 {
                                     tableProps.map((data: any) => {
                                         return (
-                                            <Stack width={250} sx={{ textAlign: 'center' }} key={data.name}>
+                                            <Stack justifyContent={'space-around'} sx={{ textAlign: 'center' }} key={data.name}>
                                                 <Typography {...summaryProps}>{data.value}</Typography>
                                                 <Typography variant="caption">{data.name}</Typography>
                                             </Stack>
