@@ -3,7 +3,7 @@ import { LevelDetailedReportViewer } from "./level-detailed-report-viewer";
 import { IAPDetailedReportViewer } from "./iap-detailed-report-viewer";
 import { AdDetailedReportViewer } from "./ad-detailed-report-viewer";
 import { EconomyDetailedReportViewer } from "./economy-detailed-report-viewer";
-
+import { StageDetailedReportViewer } from "./stage-detailed-report-viewer";
 
 export const ReportComparisonViewer = (props: any) => {
     const { data, reportType } = props.data;
@@ -11,6 +11,8 @@ export const ReportComparisonViewer = (props: any) => {
         switch (reportType) {
             case 'Level Report':
                 return <LevelDetailedReportViewer data={data} />
+            case 'Stage Report':
+                return <StageDetailedReportViewer data={data} />
             case 'IAP Report':
                 return <IAPDetailedReportViewer data={data} />
             case 'Ad Report':

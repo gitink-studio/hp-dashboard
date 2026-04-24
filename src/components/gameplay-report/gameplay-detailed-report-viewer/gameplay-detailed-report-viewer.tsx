@@ -8,6 +8,7 @@ import { TutorialDetailedReportViewer } from "./tutorial-detailed-report-viewer"
 import { MemoryUsageDetailedReportViewer } from "./memory-usage-detailed-report-viewer";
 import { FPSDetailedReportViewer } from "./fps-detailed-report-viewer";
 import { ReportComparisonViewer } from "./report-comparison-viewer";
+import { StageDetailedReportViewer } from "./stage-detailed-report-viewer";
 
 export const GameplayDetailedReportViewer = (props: any) => {
     const { reportData } = props.data;
@@ -37,6 +38,8 @@ export const GameplayDetailedReportViewer = (props: any) => {
             case 'Gameplay Event Data':
             case 'Level Event Data':
                 return <DisplayData data={data} />
+            case 'Stage Event Data':
+                return <DisplayData data={data} />
             case 'Tutorial Event Data':
                 return <TutorialDetailedReportViewer data={data} />
             case 'Level Start Event Data':
@@ -47,6 +50,15 @@ export const GameplayDetailedReportViewer = (props: any) => {
                 return <ReportComparisonViewer data={{
                     data: data,
                     reportType: 'Level Report',
+                }} />
+            case 'Stage Start Event Data':
+            case 'Stage Complete Event Data':
+            case 'Stage Fail Event Data':
+                return <StageDetailedReportViewer data={data} />
+            case 'All Stage Event Data':
+                return <ReportComparisonViewer data={{
+                    data: data,
+                    reportType: 'Stage Report',
                 }} />
             case 'IAP Initiated Event Data':
             case 'IAP Successful Event Data':

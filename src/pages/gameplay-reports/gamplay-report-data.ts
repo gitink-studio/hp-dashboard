@@ -18,6 +18,9 @@ const getGameplayReportData = (props: any) => {
         totalLevelStartEventCount = 0,
         totalLevelCompleteEventCount = 0,
         totalLevelFailEventCount = 0,
+        totalStageStartEventCount = 0,
+        totalStageCompleteEventCount = 0,
+        totalStageFailEventCount = 0,
         totalSessionTime = 0,
         totalGameplayTime = 0,
         totalReviveUsed = 0,
@@ -35,6 +38,7 @@ const getGameplayReportData = (props: any) => {
         totalCurrencySpent = 0,
         tutorialData = {},
         levelData = {},
+        stageData = {},
         iapData = {},
         adData = {},
         economyData = {},
@@ -261,6 +265,23 @@ const getGameplayReportData = (props: any) => {
                 ]
             },
             {
+                name: 'Stage Event Data',
+                data: [
+                    {
+                        name: 'Total Stage Start',
+                        value: totalStageStartEventCount
+                    },
+                    {
+                        name: 'Total Stage Complete',
+                        value: totalStageCompleteEventCount
+                    },
+                    {
+                        name: 'Total Stage Fail',
+                        value: totalStageFailEventCount
+                    },
+                ]
+            },
+            {
                 name: 'Tutorial Event Data',
                 data: isObjectEmpty(tutorialData?.stepDetails) ? emptyData : tutorialData.stepDetails
             },
@@ -315,6 +336,18 @@ const getGameplayReportData = (props: any) => {
                 },
             },
             {
+                name: 'Stage Start Event Data',
+                data: stageData?.countInfo?.stageStart ?? [],
+            },
+            {
+                name: 'Stage Complete Event Data',
+                data: stageData?.countInfo?.stageComplete ?? [],
+            },
+            {
+                name: 'Stage Fail Event Data',
+                data: stageData?.countInfo?.stageFail ?? [],
+            },
+            {
                 name: 'All Level Event Data',
                 data: [
                     {
@@ -328,6 +361,23 @@ const getGameplayReportData = (props: any) => {
                     {
                         name: 'Level Fail Event Data',
                         data: levelData?.countInfo?.levelFail ?? [],
+                    }
+                ]
+            },
+            {
+                name: 'All Stage Event Data',
+                data: [
+                    {
+                        name: 'Stage Start Event Data',
+                        data: stageData?.countInfo?.stageStart ?? [],
+                    },
+                    {
+                        name: 'Stage Complete Event Data',
+                        data: stageData?.countInfo?.stageComplete ?? [],
+                    },
+                    {
+                        name: 'Stage Fail Event Data',
+                        data: stageData?.countInfo?.stageFail ?? [],
                     }
                 ]
             },
