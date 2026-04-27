@@ -288,64 +288,112 @@ const getGameplayReportData = (props: any) => {
             {
                 name: 'Level Start Event Data',
                 data: levelData?.countInfo?.levelStart ?? [],
-                mean: {
-                    name: 'Average Level Start',
-                    value: formatDecimalNumber(additionalMetricsData?.levelData?.levelStart?.mean),
-                },
-                median: {
-                    name: 'Level Start Median',
-                    value: additionalMetricsData?.levelData?.levelStart?.median,
-                    columns: levelDataColumns,
-                },
-                mode: {
-                    name: 'Highest Level Started',
-                    value: additionalMetricsData?.levelData?.levelStart?.mode,
-                    columns: levelDataColumns,
+                additionalMetrics: {
+                    mean: {
+                        name: 'Average Level Start',
+                        value: formatDecimalNumber(additionalMetricsData?.levelData?.levelStart?.mean),
+                    },
+                    median: {
+                        name: 'Level Start Median',
+                        value: additionalMetricsData?.levelData?.levelStart?.median,
+                    },
+                    mode: {
+                        name: 'Highest Level Started',
+                        value: additionalMetricsData?.levelData?.levelStart?.mode,
+                    }
                 }
             },
             {
                 name: 'Level Complete Event Data',
                 data: levelData?.countInfo?.levelComplete ?? [],
-                mean: {
-                    name: 'Average Level Complete',
-                    value: formatDecimalNumber(additionalMetricsData?.levelData?.levelComplete?.mean)
-                },
-                median: {
-                    name: 'Level Complete Median',
-                    value: additionalMetricsData?.levelData?.levelComplete?.median
-                },
-                mode: {
-                    name: 'Highest Level Completed',
-                    value: additionalMetricsData?.levelData?.levelComplete?.mode
-                },
+                additionalMetrics: {
+                    mean: {
+                        name: 'Average Level Complete',
+                        value: formatDecimalNumber(additionalMetricsData?.levelData?.levelComplete?.mean)
+                    },
+                    median: {
+                        name: 'Level Complete Median',
+                        value: additionalMetricsData?.levelData?.levelComplete?.median,
+
+                    },
+                    mode: {
+                        name: 'Highest Level Completed',
+                        value: additionalMetricsData?.levelData?.levelComplete?.mode,
+
+                    },
+                }
             },
             {
                 name: 'Level Fail Event Data',
                 data: levelData?.countInfo?.levelFail ?? [],
-                mean: {
-                    name: 'Average Level Fail',
-                    value: formatDecimalNumber(additionalMetricsData?.levelData?.levelFail?.mean)
-                },
-                median: {
-                    name: 'Level Fail Median',
-                    value: additionalMetricsData?.levelData?.levelFail?.median
-                },
-                mode: {
-                    name: 'Highest Level Failed',
-                    value: additionalMetricsData?.levelData?.levelFail?.mode
-                },
+                additionalMetrics: {
+                    mean: {
+                        name: 'Average Level Fail',
+                        value: formatDecimalNumber(additionalMetricsData?.levelData?.levelFail?.mean)
+                    },
+                    median: {
+                        name: 'Level Fail Median',
+                        value: additionalMetricsData?.levelData?.levelFail?.median
+                    },
+                    mode: {
+                        name: 'Highest Level Failed',
+                        value: additionalMetricsData?.levelData?.levelFail?.mode
+                    },
+                }
             },
             {
                 name: 'Stage Start Event Data',
                 data: stageData?.countInfo?.stageStart ?? [],
+                additionalMetrics: {
+                    mean: {
+                        name: 'Average Stage Start',
+                        value: formatDecimalNumber(additionalMetricsData?.stageData?.stageStart?.mean)
+                    },
+                    median: {
+                        name: 'Stage Start Median',
+                        value: additionalMetricsData?.stageData?.stageStart?.median
+                    },
+                    mode: {
+                        name: 'Highest Stage Start',
+                        value: additionalMetricsData?.stageData?.stageStart?.mode
+                    },
+                }
             },
             {
                 name: 'Stage Complete Event Data',
                 data: stageData?.countInfo?.stageComplete ?? [],
+                additionalMetrics: {
+                    mean: {
+                        name: 'Average Stage Complete',
+                        value: formatDecimalNumber(additionalMetricsData?.stageData?.stageComplete?.mean)
+                    },
+                    median: {
+                        name: 'Stage Complete Median',
+                        value: additionalMetricsData?.stageData?.stageComplete?.median
+                    },
+                    mode: {
+                        name: 'Highest Stage Complete',
+                        value: additionalMetricsData?.stageData?.stageComplete?.mode
+                    },
+                }
             },
             {
                 name: 'Stage Fail Event Data',
                 data: stageData?.countInfo?.stageFail ?? [],
+                additionalMetrics: {
+                    mean: {
+                        name: 'Average Stage Fail',
+                        value: formatDecimalNumber(additionalMetricsData?.stageData?.stageFail?.mean)
+                    },
+                    median: {
+                        name: 'Stage Fail Median',
+                        value: additionalMetricsData?.stageData?.stageFail?.median
+                    },
+                    mode: {
+                        name: 'Highest Stage Fail',
+                        value: additionalMetricsData?.stageData?.stageFail?.mode
+                    },
+                }
             },
             {
                 name: 'All Level Event Data',
@@ -395,74 +443,74 @@ const getGameplayReportData = (props: any) => {
             {
                 name: 'IAP Initiated Event Data',
                 data: iapData.iapInitiated,
-                additionalMetrics: [
-                    {
+                additionalMetrics: {
+                    mean: {
                         name: 'Average IAP Initiated',
                         value: formatDecimalNumber(additionalMetricsData?.iapData?.iapInitiated?.mean)
                     },
-                    {
+                    median: {
                         name: 'IAP Initiated Median',
                         value: additionalMetricsData?.iapData?.iapInitiated?.median
                     },
-                    {
+                    mode: {
                         name: 'Highest IAP Initiated',
                         value: additionalMetricsData?.iapData?.iapInitiated?.mode
                     },
-                ]
+                }
             },
             {
                 name: 'IAP Successful Event Data',
                 data: iapData.iapSuccessful,
-                additionalMetrics: [
-                    {
+                additionalMetrics: {
+                    mean: {
                         name: 'Average IAP Successful',
                         value: formatDecimalNumber(additionalMetricsData?.iapData?.iapSuccessful?.mean)
                     },
-                    {
+                    median: {
                         name: 'IAP Successful Median',
                         value: additionalMetricsData?.iapData?.iapSuccessful?.median
                     },
-                    {
+                    mode: {
                         name: 'Highest IAP Successful',
                         value: additionalMetricsData?.iapData?.iapSuccessful?.mode
                     },
-                ]
+                }
             },
             {
                 name: 'IAP Failed Event Data',
                 data: iapData.iapFailed,
-                additionalMetrics: [
-                    {
+                additionalMetrics: {
+                    mean: {
                         name: 'Average IAP Failed',
                         value: formatDecimalNumber(additionalMetricsData?.iapData?.iapFailed?.mean)
                     },
-                    {
+                    median: {
                         name: 'IAP Failed Median',
                         value: additionalMetricsData?.iapData?.iapFailed?.median
                     },
-                    {
+                    mode: {
                         name: 'Highest IAP Failed',
                         value: additionalMetricsData?.iapData?.iapFailed?.mode
                     },
-                ]
+                }
             },
             {
                 name: 'IAP Consumed Event Data',
                 data: iapData.iapConsumed,
-                additionalMetrics: [
-                    {
+                additionalMetrics: {
+                    mean: {
                         name: 'Average IAP Consumed',
                         value: formatDecimalNumber(additionalMetricsData?.iapData?.iapConsumed?.mean)
                     },
-                    {
+                    median: {
                         name: 'IAP Consumed Median',
                         value: additionalMetricsData?.iapData?.iapConsumed?.median
                     },
-                    {
+                    mode: {
                         name: 'Highest IAP Consumed',
                         value: additionalMetricsData?.iapData?.iapConsumed?.mode
                     },
-                ]
+                }
             },
             {
                 name: 'All IAP Event Data',
@@ -490,100 +538,129 @@ const getGameplayReportData = (props: any) => {
             {
                 name: 'Ad Requested Event Data',
                 data: adData.adRequested,
+                additionalMetrics: {
+                    mean: {
+                        name: 'Average Ad Started',
+                        value: formatDecimalNumber(additionalMetricsData?.adData?.adRequested?.mean)
+                    },
+                    median: {
+                        name: 'Ad Started Median',
+                        value: additionalMetricsData?.adData?.adRequested?.median
+                    },
+                    mode: {
+                        name: 'Highest Ad Started',
+                        value: additionalMetricsData?.adData?.adRequested?.mode
+                    },
+                }
             },
             {
                 name: 'Ad Filled Event Data',
                 data: adData.adFilled,
+                additionalMetrics: {
+                    mean: {
+                        name: 'Average Ad Started',
+                        value: formatDecimalNumber(additionalMetricsData?.adData?.adFilled?.mean)
+                    },
+                    median: {
+                        name: 'Ad Started Median',
+                        value: additionalMetricsData?.adData?.adFilled?.median
+                    },
+                    mode: {
+                        name: 'Highest Ad Started',
+                        value: additionalMetricsData?.adData?.adFilled?.mode
+                    },
+                }
             },
             {
                 name: 'Ad Started Event Data',
                 data: adData.adStarted,
-                additionalMetrics: [
-                    {
+                additionalMetrics: {
+                    mean: {
                         name: 'Average Ad Started',
                         value: formatDecimalNumber(additionalMetricsData?.adData?.adStarted?.mean)
                     },
-                    {
+                    median: {
                         name: 'Ad Started Median',
                         value: additionalMetricsData?.adData?.adStarted?.median
                     },
-                    {
+                    mode: {
                         name: 'Highest Ad Started',
                         value: additionalMetricsData?.adData?.adStarted?.mode
                     },
-                ]
+                }
             },
             {
                 name: 'Ad Clicked Event Data',
                 data: adData.adClicked,
-                additionalMetrics: [
-                    {
+                additionalMetrics: {
+                    mean: {
                         name: 'Average Ad Clicked',
                         value: formatDecimalNumber(additionalMetricsData?.adData?.adClicked?.mean)
                     },
-                    {
+                    median: {
                         name: 'Ad Clicked Median',
                         value: additionalMetricsData?.adData?.adClicked?.median
                     },
-                    {
+                    mode: {
                         name: 'Highest Ad Clicked',
                         value: additionalMetricsData?.adData?.adClicked?.mode
                     },
-                ]
+
+                }
             },
             {
                 name: 'Ad Skipped Event Data',
                 data: adData.adSkipped,
-                additionalMetrics: [
-                    {
+                additionalMetrics: {
+                    mean: {
                         name: 'Average Ad Skipped',
                         value: formatDecimalNumber(additionalMetricsData?.adData?.adSkipped?.mean)
                     },
-                    {
+                    median: {
                         name: 'Ad Skipped Median',
                         value: additionalMetricsData?.adData?.adSkipped?.median
                     },
-                    {
+                    mode: {
                         name: 'Highest Ad Skipped',
                         value: additionalMetricsData?.adData?.adSkipped?.mode
                     },
-                ]
+                }
             },
             {
                 name: 'Ad Completed Event Data',
                 data: adData.adCompleted,
-                additionalMetrics: [
-                    {
+                additionalMetrics: {
+                    mean: {
                         name: 'Average Ad Completed',
                         value: formatDecimalNumber(additionalMetricsData?.adData?.adCompleted?.mean)
                     },
-                    {
+                    median: {
                         name: 'Ad Completed Median',
                         value: additionalMetricsData?.adData?.adCompleted?.median
                     },
-                    {
+                    mode: {
                         name: 'Highest Ad Completed',
                         value: additionalMetricsData?.adData?.adCompleted?.mode
                     },
-                ]
+                }
             },
             {
                 name: 'Ad Failed Event Data',
                 data: adData.adFailed,
-                additionalMetrics: [
-                    {
+                additionalMetrics: {
+                    mean: {
                         name: 'Average Ad Failed',
                         value: formatDecimalNumber(additionalMetricsData?.adData?.adFailed?.mean)
                     },
-                    {
+                    median: {
                         name: 'Ad Failed Median',
                         value: additionalMetricsData?.adData?.adFailed?.median
                     },
-                    {
+                    mode: {
                         name: 'Highest Ad Failed',
                         value: additionalMetricsData?.adData?.adFailed?.mode
                     },
-                ]
+                }
             },
             {
                 name: 'Ad Requested & Filled Event Data',
@@ -633,38 +710,38 @@ const getGameplayReportData = (props: any) => {
             {
                 name: 'Currency Earned Event Data',
                 data: economyData.currencyEarned,
-                additionalMetrics: [
-                    {
+                additionalMetrics: {
+                    mean: {
                         name: 'Average Currency Earned',
                         value: formatDecimalNumber(additionalMetricsData?.economyData?.currencyEarned?.mean)
                     },
-                    {
+                    median: {
                         name: 'Currency Earned Median',
                         value: additionalMetricsData?.economyData?.currencyEarned?.median
                     },
-                    {
+                    mode: {
                         name: 'Highest Currency Earned',
                         value: additionalMetricsData?.economyData?.currencyEarned?.mode
                     },
-                ]
+                }
             },
             {
                 name: 'Currency Spent Event Data',
                 data: economyData.currencySpent,
-                additionalMetrics: [
-                    {
+                additionalMetrics: {
+                    mean: {
                         name: 'Average Currency Spent',
                         value: formatDecimalNumber(additionalMetricsData?.economyData?.currencySpent?.mean)
                     },
-                    {
+                    median: {
                         name: 'Currency Spent Median',
                         value: additionalMetricsData?.economyData?.currencySpent?.median
                     },
-                    {
+                    mode: {
                         name: 'Highest Currency Spent',
                         value: additionalMetricsData?.economyData?.currencySpent?.mode
                     },
-                ]
+                }
             },
             {
                 name: 'All Economy Event Data',
@@ -684,56 +761,56 @@ const getGameplayReportData = (props: any) => {
             {
                 name: 'Error Event Data',
                 data: logData.error,
-                additionalMetrics: [
-                    {
+                additionalMetrics: {
+                    mean: {
                         name: 'Average Error',
                         value: formatDecimalNumber(additionalMetricsData?.logData?.error?.mean)
                     },
-                    {
+                    median: {
                         name: 'Error Median',
                         value: additionalMetricsData?.logData?.error?.median
                     },
-                    {
+                    mode: {
                         name: 'Highest Error',
                         value: additionalMetricsData?.logData?.error?.mode
-                    },
-                ]
+                    }
+                },
             },
             {
                 name: 'Warning Event Data',
                 data: logData.warning,
-                additionalMetrics: [
-                    {
+                additionalMetrics: {
+                    mean: {
                         name: 'Average Warning',
                         value: formatDecimalNumber(additionalMetricsData?.logData?.warning?.mean)
                     },
-                    {
+                    median: {
                         name: 'Warning Median',
                         value: additionalMetricsData?.logData?.warning?.median
                     },
-                    {
+                    mode: {
                         name: 'Highest Warning',
                         value: additionalMetricsData?.logData?.warning?.mode
                     },
-                ]
+                }
             },
             {
                 name: 'Info Event Data',
                 data: logData.info,
-                additionalMetrics: [
-                    {
+                additionalMetrics: {
+                    mean: {
                         name: 'Average Info',
                         value: formatDecimalNumber(additionalMetricsData?.logData?.info?.mean)
                     },
-                    {
+                    median: {
                         name: 'Info Median',
                         value: additionalMetricsData?.logData?.info?.median
                     },
-                    {
+                    mode: {
                         name: 'Highest Info',
                         value: additionalMetricsData?.logData?.info?.mode
                     },
-                ]
+                }
             }
         ],
         fpsData: [

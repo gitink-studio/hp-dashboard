@@ -127,11 +127,11 @@ export const GameplayDetailedReportViewer = (props: any) => {
                                 <CardContent sx={{ px: 4 }} >
                                     <Stack gap={2}>
                                         <Typography variant="subtitle1" textAlign={'left'}>{data.name}</Typography>
-                                        <Stack direction={'row'} gap={4} flexWrap="wrap" justifyContent="flex-start" alignItems={'center'}>
+                                        <Stack direction={'row'}>
                                             {
                                                 (!Array.isArray(data?.data) || data?.data?.length === 0) ? <DataNotFound /> :
-                                                    <Stack direction={'row'} gap={2}>
-                                                        <Box>{getData(data.name, data)}</Box>
+                                                    <Stack direction={'row'}>
+                                                        {getData(data.name, data)}
                                                     </Stack>
                                             }
                                         </Stack>

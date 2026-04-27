@@ -1,5 +1,7 @@
 import { GridColDef } from "@mui/x-data-grid";
 import { columnProps, DetailedReportViewer } from "./detailed-report-viewer";
+import { Stack } from "@mui/material";
+import { AdditionalMetricsViewer } from "./additional-metrics-viewer";
 
 const iapDataColumns: GridColDef[] = [
     {
@@ -25,10 +27,25 @@ const iapDataColumns: GridColDef[] = [
 ];
 
 export const IAPDetailedReportViewer = (props: any) => {
-    return <DetailedReportViewer
-        data={{
-            rows: props.data,
-            columns: iapDataColumns,
-        }}
-    />
+    let additionalMetrics = props.data?.additionalMetrics;
+    additionalMetrics = {
+        ...additionalMetrics,
+        columns: iapDataColumns
+    }
+
+    return <>
+        <Stack direction={'row'} gap={2}>
+            <DetailedReportViewer data={{
+                rows: props.data,
+                columns: iapDataColumns
+            }} />
+
+            {
+                props.data?.additionalMetrics &&
+                <AdditionalMetricsViewer data={{
+                    metrics: additionalMetrics
+                }} />
+            }
+        </Stack>
+    </>
 }

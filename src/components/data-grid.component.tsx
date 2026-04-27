@@ -5,7 +5,15 @@ import { useDataGridActions, useDataGridPageSize } from "../store/common/data-gr
 const pageSizeOptions = [5, 10, 20, 50, 100];
 
 export const CustomDatagrid = (props: any) => {
-    const { rows, columns, rowSelection = true, isLoading = false } = props.data;
+    const {
+        rows,
+        columns,
+        canUseCustomPageSize = false,
+        rowSelection = true,
+        isLoading = false,
+        customSize: customPageSize = 5,
+
+    } = props.data;
     const pageSize = useDataGridPageSize();
     const { setPageSize, setPage } = useDataGridActions();
 
@@ -21,12 +29,12 @@ export const CustomDatagrid = (props: any) => {
                 columns={columns}
                 initialState={{
                     pagination: {
-                        paginationModel: { pageSize: pageSize }
+                        paginationModel: { pageSize: canUseCustomPageSize ? customPageSize : pageSize }
                     }
                 }}
                 loading={isLoading}
                 pageSizeOptions={pageSizeOptions}
-                sx={customStyle.dataGrid}
+                sx={{ ...customStyle.dataGrid, height: "auto" }}
                 rowSelection={rowSelection}
                 onPaginationModelChange={handlePaginationModelChange}
                 disableColumnResize
