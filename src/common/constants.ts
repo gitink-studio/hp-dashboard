@@ -490,3 +490,8 @@ export const GameplayEventReportType = {
 export const MEAN = 'mean';
 export const MEDIAN = 'median';
 export const MODE = 'mode';
+
+export const DetailedReportViewerType = {
+  DATAGRID: "dataGrid",
+  CARD: "card"
+}

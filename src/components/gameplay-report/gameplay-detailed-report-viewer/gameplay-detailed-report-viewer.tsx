@@ -37,6 +37,14 @@ export const GameplayDetailedReportViewer = (props: any) => {
             case 'Session Event Data':
             case 'Gameplay Event Data':
             case 'Level Event Data':
+            case 'Low FPS Data':
+            case 'Average FPS Data':
+            case 'High FPS Data':
+            case 'FPS Metrics Data':
+            case 'Low Memory Usage Data':
+            case 'Average Memory Usage Data':
+            case 'High Memory Usage Data':
+            case 'Memory Usage Metrics Data':
                 return <DisplayData data={data} />
             case 'Stage Event Data':
                 return <DisplayData data={data} />
@@ -97,14 +105,6 @@ export const GameplayDetailedReportViewer = (props: any) => {
             case 'Warning Event Data':
             case 'Info Event Data':
                 return <LogDetailedReportViewer data={data} />
-            case 'Low FPS Event Data':
-            case 'Average FPS Event Data':
-            case 'High FPS Event Data':
-                return <FPSDetailedReportViewer data={data} />;
-            case 'Low Memory Usage Event Data':
-            case 'Average Memory Usage Event Data':
-            case 'High Memory Usage Event Data':
-                return <MemoryUsageDetailedReportViewer data={data} />;
             default:
                 return <DataNotFound />
         }
@@ -129,8 +129,9 @@ export const GameplayDetailedReportViewer = (props: any) => {
                                         <Typography variant="subtitle1" textAlign={'left'}>{data.name}</Typography>
                                         <Stack direction={'row'}>
                                             {
-                                                (!Array.isArray(data?.data) || data?.data?.length === 0) ? <DataNotFound /> :
-                                                    <Stack direction={'row'}>
+                                                (!Array.isArray(data?.data) || data?.data?.length === 0) && (!data.name.includes("FPS") && !data.name.includes("Memory Usage"))
+                                                    ? <DataNotFound />
+                                                    : <Stack direction={'row'}>
                                                         {getData(data.name, data)}
                                                     </Stack>
                                             }

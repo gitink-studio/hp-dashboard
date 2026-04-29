@@ -148,31 +148,57 @@ export const PlayerDetailedReportViewer = (props: any) => {
         fpsData: [
             {
                 name: 'Low FPS Data',
-                data: [fpsData.low]
-            },
-            {
+                data: [
+                    {
+                        name: 'FPS',
+                        value: fpsData.low.fps ?? 0
+                    },
+                ]
+            }, {
                 name: 'Average FPS Data',
-                data: [{ fps: fpsData.average }]
-            },
-            {
-                name: 'High FPS Data',
-                data: [fpsData.high]
-            },
+                data: [
+                    {
+                        name: "FPS",
+                        value: Math.floor(fpsData.average) ?? 0
+                    }
+                ]
+            }, {
+                name: "High FPS Data",
+                data: [
+                    {
+                        name: "FPS",
+                        value: fpsData.high.fps ?? 0
+                    }
+                ]
+            }
         ],
         memoryUsageData: [
             {
                 name: 'Low Memory Usage Data',
-                data: [memoryUsageData.low]
-            },
-            {
+                data: [
+                    {
+                        name: 'Memory Usage',
+                        value: memoryUsageData.low.memoryUsage ?? 0
+                    },
+                ]
+            }, {
                 name: 'Average Memory Usage Data',
-                data: [{ memoryUsage: memoryUsageData.average }]
-            },
-            {
-                name: 'High Memory Usage Data',
-                data: [memoryUsageData.high]
-            },
-        ]
+                data: [
+                    {
+                        name: "Memory Usage",
+                        value: Math.floor(memoryUsageData.average) ?? 0
+                    }
+                ]
+            }, {
+                name: "High Memory Usage Data",
+                data: [
+                    {
+                        name: "Memory Usage",
+                        value: memoryUsageData.high.memoryUsage ?? 0
+                    }
+                ]
+            }
+        ],
     }
 
     const DataNotFound = () => <Typography variant="caption">Data not found</Typography>
@@ -199,6 +225,12 @@ export const PlayerDetailedReportViewer = (props: any) => {
             case 'Player Data':
             case 'Session Event Data':
             case 'Gameplay Event Data':
+            case 'Low FPS Data':
+            case 'Average FPS Data':
+            case 'High FPS Data':
+            case 'Low Memory Usage Data':
+            case 'Average Memory Usage Data':
+            case 'High Memory Usage Data':
                 return <DisplayData data={data} />
             case 'Tutorial Data':
                 return <TutorialDetailedReportViewer data={data} />
@@ -226,14 +258,6 @@ export const PlayerDetailedReportViewer = (props: any) => {
             case 'Warning Data':
             case 'Info Data':
                 return <LogDetailedReportViewer data={data} />
-            case 'Low FPS Data':
-            case 'Average FPS Data':
-            case 'High FPS Data':
-                return <FPSDetailedReportViewer data={data} />;
-            case 'Low Memory Usage Data':
-            case 'Average Memory Usage Data':
-            case 'High Memory Usage Data':
-                return <MemoryUsageDetailedReportViewer data={data} />;
             default:
                 return <DataNotFound />
         }

@@ -815,32 +815,75 @@ const getGameplayReportData = (props: any) => {
         ],
         fpsData: [
             {
-                name: 'Low FPS Event Data',
-                data: [fpsData.low ?? 0]
-            },
-            {
-                name: 'Average FPS Event Data',
-                data: [{ fps: Math.floor(fpsData.average) ?? 0 }]
-            },
-            {
-                name: 'High FPS Event Data',
-                data: [fpsData.high ?? 0]
-            },
+                name: 'Low FPS Data',
+                data: [
+                    {
+                        name: 'FPS',
+                        value: fpsData.low.fps ?? 0
+                    },
+                ]
+            }, {
+                name: 'Average FPS Data',
+                data: [
+                    {
+                        name: "FPS",
+                        value: Math.floor(fpsData.average) ?? 0
+                    }
+                ]
+            }, {
+                name: "High FPS Data",
+                data: [
+                    {
+                        name: "FPS",
+                        value: fpsData.high.fps ?? 0
+                    }
+                ]
+            }, {
+                name: "FPS Metrics Data",
+                data: [
+                    {
+                        name: "Median ",
+                        value: additionalMetricsData.fpsData.median.fps ?? 0
+                    }
+                ]
+            }
         ],
         memoryUsageData: [
             {
-                name: 'Low Memory Usage Event Data',
-                data: [memoryUsageData.low ?? 0]
+                name: 'Low Memory Usage Data',
+                data: [
+                    {
+                        name: 'Memory Usage',
+                        value: memoryUsageData.low.memoryUsage ?? 0
+                    },
+                ]
+            }, {
+                name: 'Average Memory Usage Data',
+                data: [
+                    {
+                        name: "Memory Usage",
+                        value: Math.floor(memoryUsageData.average) ?? 0
+                    }
+                ]
+            }, {
+                name: "High Memory Usage Data",
+                data: [
+                    {
+                        name: "Memory Usage",
+                        value: memoryUsageData.high.memoryUsage ?? 0
+                    }
+                ]
             },
             {
-                name: 'Average Memory Usage Event Data',
-                data: [{ memoryUsage: Math.floor(memoryUsageData.average) ?? 0 }]
-            },
-            {
-                name: 'High Memory Usage Event Data',
-                data: [memoryUsageData.high ?? 0]
-            },
-        ]
+                name: "Memory Usage Metrics Data",
+                data: [
+                    {
+                        name: "Median ",
+                        value: additionalMetricsData.memoryUsageData.median.memoryUsage ?? 0
+                    }
+                ]
+            }
+        ],
     }
 
     return {
