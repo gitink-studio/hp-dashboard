@@ -9,7 +9,7 @@ import { getBuildFilesInfo, getFilesInfo, handleFileDrop, handleFileUpload, send
 import { useCurrentSetupGameDetails, useCurrentStep, useDataSending, useSubmitWebGameActions } from "../../../store/submit-web-game/submit-web-game-store";
 import { BUILDS_ROOT_URL, CRAZY_GAMES, CREATE_UPLOAD_WEB_BUILDS_URL, CREATE_WEB_GAME_SUBMISSION_DATA_URL, HttpMethod, META, MSN, PLATFORM_SPECIFIC_ZIP, POKI, SINGLE_UNIVERSAL_ZIP, WEB_GAME_SUBMISSION_SETUP_CURRENT_STATE_UPDATE_URL, WEB_GAME_SUBMISSION_STATUS_UPDATE_URL, WebGameSubmissionSetup } from "../../../common/constants";
 import { localStorageData } from "../../../common/localStorage";
-import { useGameRequests } from "../../../store/play-tests/play-tests-store";
+import { useGameRequests } from "../../../store/game-submission/game-submission-store";
 
 
 export const UploadWebBuildStep = () => {

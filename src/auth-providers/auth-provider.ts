@@ -99,3 +99,18 @@ export const authProvider: AuthProvider = {
 function removeLocalData(key: string) {
   localStorage.removeItem(key);
 }
+
+const checkRoleIsPublisher = () => {
+  const userRole = localStorage.getItem('userRole');
+
+  if (!userRole) return false;
+
+  const normalizedRole = userRole.toLowerCase().trim();
+  const isRolePublisher = normalizedRole === 'publisher' || normalizedRole.includes('publisher');
+
+  return isRolePublisher;
+};
+
+export const AuthenticationProvider = {
+  isRolePublisher: () => checkRoleIsPublisher()
+}

@@ -1,21 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Admin, defaultDarkTheme, defaultLightTheme, Resource, useAuthProvider } from "react-admin";
-import { DeviceList } from "./pages/devices/device-list";
+import { Admin, Resource, useAuthProvider } from "react-admin";
 import { dataProvider } from "./data-providers/data-provider";
-import { UserList } from "./pages/users/user-list";
-import { LinkList } from "./pages/links/link-list";
 import { EventLogList } from "./pages/event-logs/event-log-list";
-import { GamePlatformList } from "./pages/game-platforms/game-platform-list";
-import { GameList } from "./pages/games/game-list";
-import { GamePlatformCreate } from "./pages/game-platforms/game-platform-create";
-import { GameCreate } from "./pages/games/game-create";
 import { APP_AUTH_CHANGED_EVENT, QueryNames } from "./common/constants";
 import { isPublisherRole, useUserRole } from "./common/role-utils";
 import CustomLayout from "./components/layouts/CustomLayout";
 import { authProvider } from "./auth-providers/auth-provider";
 import { LoginPage } from "./pages/auth/login-page";
-import { AdminDashboard } from "./pages/dashboard/admin-dashboard";
 import { Dashboard } from "./pages/dashboard/dashboard";
 import { PublisherDashboard } from "./pages/dashboard/publisher-dashboard";
 import { ReportsPage } from "./pages/reports/reports-page";
@@ -28,15 +20,11 @@ import { DeveloperTestDetail } from "./pages/tests/developer-test-detail";
 import { PublisherTestDetail } from "./pages/tests/publisher-test-detail";
 import { Route } from "react-router";
 import { CustomRoutes } from "react-admin";
-import { SDKDetails } from "./pages/sdk/sdk-details";
+import { SDKDetails } from "./pages/mobile-game-submission/sdk-details";
 import { SubmitWebGameDetails } from "./pages/submit-web-game/submit-web-game-details";
-import { PlayTests } from "./pages/play-tests/play-tests";
+import { GameSubmission } from "./pages/game-submission/game-submission";
 import { PlayerReport } from "./pages/gameplay-reports/player-report";
 import { PublisherGameplayReportsPage } from "./components/routes/publisher-gameplay-reports-page";
-import { createTheme } from "@mui/material";
-import { customStyle } from "./common/styles";
-import { light } from "@mui/material/styles/createPalette";
-// import { ResetPasswordPage } from "./pages/auth/reset-password-page";
 
 /**
  * UserMenu reads identity from react-query (5m stale). Login only changes the hash, so the SPA keeps a stale cache.
@@ -143,27 +131,9 @@ export const App = () => {
 
       <Resource
         name={QueryNames.GET_ALL_GAME_REQUESTS}
-        list={PlayTests}
-        options={{ label: "Play Tests" }}
+        list={GameSubmission}
+        options={{ label: "Games" }}
       />
-
-      {
-        // isDeveloper && (
-        //   <>
-        //     < Resource
-        //       name="sdk"
-        //       list={SDKDetails}
-        //       options={{ label: "Submit Android Game", hasShow: false }}
-        //     />
-
-        //     <Resource
-        //       name="submit-web-game"
-        //       list={SubmitWebGameDetails}
-        //       options={{ label: "Submit Web Game" }}
-        //     />
-        //   </>
-        // )
-      }
 
       {/* Tests detail routes */}
       <CustomRoutes>
@@ -172,37 +142,8 @@ export const App = () => {
         <Route path="tests/developer/:id" element={<DeveloperTestDetail />} />
         <Route path="tests/publisher/:id" element={<PublisherTestDetail />} />
         <Route path="gameplay-reports/player-details" element={<PlayerReport />} />
-
         {/* <Route path="reset-password" element={<ResetPasswordPage />} /> */}
       </CustomRoutes>
-
-      {/* Role-based menu items
-      {(userRole === 'admin' || userRole === 'publisher') && (
-        <>
-          <Resource
-            name={QueryNames.GET_ALL_GAME_PLATFORM_DATA}
-            list={GamePlatformList}
-            create={GamePlatformCreate}
-            options={{ label: "Game Platforms" }}
-          />
-          <Resource
-            name={QueryNames.GET_ALL_GAME_DATA}
-            list={GameList}
-            create={GameCreate}
-            options={{ label: "Games" }}
-          />
-          <Resource
-            name={QueryNames.GET_ALL_DEVICE_DATA}
-            list={DeviceList}
-            options={{ label: "Devices" }}
-          />
-          <Resource
-            name={QueryNames.GET_ALL_LINK_DATA}
-            list={LinkList}
-            options={{ label: "Links" }}
-          />
-        </>
-      )} */}
 
       {/* Admin-only menu items */}
       {isAdmin && (
