@@ -95,6 +95,10 @@ export const GRAPHQL_CLIENT_OPTION = { uri: ROOT_URL + "/graphql" };
 /** Same-tab: localStorage role updated (login). SPA hash changes do not remount App — listen to re-register Resources. */
 export const APP_AUTH_CHANGED_EVENT = "hyperrabbit-auth-changed";
 export const CREATE_USER_URL = ROOT_URL + "/users/new";
+export const FORGOT_PASSWORD_URL = ROOT_URL + "/users/forgot-password";
+export const RESET_PASSWORD_URL = ROOT_URL + "/users/reset-password";
+
+// Mobile Game Submission URL
 export const CREATE_MOBILE_GAME_SUBMISSION_DATA_URL = ROOT_URL + "/mobile-game-submission/game-submission/new"
 export const CREATE_TESTING_TERMS_URL = ROOT_URL + "/mobile-game-submission/testing-terms/new"
 export const UPDATE_FB_DATA_URL = ROOT_URL + "/mobile-game-submission/facebook-setup/update"
@@ -103,9 +107,10 @@ export const CREATE_SDK_INTEGRATION_DATA_URL = ROOT_URL + "/mobile-game-submissi
 export const CREATE_STORE_DATA_URL = ROOT_URL + "/mobile-game-submission/store-setup/new"
 export const CREATE_TEST_SETUP_DATA_URL = ROOT_URL + "/mobile-game-submission/test-setup/new"
 export const MOBILE_GAME_SUBMISSION_STATUS_UPDATE_URL = ROOT_URL + "/mobile-game-submission/update/status";
-export const SDK_LAUNCH_URL = ROOT_URL + "/mobile-game-submission/launch";
+export const MOBILE_GAME_SUBMISSION_LAUNCH_URL = ROOT_URL + "/mobile-game-submission/launch";
 export const DOWNLOAD_MOBILE_GAME_CREATIVES_DATA_URL = ROOT_URL + "/mobile-game-submission/creatives/download"
 
+// Web Game Submission URL
 export const CREATE_WEB_GAME_SUBMISSION_DATA_URL = ROOT_URL + "/web-game-submission/new"
 export const REVIEW_AND_SUBMISSION_URL = ROOT_URL + "/web-game-submission/review-and-launch"
 export const WEB_GAME_SUBMISSION_STATUS_UPDATE_URL = ROOT_URL + "/web-game-submission/update/status"
@@ -118,8 +123,8 @@ export const CREATE_METADATA_AND_RATINGS_DATA_URL = ROOT_URL + "/web-game-submis
 export const REVIEW_AND_LAUNCH_URL = ROOT_URL + "/web-game-submission/review-and-launch"
 export const LAUNCH_GAME_URL = ROOT_URL + "/web-game-submission/launch-game"
 export const UPLOAD_FILES_URL = ROOT_URL + "/files/upload"
-export const FORGOT_PASSWORD_URL = ROOT_URL + "/users/forgot-password";
-export const RESET_PASSWORD_URL = ROOT_URL + "/users/reset-password";
+
+
 
 export const QueryNames = {
   GET_ALL_DEVICE_DATA,

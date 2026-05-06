@@ -3,7 +3,7 @@ import { useDataSending, useDetailedView, useGameRequestDetails, useGameSubmissi
 import { useFacebookAppAccountId, useMobileGameSubmissionActions } from "../../../store/mobile-game-submission/sdk-details-store";
 import { AuthenticationProvider } from "../../../auth-providers/auth-provider";
 import { openDownloadPopupWindow, sendRequest, sendRequestForDownloadFiles } from "../../../common/utils";
-import { DOWNLOAD_WEB_GAME_CREATIVES_DATA_URL, GameRequestStatus, HttpMethod, MobileGameSubmissionSetup, SDK_LAUNCH_URL, MOBILE_GAME_SUBMISSION_STATUS_UPDATE_URL, TOTAL_MOBILE_GAME_SUBMISSION_STEPS, UPDATE_FB_AD_ACCOUNT_ID_URL, DOWNLOAD_MOBILE_GAME_CREATIVES_DATA_URL } from "../../../common/constants";
+import { DOWNLOAD_WEB_GAME_CREATIVES_DATA_URL, GameRequestStatus, HttpMethod, MobileGameSubmissionSetup, MOBILE_GAME_SUBMISSION_LAUNCH_URL, MOBILE_GAME_SUBMISSION_STATUS_UPDATE_URL, TOTAL_MOBILE_GAME_SUBMISSION_STEPS, UPDATE_FB_AD_ACCOUNT_ID_URL, DOWNLOAD_MOBILE_GAME_CREATIVES_DATA_URL } from "../../../common/constants";
 import { notify } from "../../../components/notify";
 import { Box, Button, CircularProgress, Dialog, IconButton, InputAdornment, Paper, Stack, TextField, Typography } from "@mui/material";
 import { customStyle } from "../../../common/styles";
@@ -64,7 +64,9 @@ export const MobileGameSubmissionDetailedView = () => {
             let response: any;
 
             if (isLaunchRequest()) {
-                response = await sendRequest(HttpMethod.POST, SDK_LAUNCH_URL, {
+                console.log(`Launching... ${gameRequestDetails.platform}`);
+
+                response = await sendRequest(HttpMethod.POST, MOBILE_GAME_SUBMISSION_LAUNCH_URL, {
                     gameName: gameRequestDetails.name,
                     gameRequestId: gameRequestDetails.id,
                     androidOrIOSGameRequestId: gameRequestDetails.androidOrIOSGameRequest.id,
@@ -118,7 +120,7 @@ export const MobileGameSubmissionDetailedView = () => {
     }
 
     const isLaunchRequest = () => {
-        return gameRequestDetails.currentSetupIndex >= TOTAL_MOBILE_GAME_SUBMISSION_STEPS - 1;
+        return gameRequestDetails.currentSetupStateIndex >= TOTAL_MOBILE_GAME_SUBMISSION_STEPS;
     }
 
     const handleFacebookAdAccountId = async () => {

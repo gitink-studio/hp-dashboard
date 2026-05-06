@@ -1,7 +1,7 @@
 import { Box, Button, CircularProgress, Dialog, IconButton, InputAdornment, Paper, Stack, TextField, Typography } from "@mui/material"
 import { useDataSending, useDetailedView, useGameRequestDetails, useGameSubmissionActions, useReviewNotes } from "../../store/game-submission/game-submission-store";
 import { Close, Done, Download, Edit, PlayArrow } from "@mui/icons-material";
-import { DOWNLOAD_WEB_GAME_CREATIVES_DATA_URL, GameRequestStatus, HttpMethod, LAUNCH_GAME_URL, MobileGameSubmissionSetup, Platform, SDK_LAUNCH_URL, MOBILE_GAME_SUBMISSION_STATUS_UPDATE_URL, TOTAL_MOBILE_GAME_SUBMISSION_STEPS, TOTAL_WEB_GAME_SUBMISSION_STEPS, UPDATE_FB_AD_ACCOUNT_ID_URL, WEB_GAME_SUBMISSION_STATUS_UPDATE_URL } from "../../common/constants";
+import { DOWNLOAD_WEB_GAME_CREATIVES_DATA_URL, GameRequestStatus, HttpMethod, LAUNCH_GAME_URL, MobileGameSubmissionSetup, Platform, MOBILE_GAME_SUBMISSION_LAUNCH_URL, MOBILE_GAME_SUBMISSION_STATUS_UPDATE_URL, TOTAL_MOBILE_GAME_SUBMISSION_STEPS, TOTAL_WEB_GAME_SUBMISSION_STEPS, UPDATE_FB_AD_ACCOUNT_ID_URL, WEB_GAME_SUBMISSION_STATUS_UPDATE_URL } from "../../common/constants";
 import { openDownloadPopupWindow, sendRequest, sendRequestForDownloadFiles } from "../../common/utils";
 import { notify } from "../../components/notify";
 import { customStyle } from "../../common/styles";
@@ -90,7 +90,7 @@ export const GameSubmissionDetailedView = () => {
                 }
             } else {
                 if (isLaunchRequest()) {
-                    response = await sendRequest(HttpMethod.POST, SDK_LAUNCH_URL, {
+                    response = await sendRequest(HttpMethod.POST, MOBILE_GAME_SUBMISSION_LAUNCH_URL, {
                         gameName: gameRequestDetails.name,
                         gameRequestId: gameRequestDetails.id,
                         androidOrIOSGameRequestId: gameRequestDetails.androidOrIOSGameRequest.id,
