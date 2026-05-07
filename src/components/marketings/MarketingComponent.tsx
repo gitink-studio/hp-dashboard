@@ -1,14 +1,14 @@
 import { Add, Height, VisibilityOutlined, Widgets } from "@mui/icons-material"
 import { Box, Paper, Popover, Stack, Tooltip, Typography, Button } from "@mui/material"
-import { customStyle } from "../common/styles"
-import { MarketingButtonComponent } from "./marketings/MarketingButtonComponent";
+import { customStyle } from "../../common/styles"
+import { MarketingButtonComponent } from "./MarketingButtonComponent";
 import { useEffect, useRef, useState } from "react";
-import { CustomDialog } from "./dialog.component";
-import { GridComponent } from "./GridComponent";
-import { convertBase64ToImageFile, getFileInfo, isImageFile, isSameAspectRatio, resizeImage, sendFormDataRequest, slugify } from "../common/utils";
-import { useWebCreativeListState, useWebGameCreativesActions } from "../store/submit-web-game/creatives-store";
-import { CREATE_CREATIVES_DATA_URL, CREATIVES_ROOT_URL, MARKETINGS } from "../common/constants";
-import { useCurrentSetupGameDetails } from "../store/submit-web-game/submit-web-game-store";
+import { CustomDialog } from "../dialog.component";
+import { GridComponent } from "../GridComponent";
+import { convertBase64ToImageFile, getFileInfo, isImageFile, isSameAspectRatio, resizeImage, sendFormDataRequest, slugify } from "../../common/utils";
+import { useWebCreativeListState, useWebGameCreativesActions } from "../../store/submit-web-game/creatives-store";
+import { CREATE_CREATIVES_DATA_URL, CREATIVES_ROOT_URL, MARKETINGS } from "../../common/constants";
+import { useCurrentSetupGameDetails } from "../../store/submit-web-game/submit-web-game-store";
 
 
 export const MarketingComponent = (props: any) => {

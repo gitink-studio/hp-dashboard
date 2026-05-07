@@ -12,7 +12,7 @@ import {
     useTheme,
     CircularProgress,
 } from '@mui/material';
-import { WebGameSubmissionStep } from './web-game-submission/web-game-submission-step';
+import { WebGameSubmissionForm } from './web-game-submission-form/web-game-submission-form';
 import { SelectPlatformsStep } from './select-platforms/select-platforms-step';
 import { UploadWebBuildStep } from './upload-web-build/upload-web-build-step';
 import { useActiveStep, useCurrentSetupGameDetails, useCurrentStep, useDataSending, useSubmitWebGameActions, useWebGameSubmissionDetails } from '../../store/submit-web-game/submit-web-game-store';
@@ -22,7 +22,7 @@ import { MetaDataAndRatingsStep } from './metadata-and-ratings/metadata-and-rati
 import { ReviewAndLaunchStep } from './review-and-launch/review-and-launch-step';
 import { WebGameSubmissionSetup } from '../../common/constants';
 
-export const SubmitWebGameDetails = () => {
+export const WebGameSubmission = () => {
     const currentStep = useCurrentStep();
     const activeStep = useActiveStep();
     const currentSetupGameDetails = useCurrentSetupGameDetails();
@@ -38,7 +38,7 @@ export const SubmitWebGameDetails = () => {
     }, []);
 
     const steps = [
-        { name: "Web Game Submission", component: <WebGameSubmissionStep />, isAllDataEntered: false },
+        { name: "Web Game Submission", component: <WebGameSubmissionForm />, isAllDataEntered: false },
         { name: "Select Platforms", component: <SelectPlatformsStep />, isAllDataEntered: false },
         { name: "Upload Web Builds", component: <UploadWebBuildStep />, isAllDataEntered: false },
         { name: "Platform Requirements (Tech)", component: <PlatformRequirementsStep />, isAllDataEntered: false },

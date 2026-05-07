@@ -8,7 +8,7 @@ import { getFilesInfo, handleFileDrop, handleFileUpload, sendFormDataRequest, se
 import { CREATE_WEB_GAME_SUBMISSION_DATA_URL, CREATIVES_ROOT_URL, HttpMethod, STUDIO_ID, TEST_SUBMISSION, WebGameSubmissionSetup } from "../../../common/constants";
 import { localStorageData } from "../../../common/localStorage";
 
-export const WebGameSubmissionStep = () => {
+export const WebGameSubmissionForm = () => {
     const notify = useNotify();
     const webGameTitle = useWebGameTitle();
     const playableLink = usePlayableLink();

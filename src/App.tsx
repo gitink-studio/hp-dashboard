@@ -21,7 +21,7 @@ import { PublisherTestDetail } from "./pages/tests/publisher-test-detail";
 import { Route } from "react-router";
 import { CustomRoutes } from "react-admin";
 import { SDKDetails } from "./pages/mobile-game-submission/sdk-details";
-import { SubmitWebGameDetails } from "./pages/submit-web-game/submit-web-game-details";
+import { WebGameSubmission } from "./pages/web-game-submission/web-game-submission";
 import { GameSubmission } from "./pages/game-submission/game-submission";
 import { PlayerReport } from "./pages/gameplay-reports/player-report";
 import { PublisherGameplayReportsPage } from "./components/routes/publisher-gameplay-reports-page";
@@ -138,7 +138,7 @@ export const App = () => {
       {/* Tests detail routes */}
       <CustomRoutes>
         <Route path="sdk" element={<SDKDetails />} />
-        <Route path="submit-web-game" element={<SubmitWebGameDetails />} />
+        <Route path="submit-web-game" element={<WebGameSubmission />} />
         <Route path="tests/developer/:id" element={<DeveloperTestDetail />} />
         <Route path="tests/publisher/:id" element={<PublisherTestDetail />} />
         <Route path="gameplay-reports/player-details" element={<PlayerReport />} />

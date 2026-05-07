@@ -11,7 +11,7 @@ import {
 import { useNotify } from 'react-admin';
 import { useActiveStep, useCurrentSetupGameDetails, useCurrentStep, useDataSending, useSubmitWebGameActions } from '../../../store/submit-web-game/submit-web-game-store';
 import { FileType, WebGameSubmissionSetup } from '../../../common/constants';
-import { MarketingComponent } from '../../../components/MarketingComponent';
+import { MarketingComponent } from '../../../components/marketings/MarketingComponent';
 import { webGameCreativesData } from './web-game-creatives-data';
 
 
@@ -113,28 +113,6 @@ export const WebGameCreatives = (): JSX.Element => {
                     })
                 }
             </Stack>
-
-            <Box sx={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                mt: 3
-            }}>
-                <Button
-                    variant="contained"
-                    onClick={() => handleStepComplete()}
-                    sx={{ px: 4, py: 1, textTransform: "none" }}
-                    disabled={isDataSending}
-                >
-                    {
-                        isDataSending ? (
-                            <Stack gap={2} direction={'row'}>
-                                <Typography>Processing</Typography>
-                                <CircularProgress size={20} />
-                            </Stack>
-                        ) : "Complete Step"
-                    }
-                </Button>
-            </Box>
         </Stack>
     );
 }
