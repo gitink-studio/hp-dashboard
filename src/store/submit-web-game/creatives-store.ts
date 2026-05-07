@@ -1,19 +1,24 @@
 import { create } from "zustand";
 
-type CreativesAction = {
-
+type WebGameCreativesAction = {
+    setWebCreativeList: (creativeList: ((prev: any[]) => any[])) => void;
 }
 
-type CreativesState = {
-    actions: CreativesAction;
+type WebGameCreativesState = {
+    creativeList: any[];
+    actions: WebGameCreativesAction;
 }
 
+const initialState = {
+    creativeList: []
+}
 
-const useCreativesStore = create<CreativesState>((set) => ({
+const useWebGameCreativesStore = create<WebGameCreativesState>((set) => ({
+    ...initialState,
     actions: {
-
+        setWebCreativeList: (creativeList) => set((state: any) => ({ creativeList: creativeList(state.creativeList) }))
     }
 }));
 
-
-export const useCreativesActions = () => useCreativesStore((state) => state.actions);
+export const useWebCreativeListState = () => useWebGameCreativesStore((state) => state.creativeList);
+export const useWebGameCreativesActions = () => useWebGameCreativesStore((state) => state.actions);

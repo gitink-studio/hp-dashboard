@@ -26,14 +26,14 @@ export const CustomDialog = (props: any) => {
                             borderBottom: `1px solid ${theme.palette.divider}`
                         }}
                         >
-                            <Stack pl={4}>
+                            <Stack pl={3}>
                                 <Typography variant="h6" fontWeight="bold" >{title}</Typography>
                                 {caption !== "" && <Typography variant="caption" >{caption}</Typography>}
                             </Stack>
                         </Box>
                     </Stack>
                     <Stack overflow={"auto"}>
-                        <Box p={4}> {component}</Box>
+                        <Box p={3}> {component}</Box>
                     </Stack>
 
                     <Box sx={{

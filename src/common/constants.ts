@@ -415,10 +415,10 @@ export const Images = {
   }
 }
 
-export const FileTypes = {
-  images: "images",
-  videos: "videos",
-  zips: "zips",
+export const FileType = {
+  image: "image",
+  video: "video",
+  zip: "zip",
 }
 
 export const SINGLE_UNIVERSAL_ZIP = "Single universal zip";

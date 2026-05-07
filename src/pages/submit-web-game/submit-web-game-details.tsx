@@ -17,7 +17,7 @@ import { SelectPlatformsStep } from './select-platforms/select-platforms-step';
 import { UploadWebBuildStep } from './upload-web-build/upload-web-build-step';
 import { useActiveStep, useCurrentSetupGameDetails, useCurrentStep, useDataSending, useSubmitWebGameActions, useWebGameSubmissionDetails } from '../../store/submit-web-game/submit-web-game-store';
 import { PlatformRequirementsStep } from './platform-requirements/platform-requirements-step';
-import { CreativesStep } from './creatives/creatives-step';
+import { WebGameCreatives } from './creatives/web-game-creatives';
 import { MetaDataAndRatingsStep } from './metadata-and-ratings/metadata-and-ratings-step';
 import { ReviewAndLaunchStep } from './review-and-launch/review-and-launch-step';
 import { WebGameSubmissionSetup } from '../../common/constants';
@@ -42,7 +42,7 @@ export const SubmitWebGameDetails = () => {
         { name: "Select Platforms", component: <SelectPlatformsStep />, isAllDataEntered: false },
         { name: "Upload Web Builds", component: <UploadWebBuildStep />, isAllDataEntered: false },
         { name: "Platform Requirements (Tech)", component: <PlatformRequirementsStep />, isAllDataEntered: false },
-        { name: "Creatives (Marketing)", component: <CreativesStep />, isAllDataEntered: false },
+        { name: "Creatives (Marketing)", component: <WebGameCreatives />, isAllDataEntered: false },
         { name: "Metadata & Ratings", component: <MetaDataAndRatingsStep />, isAllDataEntered: false },
         { name: "Review & Launch", component: <ReviewAndLaunchStep />, isAllDataEntered: false },
     ]

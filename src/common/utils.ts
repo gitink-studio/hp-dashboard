@@ -1,10 +1,11 @@
 import { fetchUtils } from "react-admin";
 import { clampPublisherCustomRange } from "./publisher-custom-dates";
-import { DECIMAL_LENGTH, FileTypes, GRAPHQL_URL, HttpMethod } from "./constants";
+import { DECIMAL_LENGTH, FileType, GRAPHQL_URL, HttpMethod } from "./constants";
 import { FetchData } from "../data-providers/data-provider";
 import { notify } from "../components/notify";
 import { print } from "graphql";
 import React from "react";
+import Resizer from "react-image-file-resizer";
 
 const imageFormats = ['.png', '.jpg', '.jpeg'];
 const videoFormats = ['.mp4', '.mov', '.mkv', '.webm', '.m4a'];
@@ -355,11 +356,11 @@ export const sendGraphqlRequest = async (queryName: string, params: any) => {
 const getFileLocation = (fileExtension: string) => {
 
   if (imageFormats.includes(fileExtension)) {
-    return FileTypes.images;
+    return "images";
   }
 
   if (videoFormats.includes(fileExtension)) {
-    return FileTypes.videos;
+    return "videos";
   }
 
   if (buildFormats.includes(fileExtension)) {
@@ -374,6 +375,15 @@ export const slugify = (text: string): string => {
     .trim()
     .toLowerCase()
     .replace(/\s+/g, "-")
+}
+
+export const getFileInfo = (filePath: string, file: File, prefix: string = "") => {
+  let fileExtension = `.${file.name.split('.').pop()?.toLowerCase()}`;
+  return {
+    filePath: `${filePath}/${getFileLocation(fileExtension)}`,
+    fileType: encodeURI(file.type),
+    prefix: prefix
+  }
 }
 
 export const getFilesInfo = (commonFilePath: string, files: File[]) => {
@@ -567,3 +577,45 @@ export const setElementId = (data: any) => {
     }
   });
 }
+
+export const resizeImage = (props: any) => {
+  const { file, maxWidth, maxHeight, onResize } = props;
+  let resizedFile: any = null;
+
+  if (file) {
+    console.log(`File resizing... ${maxWidth}x${maxHeight}`);
+    resizedFile = Resizer.imageFileResizer(file, maxWidth, maxHeight, 'JPEG', 100, 0, (uri) => onResize(uri));
+  }
+
+  return resizedFile;
+}
+
+export const convertBase64ToImageFile = (base64String: string, filename: string) => {
+  const parts = base64String.split(',');
+  const mimeMatch = parts[0].match(/:(.*?);/);
+  const mimeType = mimeMatch?.[1] || 'image/jpeg';
+  const base64Data = parts[1];
+  const binaryString = atob(base64Data);
+  const byteLength = binaryString.length;
+  const byteArray = new Uint8Array(byteLength);
+
+  for (let i = 0; i < byteLength; i++) {
+    byteArray[i] = binaryString.charCodeAt(i);
+  }
+
+  return new File([byteArray], filename, { type: mimeType });
+};
+
+export const isSameAspectRatio = (resolution1: any, resolution2: any) => {
+  const aspectRatio1 = resolution1.width / resolution1.height;
+  const aspectRatio2 = resolution2.width / resolution2.height;
+
+  console.log(`Aspect Ratio 1: ${aspectRatio1}, Aspect Ratio 2: ${aspectRatio2}`);
+
+  return aspectRatio1 === aspectRatio2;
+}
+
+export const isImageFile = (file: any) => {
+  return file?.type?.startsWith(`${FileType.image}/`)
+}
+
