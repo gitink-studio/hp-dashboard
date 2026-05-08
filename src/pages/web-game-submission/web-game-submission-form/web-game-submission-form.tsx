@@ -1,11 +1,11 @@
 import { Box, Button, CircularProgress, Paper, Stack, TextField, Typography } from "@mui/material"
 import { FileUploadOutlined, PlayArrow } from "@mui/icons-material"
-import { useAdditionalNotes, useControlsDescription, useWebGameTitle, usePlayableLink, useShortGameplayVideoFile, useValidateWebGameSubmissionInputs, useWebGameSubmissionActions } from "../../../store/submit-web-game/web-game-submission-store";
-import { useActiveStep, useCurrentStep, useDataSending, useSubmitWebGameActions } from "../../../store/submit-web-game/submit-web-game-store";
+import { useAdditionalNotes, useControlsDescription, useWebGameTitle, usePlayableLink, useShortGameplayVideoFile, useWebGameSubmissionActions } from "../../../store/submit-web-game/web-game-submission-store";
+import { useDataSending, useSubmitWebGameActions } from "../../../store/submit-web-game/submit-web-game-store";
 import { useNotify } from "react-admin";
 import { customStyle } from "../../../common/styles";
-import { getFilesInfo, handleFileDrop, handleFileUpload, sendFormDataRequest, sendRequest, slugify } from "../../../common/utils";
-import { CREATE_WEB_GAME_SUBMISSION_DATA_URL, CREATIVES_ROOT_URL, HttpMethod, STUDIO_ID, TEST_SUBMISSION, WebGameSubmissionSetup } from "../../../common/constants";
+import { getFilesInfo, handleFileDrop, handleFileUpload, sendFormDataRequest, slugify } from "../../../common/utils";
+import { CREATE_WEB_GAME_SUBMISSION_DATA_URL, CREATIVES_ROOT_URL, STUDIO_ID, TEST_SUBMISSION, } from "../../../common/constants";
 import { localStorageData } from "../../../common/localStorage";
 
 export const WebGameSubmissionForm = () => {
@@ -16,9 +16,8 @@ export const WebGameSubmissionForm = () => {
     const additionalNotes = useAdditionalNotes();
     const shortGameplayVideoFile = useShortGameplayVideoFile();
     const isDataSending = useDataSending();
-    const currentStep = useCurrentStep();
     const { setPlayableLink, setControlsDescription, setAdditionalNotes, setShortGameplayVideoFile, setWebGameTitle, resetWebGameSubmissionStore } = useWebGameSubmissionActions();
-    const { setCurrentStep, setDataSending } = useSubmitWebGameActions();
+    const { setDataSending } = useSubmitWebGameActions();
 
     const validateData = (): boolean => {
         console.log("validateData");

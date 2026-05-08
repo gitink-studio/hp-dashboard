@@ -72,7 +72,7 @@ export const GameSubmissionDetailedView = () => {
                 if (isLaunchRequest()) {
                     response = await sendRequest(HttpMethod.POST, LAUNCH_GAME_URL, {
                         name: gameRequestDetails.name,
-                        studioId: gameRequestDetails.studioId,
+                        studioId: localStorage.getItem("studioId"),
                         platformList: gameRequestDetails.selectedPlatforms,
                         gameRequestId: gameRequestDetails.id,
                         webGameRequestId: gameRequestDetails.webGameRequest.id,
@@ -85,6 +85,7 @@ export const GameSubmissionDetailedView = () => {
                         gameRequestId: gameRequestDetails.id,
                         webGameRequestId: gameRequestDetails.webGameRequest.id,
                         status: GameRequestStatus.ACCEPTED,
+                        studioId: localStorage.getItem("studioId"),
                         reviewNotes: reviewNotes,
                     });
                 }
@@ -96,7 +97,7 @@ export const GameSubmissionDetailedView = () => {
                         androidOrIOSGameRequestId: gameRequestDetails.androidOrIOSGameRequest.id,
                         reviewNotes: reviewNotes,
                         status: GameRequestStatus.LAUNCHED,
-                        studioId: gameRequestDetails.studioId,
+                        studioId: localStorage.getItem("studioId"),
                         platform: gameRequestDetails.platform
                     });
                 } else {
@@ -106,7 +107,7 @@ export const GameSubmissionDetailedView = () => {
                         androidOrIOSGameRequestId: gameRequestDetails.androidOrIOSGameRequest.id,
                         reviewNotes: reviewNotes,
                         status: GameRequestStatus.ACCEPTED,
-                        studioId: gameRequestDetails.studioId
+                        studioId: localStorage.getItem("studioId")
                     });
                 }
             }

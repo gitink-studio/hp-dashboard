@@ -72,7 +72,7 @@ export const MobileGameSubmissionDetailedView = () => {
                     androidOrIOSGameRequestId: gameRequestDetails.androidOrIOSGameRequest.id,
                     reviewNotes: reviewNotes,
                     status: GameRequestStatus.LAUNCHED,
-                    studioId: gameRequestDetails.studioId,
+                    studioId: localStorage.getItem("studioId"),
                     platform: gameRequestDetails.platform
                 });
             } else {
@@ -82,7 +82,7 @@ export const MobileGameSubmissionDetailedView = () => {
                     androidOrIOSGameRequestId: gameRequestDetails.androidOrIOSGameRequest.id,
                     reviewNotes: reviewNotes,
                     status: GameRequestStatus.ACCEPTED,
-                    studioId: gameRequestDetails.studioId
+                    studioId: localStorage.getItem("studioId")
                 });
             }
 
@@ -106,7 +106,8 @@ export const MobileGameSubmissionDetailedView = () => {
                 gameRequestId: gameRequestDetails.id,
                 androidOrIOSGameRequestId: gameRequestDetails.androidOrIOSGameRequest.id,
                 reviewNotes: reviewNotes,
-                status: "Rejected"
+                status: "Rejected",
+                studioId: localStorage.getItem("studioId")
             });
 
             console.log("Game Request Response: ", response);
